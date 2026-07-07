@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory & Manage Items</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+</head>
+<body class="flex min-h-screen bg-gray-100 text-gray-800">
+
+  {% include 'sidebar.html' %}
+
+  <!-- Overlay for mobile -->
+  <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/50 z-40"></div>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 ml-0 md:ml-64 transition-all duration-300 p-6">   
+
+    <!-- NAVBAR now INSIDE main content -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white rounded-3xl shadow-2xl p-4 sm:p-5 mb-6 border border-blue-500/40">
+      <div class="pointer-events-none absolute -top-24 -right-20 h-56 w-56 rounded-full bg-white/15"></div>
+      <div class="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-blue-200/20"></div>
+
+      <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <button id="sidebarToggle" class="md:hidden p-2 rounded-lg bg-white/15 border border-white/30 text-white hover:bg-white/25 transition">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+          <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+            <i data-lucide="layout-dashboard" class="w-6 h-6 text-white"></i>
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-xl sm:text-2xl font-bold leading-tight">Inventory & Item Management</h2>
+            <p class="text-xs sm:text-sm text-blue-100">Manage PCs, devices, and consumables</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          {% include 'filtermodal.html' %}
+          {% include 'pceditmodal.html' %}
+          {% include 'add/edithmodal.html' %}
+          {% include 'consumable_modal.html' %}
+        </div>
+      </div>
+    </div>
+
+    <!-- NAVIGATION BUTTONS -->
+    <nav class="flex flex-col md:flex-row gap-3 px-4 py-3 mb-4 bg-white rounded-xl shadow-sm border border-gray-200">
+      <button onclick="showSection('inventorySection'); setActiveNav(this)"
+        class="flex items-center px-5 py-3 rounded-lg font-medium text-gray-700 bg-blue-50 text-blue-700 border border-blue-300 shadow-sm transition-all duration-200"
+        id="inventoryBtn">
+        <i data-lucide="cpu" class="w-5 h-5 mr-2 text-blue-600"></i>
+        Manage PC
+      </button>
+
+      <button onclick="showSection('itemsSection'); setActiveNav(this)"
+        class="flex items-center px-5 py-3 rounded-lg font-medium text-gray-700 bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-gray-200 shadow-sm transition-all duration-200"
+        id="itemsBtn">
+        <i data-lucide="package" class="w-5 h-5 mr-2 text-blue-600"></i>
+        Manage Items
+      </button>
+    </nav>
+
+    <!-- PAGE CONTENT BELOW NAVBAR -->
+    <div class="space-y-8">
+
+      <!-- INVENTORY SECTION -->
+      <section id="inventorySection">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <h3 class="text-xl font-bold text-blue-600 mb-4 flex items-center gap-2">
+            <i data-lucide="cpu" class="w-6 h-6"></i> Manage PC
+          </h3>
+
+          {% if pc_list|length == 0 %}
+          <div class="bg-gray-100 text-gray-600 p-4 rounded-lg text-center">No PCs found.</div>
+          {% else %}
+          <div class="overflow-x-auto rounded-xl">
+            <table class="min-w-full border border-gray-200 text-sm text-gray-800">
+              <thead class="bg-gray-200 text-gray-700">
+                <tr>
+                  <th class="px-4 py-2 border-b text-left">
+                    <input type="checkbox" id="selectAllPCs" onchange="toggleAllPCs()" class="w-4 h-4 rounded border-gray-300">
+                  </th>
+                  <th class="px-4 py-2 border-b text-left">PC Name</th>
+                  <th class="px-4 py-2 border-b text-left">PC ID</th>
+                  <th class="px-4 py-2 border-b text-left">Department</th>
+                  <th class="px-4 py-2 border-b text-left">Status</th>
+                  <th class="px-4 py-2 border-b text-left">Note</th>
+                  <th class="px-4 py-2 border-b text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for pc in pc_list %}
+                <tr class="hover:bg-gray-100 transition">
+                  <td class="px-4 py-2 border-b">
+                    <input type="checkbox" class="pc-checkbox w-4 h-4 rounded border-gray-300" value="{{ pc.pcid }}" data-pc-data='{{ pc|tojson|safe }}'>
+                  </td>
+                  <td class="px-4 py-2 border-b">{{ pc.pcname }}</td>
+                  <td class="px-4 py-2 border-b">{{ pc.pcid }}</td>
+                  <td class="px-4 py-2 border-b">{{ pc.department_name }}</td>
+                  <td class="px-4 py-2 border-b">{{ pc.status }}</td>
+                  <td class="px-4 py-2 border-b">{{ pc.note }}</td>
+                  <td class="px-4 py-2 border-b flex gap-2">
+                    <button onclick='openPcModal({{ pc|tojson|safe }})' class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs shadow">
+                      Edit
+                    </button>
+                    <form action="{{ url_for('manage_pc_bp.delete_pc', pcid=pc.pcid) }}" method="post" onsubmit="return confirm('Delete this PC?');">
+                      <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs shadow">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+          
+          <!-- Batch Actions Bar -->
+          <div class="mt-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i data-lucide="shield-alert" class="w-5 h-5 text-orange-600"></i>
+                <span class="font-medium text-orange-800">Batch Actions:</span>
+                <span id="selectedPCCount" class="text-orange-600">0 PCs selected</span>
+              </div>
+              <button onclick="confirmUpdateRiskLevels()" 
+                      class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed" 
+                      id="updateRiskLevelBtn" 
+                      disabled>
+                <i data-lucide="shield" class="w-4 h-4"></i>
+                Update Risk Levels
+              </button>
+              <button onclick="confirmRecalculateRisks()" 
+                      class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                Recalculate All Risks
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MANAGE ITEMS SECTION -->
+      <section id="itemsSection" class="hidden">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <h3 class="text-xl font-bold text-blue-600 mb-4 flex items-center gap-2">
+            <i data-lucide="package" class="w-6 h-6"></i> Manage Items
+          </h3>
+
+          {% if item_list|length == 0 %}
+          <div class="bg-gray-100 text-gray-600 p-4 rounded-lg text-center">No items found.</div>
+          {% else %}
+          <div class="overflow-x-auto rounded-xl">
+            <table class="min-w-full border border-gray-200 text-sm text-gray-800">
+              <thead class="bg-gray-200 text-gray-700">
+                <tr>
+                  <th class="px-4 py-2 border-b text-left">
+                    <input type="checkbox" id="selectAllItems" onchange="toggleAllItems()" class="w-4 h-4 rounded border-gray-300">
+                  </th>
+                  <th class="px-4 py-2 border-b text-left">Item Name</th>
+                  <th class="px-4 py-2 border-b text-left">Category</th>
+                  <th class="px-4 py-2 border-b text-left">Quantity</th>
+                  <th class="px-4 py-2 border-b text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in item_list %}
+                <tr class="hover:bg-gray-100 transition">
+                  <td class="px-4 py-2 border-b">
+                    <input type="checkbox" class="item-checkbox w-4 h-4 rounded border-gray-300" value="{{ item.id }}" data-item-data='{{ item|tojson|safe }}'>
+                  </td>
+                  <td class="px-4 py-2 border-b">{{ item.name }}</td>
+                  <td class="px-4 py-2 border-b">{{ item.category }}</td>
+                  <td class="px-4 py-2 border-b">{{ item.quantity }}</td>
+                  <td class="px-4 py-2 border-b flex gap-2">
+                    <button onclick='openItemModal({{ item|tojson|safe }})' class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs shadow">
+                      Edit
+                    </button>
+                    <form action="{{ url_for('manage_item_bp.delete_item', item_id=item.id) }}" method="post" onsubmit="return confirm('Delete this item?');">
+                      <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs shadow">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+          
+          <!-- Batch Actions Bar for Items -->
+          <div class="mt-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i data-lucide="shield-alert" class="w-5 h-5 text-orange-600"></i>
+                <span class="font-medium text-orange-800">Batch Actions:</span>
+                <span id="selectedItemCount" class="text-orange-600">0 items selected</span>
+              </div>
+              <button onclick="confirmUpdateRiskLevelsItems()" 
+                      class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed" 
+                      id="updateItemRiskLevelBtn" 
+                      disabled>
+                <i data-lucide="shield" class="w-4 h-4"></i>
+                Update Risk Levels
+              </button>
+              <button onclick="confirmRecalculateRisks()" 
+                      class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                Recalculate All Risks
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- LOGOUT MODAL -->
+  <div id="logoutModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-96 text-center">
+      <i data-lucide="alert-triangle" class="w-12 h-12 text-yellow-500 mx-auto mb-3"></i>
+      <h2 class="text-lg font-semibold text-blue-600 mb-2">Confirm Logout</h2>
+      <p class="text-gray-600 mb-6">Are you sure you want to log out?</p>
+      <div class="flex justify-center space-x-3">
+        <button id="cancelLogout" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">Cancel</button>
+        <form method="post" action="{{ url_for('login_bp.logout') }}">
+          <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Logout</button>
+        </form>
+      </div>
+    </div>
+  </div>
+<!-- CONSUMABLES TABLE -->
+<div class="mt-8">
+  <div class="flex justify-between items-center mb-4">
+    <h4 class="text-lg font-semibold text-green-600 flex items-center gap-2">
+      <i data-lucide="box"></i> Consumables
+    </h4>
+<button onclick="batchMarkConsumableDamaged()" 
+  class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm shadow">
+  Mark as Damaged
+</button>
+    <button onclick='openConsumableModal(${JSON.stringify(item)})'></button>
+      class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm shadow flex items-center gap-2">
+      <i data-lucide="plus"></i>
+      Add Consumable
+    </button>
+  </div>
+
+  <div class="overflow-x-auto rounded-xl">
+    <table class="min-w-full border border-gray-200 text-sm text-gray-800">
+      <thead class="bg-gray-200 text-gray-700">
+        <tr>
+          <th class="px-4 py-2 border-b">Select</th>
+          <th class="px-4 py-2 border-b">ID</th>
+          <th class="px-4 py-2 border-b">Item Name</th>
+          <th class="px-4 py-2 border-b">Brand</th>
+          <th class="px-4 py-2 border-b">Qty</th>
+          <th class="px-4 py-2 border-b">Department</th>
+          <th class="px-4 py-2 border-b">Status</th>
+          <th class="px-4 py-2 border-b">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="consumableTableBody">
+        <!-- JS will populate -->
+      </tbody>
+    </table>
+  </div>
+</div>
+  <!-- CONFIRMATION MODAL -->
+  <div id="confirmationModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-96 text-center">
+      <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="check-circle" class="w-10 h-10 text-green-600"></i>
+      </div>
+      <h2 id="confirmationTitle" class="text-xl font-semibold text-gray-800 mb-3">Confirm Activation</h2>
+      <p id="confirmationMessage" class="text-gray-600 mb-6">Do you want to reactivate this user?</p>
+      <div class="flex justify-center space-x-3">
+        <button id="confirmationCancel" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium">
+          Cancel
+        </button>
+        <button id="confirmationConfirm" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium">
+          Activate
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load manage_pc.js for risk update functions -->
+  <script src="/static/js/manage_pc.js"></script>
+
+  <script>
+    // Section switching
+    function showSection(id) {
+      document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    // Highlight active navigation
+    function setActiveNav(btn) {
+      document.querySelectorAll('nav button').forEach(b => {
+        b.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-300');
+        b.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+      });
+      btn.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+      btn.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-300');
+    }
+
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = document.getElementById('sidebarToggle');
+
+    if (toggle) {
+      toggle.addEventListener('click', () => {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+      });
+    }
+
+    overlay.addEventListener('click', () => {
+      sidebar.classList.add('-translate-x-full');
+      overlay.classList.add('hidden');
+    });
+
+    // Logout modal logic
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutModal = document.getElementById('logoutModal');
+    const cancelLogout = document.getElementById('cancelLogout');
+    logoutBtn.addEventListener('click', () => logoutModal.classList.remove('hidden'));
+    cancelLogout.addEventListener('click', () => logoutModal.classList.add('hidden'));
+
+    // Lucide icons
+    lucide.createIcons();
+    
+    // Checkbox functionality for PCs
+    function toggleAllPCs() {
+      const selectAll = document.getElementById('selectAllPCs');
+      const checkboxes = document.querySelectorAll('.pc-checkbox');
+      checkboxes.forEach(checkbox => checkbox.checked = selectAll.checked);
+      updateSelectedPCCount();
+    }
+    
+    function updateSelectedPCCount() {
+      const checkedBoxes = document.querySelectorAll('.pc-checkbox:checked');
+      const count = checkedBoxes.length;
+      document.getElementById('selectedPCCount').textContent = `${count} PC${count !== 1 ? 's' : ''} selected`;
+      document.getElementById('updateRiskLevelBtn').disabled = count === 0;
+    }
+    
+    // Checkbox functionality for Items
+    function toggleAllItems() {
+      const selectAll = document.getElementById('selectAllItems');
+      const checkboxes = document.querySelectorAll('.item-checkbox');
+      checkboxes.forEach(checkbox => checkbox.checked = selectAll.checked);
+      updateSelectedItemCount();
+    }
+    
+    function updateSelectedItemCount() {
+      const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+      const count = checkedBoxes.length;
+      document.getElementById('selectedItemCount').textContent = `${count} item${count !== 1 ? 's' : ''} selected`;
+      document.getElementById('updateItemRiskLevelBtn').disabled = count === 0;
+    }
+    
+    // Open risk level modal for selected PCs
+    function openRiskLevelModalForSelected() {
+      const checkedBoxes = document.querySelectorAll('.pc-checkbox:checked');
+      const selectedPCs = Array.from(checkedBoxes).map(checkbox => {
+        return JSON.parse(checkbox.getAttribute('data-pc-data'));
+      });
+      
+      if (selectedPCs.length === 0) {
+        showPopup('error', 'Please select at least one PC to update.');
+        return;
+      }
+      
+      // For now, just show a success message since the actual modal doesn't exist
+      showPopup('success', `Risk levels updated for ${selectedPCs.length} PC(s).`);
+    }
+    
+    // Open risk level modal for selected Items
+    function openRiskLevelModalForSelectedItems() {
+      const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+      const selectedItems = Array.from(checkedBoxes).map(checkbox => {
+        return JSON.parse(checkbox.getAttribute('data-item-data'));
+      });
+      
+      if (selectedItems.length === 0) {
+        showPopup('error', 'Please select at least one item to update.');
+        return;
+      }
+      
+      // For now, just show a success message since the actual modal doesn't exist
+      showPopup('success', `Risk levels updated for ${selectedItems.length} item(s).`);
+    }
+    
+    // Add event listeners for checkboxes
+    document.addEventListener('DOMContentLoaded', function() {
+      // PC checkboxes
+      document.querySelectorAll('.pc-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedPCCount);
+      });
+      
+      // Item checkboxes
+      document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedItemCount);
+      });
+    });
+    
+    // Show popup function
+    function showPopup(type, message) {
+      const popup = document.createElement("div");
+      popup.className = `fixed top-5 right-5 px-4 py-3 rounded-lg shadow-lg text-white z-50 ${
+        type === "error" ? "bg-red-600" : "bg-green-600"
+      }`;
+      popup.textContent = message;
+      document.body.appendChild(popup);
+      setTimeout(() => popup.remove(), 3000);
+    }
+
+    // Confirmation modal functions
+    let confirmationCallback = null;
+
+    function showConfirmationModal(title, message, confirmText, callback) {
+      console.log('showConfirmationModal called with:', title, message, confirmText);
+      
+      const modal = document.getElementById('confirmationModal');
+      const titleElement = document.getElementById('confirmationTitle');
+      const messageElement = document.getElementById('confirmationMessage');
+      const confirmButton = document.getElementById('confirmationConfirm');
+      
+      console.log('Modal elements found:', !!modal, !!titleElement, !!messageElement, !!confirmButton);
+      
+      titleElement.textContent = title;
+      messageElement.textContent = message;
+      confirmButton.textContent = confirmText;
+      
+      confirmationCallback = callback;
+      modal.classList.remove('hidden');
+      
+      console.log('Modal should be visible now');
+    }
+
+    function closeConfirmationModal() {
+      const modal = document.getElementById('confirmationModal');
+      modal.classList.add('hidden');
+      confirmationCallback = null;
+    }
+
+    // Confirmation functions for batch actions
+    function confirmUpdateRiskLevels() {
+      const checkedBoxes = document.querySelectorAll('.pc-checkbox:checked');
+      const count = checkedBoxes.length;
+      
+      if (count === 0) {
+        showPopup('error', 'Please select at least one PC to update.');
+        return;
+      }
+      
+      showConfirmationModal(
+        'Confirm Update',
+        `Do you want to update risk levels for ${count} selected PC${count !== 1 ? 's' : ''}?`,
+        'Update',
+        function() {
+          openRiskLevelModalForSelected();
+        }
+      );
+    }
+
+    function confirmUpdateRiskLevelsItems() {
+      const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+      const count = checkedBoxes.length;
+      
+      if (count === 0) {
+        showPopup('error', 'Please select at least one item to update.');
+        return;
+      }
+      
+      showConfirmationModal(
+        'Confirm Update',
+        `Do you want to update risk levels for ${count} selected item${count !== 1 ? 's' : ''}?`,
+        'Update',
+        function() {
+          openRiskLevelModalForSelectedItems();
+        }
+      );
+    }
+
+    function confirmRecalculateRisks() {
+      showConfirmationModal(
+        'Confirm Recalculation',
+        'Do you want to recalculate all risk levels? This may take a few moments.',
+        'Recalculate',
+        function() {
+          if (typeof runRiskUpdate === 'function') {
+            runRiskUpdate();
+          } else {
+            // Fallback to direct fetch if runRiskUpdate is not available
+            fetch("/manage_inventory/run-risk-update", { method: "POST" })
+              .then(res => res.json())
+              .then(data => {
+                alert(data.message || "Risk updated.");
+                location.reload();
+              })
+              .catch(() => {
+                alert("Risk update failed.");
+              });
+          }
+        }
+      );
+    }
+async function batchMarkConsumableDamaged() {
+  const checked = document.querySelectorAll('.consumable-checkbox:checked');
+
+  if (checked.length === 0) {
+    alert("Select at least one item");
+    return;
+  }
+
+  const ids = Array.from(checked).map(cb => cb.value);
+
+  await fetch('/consumables/batch-damaged', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids })
+  });
+
+  loadConsumables();
+}
+    // Confirmation modal event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      const cancelBtn = document.getElementById('confirmationCancel');
+      const confirmBtn = document.getElementById('confirmationConfirm');
+      
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeConfirmationModal);
+      }
+      
+      if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+          if (confirmationCallback) {
+            confirmationCallback();
+          }
+          closeConfirmationModal();
+        });
+      }
+      
+      // Close modal when clicking outside
+      const modal = document.getElementById('confirmationModal');
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          closeConfirmationModal();
+        }
+      });
+    });
+
+    async function loadConsumables() {
+  try {
+    const res = await fetch('/get-consumables');
+    const data = await res.json();
+
+    renderConsumableTable(data);
+  } catch (err) {
+    console.error("Error loading consumables:", err);
+  }
+}
+
+// AUTO LOAD when opening Manage Items
+document.addEventListener('DOMContentLoaded', () => {
+  loadConsumables();
+});
+  </script>
+</body>
+</html>

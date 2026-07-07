@@ -1,0 +1,141 @@
+/* static/css/sidebar.css
+   Shared sidebar styles moved from templates to a static stylesheet.
+*/
+:root { --ui-radius: 10px; --ui-radius-pill: 9999px; }
+
+/* Unify corner radius across the app (override Tailwind utility classes where used) */
+.rounded-xl, .rounded-lg, .rounded-md, .rounded-2xl, .rounded { border-radius: var(--ui-radius) !important; }
+.card-radius { border-radius: var(--ui-radius) !important; }
+
+/* Scrollbar for sidebar */
+.sidebar-scrollbar::-webkit-scrollbar { width: 6px; }
+.sidebar-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.sidebar-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 9999px; }
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(96, 165, 250, 0.55); }
+
+/* Logout modal visuals */
+.logout-modal-backdrop {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(56, 189, 248, 0.2) 0%, rgba(56, 189, 248, 0) 38%),
+    radial-gradient(circle at 86% 86%, rgba(248, 113, 113, 0.2) 0%, rgba(248, 113, 113, 0) 42%),
+    rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.logout-modal-card {
+  border: 1px solid #dbeafe;
+  border-radius: var(--ui-radius);
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 28%, #ffffff 100%);
+  box-shadow: 0 28px 64px rgba(2, 6, 23, 0.36);
+  padding: 1.4rem 1.2rem 1.15rem;
+  animation: logout-modal-in 0.2s ease-out;
+}
+
+.logout-modal-icon-wrap {
+  width: 3.4rem; height: 3.4rem; margin: 0 auto 0.75rem; border-radius: 9999px;
+  border: 1px solid #fcd34d; background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%);
+  display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+}
+
+.logout-modal-title { font-size: 1.1rem; font-weight: 700; color: #1e3a8a; margin-bottom: 0.35rem; }
+.logout-modal-subtitle { color: #475569; font-size: 0.93rem; line-height: 1.45; margin-bottom: 1rem; }
+.logout-modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.logout-modal-btn { border-radius: var(--ui-radius); padding: 0.6rem 0.95rem; font-size: 0.88rem; font-weight: 600; transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease; }
+.logout-modal-btn:hover { transform: translateY(-1px); }
+.logout-modal-btn-cancel { border: 1px solid #cbd5e1; background: #e2e8f0; color: #334155; }
+.logout-modal-btn-cancel:hover { background: #cbd5e1; }
+.logout-modal-btn-confirm { border: 1px solid #dc2626; background: linear-gradient(120deg, #ef4444 0%, #dc2626 100%); color: #ffffff; box-shadow: 0 10px 22px rgba(220,38,38,0.26); }
+.logout-modal-btn-confirm:hover { filter: brightness(1.03); }
+
+/* Sidebar logout button visuals */
+.sidebar-logout-btn {
+  position: relative; overflow: hidden; border: 1px solid rgba(254, 202, 202, 0.35);
+  background: linear-gradient(130deg, #ef4444 0%, #dc2626 52%, #b91c1c 100%);
+  box-shadow: 0 14px 26px rgba(220, 38, 38, 0.34), inset 0 1px 0 rgba(255,255,255,0.26);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+.sidebar-logout-btn::after { content: ""; position: absolute; top: -110%; left: -45%; width: 170%; height: 220%; background: linear-gradient(120deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%); transform: rotate(18deg); transition: transform 0.45s ease; pointer-events: none; }
+.sidebar-logout-btn:hover { transform: translateY(-1px); filter: brightness(1.03); box-shadow: 0 18px 32px rgba(220,38,38,0.42), inset 0 1px 0 rgba(255,255,255,0.3); }
+.sidebar-logout-btn:hover::after { transform: translateX(13%) rotate(18deg); }
+.sidebar-logout-btn:active { transform: translateY(0); }
+.sidebar-logout-icon { transition: transform 0.18s ease; }
+.sidebar-logout-btn:hover .sidebar-logout-icon { transform: translateX(-2px); }
+
+@keyframes logout-modal-in { from { opacity: 0; transform: translateY(6px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (max-width: 520px) { .logout-modal-actions { grid-template-columns: 1fr; } }
+
+/* Usage Log nav special styles */
+.nav-usage .usage-badge { margin-left: auto; padding: .15rem .5rem; font-size: .68rem; font-weight: 700; border-radius: 999px; color: #1d4ed8; background: linear-gradient(90deg,#eff6ff,#e0f2fe); border: 1px solid rgba(59,130,246,0.08); }
+.nav-usage .icon-accent { transition: transform .18s ease, box-shadow .18s ease; }
+.nav-usage:hover .icon-accent { transform: translateY(-2px); }
+
+/* Submit-ticket specific nav styles reused across sidebars */
+.nav-item { display:flex; gap:.75rem; align-items:center; padding:.6rem .9rem; border-radius:.8rem; transition:all .18s ease; }
+.nav-item .icon { display:inline-flex; align-items:center; justify-content:center; width:1.6rem; height:1.6rem; }
+.nav-item:hover { transform:translateY(-2px); background: rgba(37,99,235,0.08) !important; color: #fff !important; }
+.nav-item:not(.nav-item-active):hover .icon { color: #fff !important; }
+.nav-item-active { background: linear-gradient(90deg,#2563eb,#1e40af); color: #fff; box-shadow: 0 8px 22px rgba(2,6,23,0.24); position:relative; }
+.nav-item-active::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; background: linear-gradient(180deg,#60a5fa,#1e40af); border-radius: 0 6px 6px 0; }
+
+.sidebar-brand { background: linear-gradient(180deg,#0f172a,#111827); border-radius: 1rem; padding:.6rem; }
+
+@media (max-width:520px) { .sidebar-logout-btn { width:100%; } }
+
+/* Typography and sizing consistency for sidebar */
+#sidebar {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+#sidebar h4 {
+  font-size: 16px !important;
+  line-height: 1.05;
+  font-weight: 800 !important;
+  margin: 0;
+}
+
+#sidebar .mx-3 span,
+#sidebar .mx-3 .brand-subtitle {
+  font-size: 12px !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#sidebar nav a,
+#sidebar .nav-item,
+#sidebar .leading-tight {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  color: inherit;
+}
+
+#sidebar nav a span.leading-tight,
+#sidebar .nav-item .leading-tight {
+  font-size: 14px !important;
+}
+
+#sidebar [data-lucide], #sidebar svg, #sidebar i {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px;
+  min-height: 18px;
+  vertical-align: middle;
+}
+
+#sidebar .sidebar-logout-btn {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+#sidebar { letter-spacing: 0.01em; }
+
+/* Ensure smaller micro-text is readable and consistent */ 
+#sidebar small, #sidebar .small-text {
+  font-size: 12px !important;
+  color: rgba(255,255,255,0.8);
+}

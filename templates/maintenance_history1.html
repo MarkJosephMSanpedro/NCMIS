@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Maintenance History</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+  <style>
+    .quick-search-card {
+      border: 1px solid #d7e4f3;
+      border-radius: 0.9rem;
+      background:
+        radial-gradient(140% 120% at 100% 0%, rgba(191, 219, 254, 0.3) 0%, rgba(191, 219, 254, 0) 56%),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      box-shadow: 0 14px 26px -24px rgba(30, 64, 175, 0.65);
+    }
+
+    .quick-search-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-bottom: 0.58rem;
+      color: #334155;
+      font-size: 0.72rem;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .quick-search-label-dot {
+      width: 0.52rem;
+      height: 0.52rem;
+      border-radius: 9999px;
+      flex-shrink: 0;
+      background: linear-gradient(145deg, #2563eb 0%, #1d4ed8 100%);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .quick-search-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 27rem;
+    }
+
+    .quick-search-icon {
+      position: absolute;
+      left: 0.8rem;
+      top: 50%;
+      width: 1rem;
+      height: 1rem;
+      transform: translateY(-50%);
+      color: #64748b;
+      pointer-events: none;
+      transition: color 0.16s ease;
+    }
+
+    .quick-search-input {
+      width: 100%;
+      border: 1px solid #bfdbfe;
+      border-radius: 0.82rem;
+      padding: 0.6rem 4.6rem 0.6rem 2.45rem;
+      font-size: 0.9rem;
+      line-height: 1.2;
+      color: #1e293b;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      box-shadow: inset 0 1px 1px rgba(15, 23, 42, 0.05);
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+      outline: none;
+    }
+
+    .quick-search-input::placeholder {
+      color: #94a3b8;
+    }
+
+    .quick-search-input:hover {
+      border-color: #93c5fd;
+    }
+
+    .quick-search-input:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), inset 0 1px 1px rgba(15, 23, 42, 0.04);
+      background: #ffffff;
+    }
+
+    .quick-search-wrap:focus-within .quick-search-icon {
+      color: #2563eb;
+    }
+
+    .quick-search-clear {
+      position: absolute;
+      right: 0.42rem;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 1px solid #c7d2fe;
+      border-radius: 9999px;
+      padding: 0.2rem 0.56rem;
+      background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
+      color: #334155;
+      font-size: 0.68rem;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      transition: border-color 0.16s ease, color 0.16s ease, background-color 0.16s ease;
+    }
+
+    .quick-search-clear:hover {
+      border-color: #93c5fd;
+      color: #1d4ed8;
+      background: #eff6ff;
+    }
+
+    .quick-search-clear:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .quick-search-status {
+      margin-top: 0.56rem;
+      font-size: 0.74rem;
+      color: #64748b;
+    }
+
+    /* ── Search Highlight ── */
+    mark.mh-highlight {
+      background: #fef08a;
+      color: inherit;
+      border-radius: 0.15em;
+      padding: 0 0.08em;
+      font-weight: 600;
+    }
+
+    /* ── Quick Filter Chips ── */
+    .mh-filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.65rem;
+    }
+
+    .mh-filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.22rem 0.58rem;
+      border-radius: 9999px;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+      color: #475569;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .mh-filter-chip:hover {
+      border-color: #93c5fd;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .mh-filter-chip.mh-filter-chip-active {
+      border-color: #3b82f6;
+      background: #dbeafe;
+      color: #1e40af;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    }
+
+    .mh-filter-chip-dot {
+      width: 0.38rem;
+      height: 0.38rem;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+
+    /* ── Keyboard Shortcut Badge ── */
+    .mh-kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.08rem 0.32rem;
+      border-radius: 0.3rem;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      color: #6b7280;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.6rem;
+      font-weight: 600;
+      line-height: 1.4;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+    }
+
+    .quick-search-wrap .mh-kbd {
+      position: absolute;
+      right: 0.55rem;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .quick-search-wrap:focus-within .mh-kbd,
+    .quick-search-wrap.has-value .mh-kbd {
+      opacity: 0;
+    }
+
+    /* ── Search Hint ── */
+    .mh-search-hint {
+      margin-top: 0.45rem;
+      font-size: 0.68rem;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+
+    .mh-search-hint code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.66rem;
+      background: #f1f5f9;
+      padding: 0.08rem 0.28rem;
+      border-radius: 0.25rem;
+      color: #64748b;
+    }
+
+    /* ── Table Shell ── */
+    .mh-table-shell {
+      border: 1px solid #d9e4f2;
+      border-radius: 1rem;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      box-shadow: 0 16px 30px -24px rgba(15, 23, 42, 0.5);
+      overflow: hidden;
+    }
+
+    .mh-table-scroll {
+      overflow-x: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .mh-table-scroll::-webkit-scrollbar {
+      height: 10px;
+      width: 10px;
+    }
+
+    .mh-table-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 999px;
+    }
+
+    .mh-table-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 999px;
+    }
+
+    /* ── Table ── */
+    .mh-table {
+      width: 100%;
+      min-width: 1100px;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.875rem;
+      color: #334155;
+    }
+
+    .mh-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+      color: #334155;
+      font-size: 0.67rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 0.82rem 1.1rem;
+      border-bottom: 1px solid #d8e2f0;
+      white-space: nowrap;
+      text-align: left;
+    }
+
+    .mh-table tbody tr:nth-child(even) {
+      background: #fbfdff;
+    }
+
+    .mh-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .mh-table tbody tr:hover {
+      background: #edf4ff !important;
+    }
+
+    .mh-table tbody td {
+      padding: 0.72rem 1.1rem;
+      border-bottom: 1px solid #edf2f7;
+      vertical-align: middle;
+    }
+
+    .mh-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ── Duration Warning Row ── */
+    .mh-table tbody tr.mh-duration-warn {
+      background: #fff5f5;
+    }
+
+    .mh-table tbody tr.mh-duration-warn:nth-child(even) {
+      background: #fef2f2;
+    }
+
+    .mh-table tbody tr.mh-duration-warn:hover {
+      background: #fee2e2 !important;
+    }
+
+    /* ── Chips / Badges ── */
+    .mh-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.32rem;
+      padding: 0.26rem 0.62rem;
+      border-radius: 9999px;
+      border: 1px solid transparent;
+      font-size: 0.72rem;
+      font-weight: 650;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .mh-chip-dot {
+      width: 0.42rem;
+      height: 0.42rem;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+
+    /* Action chip */
+    .mh-chip-action {
+      border-color: #c7d2fe;
+      background: #eef2ff;
+      color: #3730a3;
+    }
+    .mh-chip-action .mh-chip-dot { background: #6366f1; }
+
+    /* Status chips */
+    .mh-chip-available {
+      border-color: #86efac;
+      background: #dcfce7;
+      color: #166534;
+    }
+    .mh-chip-available .mh-chip-dot { background: #22c55e; }
+
+    .mh-chip-inused {
+      border-color: #93c5fd;
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    .mh-chip-inused .mh-chip-dot { background: #3b82f6; }
+
+    .mh-chip-inactive {
+      border-color: #cbd5e1;
+      background: #e2e8f0;
+      color: #475569;
+    }
+    .mh-chip-inactive .mh-chip-dot { background: #94a3b8; }
+
+    .mh-chip-damaged {
+      border-color: #fca5a5;
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    .mh-chip-damaged .mh-chip-dot { background: #ef4444; }
+
+    /* Risk chips */
+    .mh-chip-high {
+      border-color: #fca5a5;
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    .mh-chip-high .mh-chip-dot { background: #ef4444; }
+
+    .mh-chip-medium {
+      border-color: #fcd34d;
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .mh-chip-medium .mh-chip-dot { background: #f59e0b; }
+
+    .mh-chip-low {
+      border-color: #86efac;
+      background: #dcfce7;
+      color: #166534;
+    }
+    .mh-chip-low .mh-chip-dot { background: #22c55e; }
+
+    .mh-chip-default {
+      border-color: #cbd5e1;
+      background: #e2e8f0;
+      color: #475569;
+    }
+    .mh-chip-default .mh-chip-dot { background: #94a3b8; }
+
+    /* ── Duration Pill ── */
+    .mh-duration-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+      padding: 0.22rem 0.56rem;
+      border-radius: 9999px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .mh-duration-pill.mh-duration-ok {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .mh-duration-pill.mh-duration-warn {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+
+    .mh-duration-pill.mh-duration-danger {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+      animation: pulse-danger 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-danger {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+      50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12); }
+    }
+
+    /* ── Asset Name ── */
+    .mh-asset-name {
+      font-weight: 650;
+      color: #1e293b;
+    }
+
+    .mh-asset-type {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.22rem;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.14rem 0.42rem;
+      border-radius: 0.35rem;
+      margin-right: 0.35rem;
+    }
+
+    .mh-asset-type-pc {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .mh-asset-type-device {
+      background: #e0e7ff;
+      color: #4338ca;
+    }
+
+    .mh-asset-type-other {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    /* ── Remarks ── */
+    .mh-remarks {
+      max-width: 280px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #64748b;
+      font-size: 0.82rem;
+    }
+
+    /* ── Empty State ── */
+    .mh-empty-state {
+      padding: 3.5rem 1rem;
+      text-align: center;
+    }
+
+    .mh-empty-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 3.2rem;
+      height: 3.2rem;
+      border-radius: 9999px;
+      background: #f1f5f9;
+      color: #94a3b8;
+      margin-bottom: 0.8rem;
+    }
+
+    .mh-empty-title {
+      font-size: 0.92rem;
+      font-weight: 650;
+      color: #475569;
+      margin-bottom: 0.25rem;
+    }
+
+    .mh-empty-sub {
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex">
+
+  {% include 'sidebar.html' %}
+
+  <main class="flex-1 ml-0 md:ml-64 p-6">
+
+    <!-- HEADER -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white rounded-3xl shadow-2xl p-4 sm:p-5 mb-6 border border-blue-500/40">
+      <div class="pointer-events-none absolute -top-24 -right-20 h-56 w-56 rounded-full bg-white/15"></div>
+      <div class="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-blue-200/20"></div>
+
+      <div class="relative z-10 flex items-center justify-between gap-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+            <i data-lucide="wrench" class="w-6 h-6 text-white"></i>
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-xl sm:text-2xl font-bold leading-tight">Maintenance History</h2>
+            <p class="text-xs sm:text-sm text-blue-100">Track repairs, status changes, and service records</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <div class="quick-search-card p-3 sm:p-4">
+        <label for="maintenanceQuickSearchInput" class="quick-search-label">
+          <span class="quick-search-label-dot"></span>
+          Quick Search
+        </label>
+        <div class="quick-search-wrap" id="maintenanceQuickSearchWrap">
+          <i data-lucide="search" class="quick-search-icon"></i>
+          <input
+            id="maintenanceQuickSearchInput"
+            type="text"
+            autocomplete="off"
+            placeholder="Search all columns or use column:value..."
+            class="quick-search-input"
+          >
+          <span class="mh-kbd" id="mhKbdHint">⌘K</span>
+          <button
+            type="button"
+            id="maintenanceQuickSearchClearBtn"
+            class="hidden quick-search-clear"
+          >
+            Clear
+          </button>
+        </div>
+
+        <!-- Quick Filter Chips -->
+        <div class="mh-filter-chips" id="mhFilterChips">
+          <span class="mh-filter-chip" data-filter="status:available">
+            <span class="mh-filter-chip-dot" style="background:#22c55e"></span>Available
+          </span>
+          <span class="mh-filter-chip" data-filter="status:in use">
+            <span class="mh-filter-chip-dot" style="background:#3b82f6"></span>IN USE
+          </span>
+          <span class="mh-filter-chip" data-filter="status:damaged">
+            <span class="mh-filter-chip-dot" style="background:#ef4444"></span>Damaged
+          </span>
+          <span class="mh-filter-chip" data-filter="risk:high">
+            <span class="mh-filter-chip-dot" style="background:#ef4444"></span>Risk: High
+          </span>
+          <span class="mh-filter-chip" data-filter="risk:medium">
+            <span class="mh-filter-chip-dot" style="background:#f59e0b"></span>Risk: Medium
+          </span>
+          <span class="mh-filter-chip" data-filter="risk:low">
+            <span class="mh-filter-chip-dot" style="background:#22c55e"></span>Risk: Low
+          </span>
+          <span class="mh-filter-chip" data-filter="type:pc">
+            <span class="mh-filter-chip-dot" style="background:#3b82f6"></span>PC Only
+          </span>
+          <span class="mh-filter-chip" data-filter="type:device">
+            <span class="mh-filter-chip-dot" style="background:#6366f1"></span>Device Only
+          </span>
+        </div>
+
+        <p id="maintenanceQuickSearchStatus" class="quick-search-status">Type to auto-filter current page.</p>
+        <div class="mh-search-hint">
+          Use <code>column:value</code> to filter specific columns — e.g. <code>status:available</code>, <code>risk:high</code>, <code>type:pc</code>, <code>action:repair</code>, <code>performed_by:admin</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY TABLE -->
+    <div id="maintenance-history-table-container" class="mh-table-shell">
+      <div class="mh-table-scroll">
+      <table class="mh-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Asset</th>
+            <th>Action</th>
+            <th>Old Status</th>
+            <th>New Status</th>
+            <th>Risk</th>
+            <th>Duration</th>
+            <th>Performed By</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+
+        <tbody id="maintenance-history-tbody">
+          {% if records|length == 0 %}
+          <tr>
+            <td colspan="9" class="mh-empty-state">
+              <div class="mh-empty-icon"><i data-lucide="inbox" class="w-5 h-5"></i></div>
+              <div class="mh-empty-title">No maintenance records found</div>
+              <div class="mh-empty-sub">Records will appear here when maintenance actions are logged.</div>
+            </td>
+          </tr>
+          {% else %}
+          {% for row in records %}
+          {% set is_duration_warn = row.duration_years is not none and row.duration_years > 0 and (row.new_status or '')|lower != 'damaged' %}
+          <tr class="{% if is_duration_warn %}mh-duration-warn{% endif %}">
+            <td class="whitespace-nowrap" style="color:#64748b">
+              {{ row.performed_at }}
+            </td>
+
+            <td class="whitespace-nowrap">
+              <span class="mh-asset-name">
+                {% if row.asset_type_key == 'PC' %}
+                  <span class="mh-asset-type mh-asset-type-pc">PC</span>{{ row.asset_name or ('#' ~ row.asset_id) }}
+                {% elif row.asset_type_key == 'DEVICE' %}
+                  <span class="mh-asset-type mh-asset-type-device">DEV</span>{{ row.asset_name or ('#' ~ row.asset_id) }}
+                {% else %}
+                  <span class="mh-asset-type mh-asset-type-other">{{ row.asset_type or 'AST' }}</span>#{{ row.asset_id }}
+                {% endif %}
+              </span>
+            </td>
+
+            <td>
+              <span class="mh-chip mh-chip-action">
+                <span class="mh-chip-dot"></span>
+                {{ row.action }}
+              </span>
+            </td>
+
+            <td style="color:#64748b">
+              {{ row.old_status or '—' }}
+            </td>
+
+            <td>
+              {% set row_new_status_key = (row.new_status or '')|trim|lower %}
+              <span class="mh-chip
+                {% if row_new_status_key == 'available' %}mh-chip-available
+                {% elif row_new_status_key in ['in used','in use','in-used','inuse'] %}mh-chip-inused
+                {% elif row_new_status_key == 'inactive' %}mh-chip-inactive
+                {% else %}mh-chip-damaged{% endif %}">
+                <span class="mh-chip-dot"></span>
+                {{ row.new_status or '—' }}
+              </span>
+            </td>
+
+            {% set row_risk_value = row.effective_risk_level or row.risk_level or '--' %}
+            {% set row_risk_key = (row_risk_value or '')|trim|lower %}
+            <td>
+              <span class="mh-chip
+                {% if row_risk_key == 'high' %}mh-chip-high
+                {% elif row_risk_key == 'medium' %}mh-chip-medium
+                {% elif row_risk_key == 'low' %}mh-chip-low
+                {% else %}mh-chip-default{% endif %}">
+                <span class="mh-chip-dot"></span>
+                {{ row_risk_value }}
+              </span>
+            </td>
+
+            <td class="whitespace-nowrap">
+              {% if row.duration_years is not none %}
+                {% if row.duration_years >= 2 %}
+                  <span class="mh-duration-pill mh-duration-danger">
+                    <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+                    {{ row.duration_years }} year{% if row.duration_years != 1 %}s{% endif %}
+                  </span>
+                {% elif row.duration_years >= 1 %}
+                  <span class="mh-duration-pill mh-duration-warn">
+                    <i data-lucide="clock" class="w-3 h-3"></i>
+                    {{ row.duration_years }} year{% if row.duration_years != 1 %}s{% endif %}
+                  </span>
+                {% else %}
+                  <span class="mh-duration-pill mh-duration-ok">
+                    <i data-lucide="check-circle-2" class="w-3 h-3"></i>
+                    {{ row.duration_years }} year{% if row.duration_years != 1 %}s{% endif %}
+                  </span>
+                {% endif %}
+              {% else %}
+                <span style="color:#94a3b8">—</span>
+              {% endif %}
+            </td>
+
+            <td class="whitespace-nowrap" style="color:#475569">
+              {{ row.performed_by or '—' }}
+            </td>
+
+            <td class="mh-remarks" title="{{ row.remarks or '' }}">
+              {{ row.remarks or '—' }}
+            </td>
+          </tr>
+          {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <!-- PAGINATION -->
+    {% if total_pages > 1 %}
+    <div id="maintenance-history-pagination-container" class="flex flex-col sm:flex-row items-center justify-between mt-5 gap-4 px-1">
+      <div class="text-sm text-slate-500">
+        Showing <span class="font-semibold text-slate-700">{{ (page - 1) * per_page + 1 }}</span><span class="mx-0.5">–</span><span class="font-semibold text-slate-700">{{ [page * per_page, total_items]|min }}</span> of <span class="font-semibold text-slate-700">{{ total_items }}</span> records
+      </div>
+
+      <nav class="flex items-center gap-1.5 flex-wrap justify-center" aria-label="Pagination">
+        {% if page > 1 %}
+          <a href="?page={{ page - 1 }}&per_page={{ per_page }}"
+             class="flex items-center px-3.5 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
+            <i data-lucide="chevron-left" class="w-4 h-4 mr-1"></i>
+            Prev
+          </a>
+        {% else %}
+          <span class="flex items-center px-3.5 py-2 text-sm font-semibold text-slate-300 bg-slate-50 border border-slate-150 rounded-xl cursor-not-allowed">
+            <i data-lucide="chevron-left" class="w-4 h-4 mr-1"></i>
+            Prev
+          </span>
+        {% endif %}
+
+        {% set start_page = [1, page - 2]|max %}
+        {% set end_page = [total_pages, page + 2]|min %}
+        
+        {% if start_page > 1 %}
+          <a href="?page=1&per_page={{ per_page }}"
+             class="hidden sm:flex items-center justify-center w-9 h-9 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
+            1
+          </a>
+          {% if start_page > 2 %}
+            <span class="hidden sm:flex items-center justify-center w-9 h-9 text-sm font-medium text-slate-400">…</span>
+          {% endif %}
+        {% endif %}
+
+        {% for p in range(start_page, end_page + 1) %}
+          <a href="?page={{ p }}&per_page={{ per_page }}"
+             class="flex items-center justify-center w-9 h-9 text-sm font-semibold rounded-xl transition-all shadow-sm
+             {% if p == page %}
+               z-10 bg-blue-600 text-white border border-blue-600 shadow-blue-200 shadow-md
+             {% else %}
+               text-slate-600 bg-white border border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200
+             {% endif %}">
+            {{ p }}
+          </a>
+        {% endfor %}
+
+        {% if end_page < total_pages %}
+          {% if end_page < total_pages - 1 %}
+            <span class="hidden sm:flex items-center justify-center w-9 h-9 text-sm font-medium text-slate-400">…</span>
+          {% endif %}
+          <a href="?page={{ total_pages }}&per_page={{ per_page }}"
+             class="hidden sm:flex items-center justify-center w-9 h-9 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
+            {{ total_pages }}
+          </a>
+        {% endif %}
+
+        {% if page < total_pages %}
+          <a href="?page={{ page + 1 }}&per_page={{ per_page }}"
+             class="flex items-center px-3.5 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
+            Next
+            <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+          </a>
+        {% else %}
+          <span class="flex items-center px-3.5 py-2 text-sm font-semibold text-slate-300 bg-slate-50 border border-slate-150 rounded-xl cursor-not-allowed">
+            Next
+            <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+          </span>
+        {% endif %}
+      </nav>
+
+      <!-- ROWS PER PAGE -->
+      <form method="get" class="flex items-center gap-2">
+        <label class="text-sm text-slate-500 font-medium">Rows:</label>
+        <select name="per_page"
+                class="border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 bg-white shadow-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all">
+          {% for size in [5, 10, 25, 50] %}
+            <option value="{{ size }}" {% if per_page == size %}selected{% endif %}>
+              {{ size }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+    {% endif %}
+
+  </main>
+
+  <script>
+    lucide.createIcons();
+
+    (function () {
+      const tableContainerId = "maintenance-history-table-container";
+      const paginationContainerId = "maintenance-history-pagination-container";
+      const quickSearchInput = document.getElementById("maintenanceQuickSearchInput");
+      const quickSearchClearBtn = document.getElementById("maintenanceQuickSearchClearBtn");
+      const quickSearchStatus = document.getElementById("maintenanceQuickSearchStatus");
+      const quickSearchWrap = document.getElementById("maintenanceQuickSearchWrap");
+      const kbdHint = document.getElementById("mhKbdHint");
+      const filterChipsContainer = document.getElementById("mhFilterChips");
+
+      // ── Column index mapping ──
+      const COL_INDEX = {
+        date: 0,
+        asset: 1,
+        action: 2,
+        old_status: 3,
+        oldstatus: 3,
+        new_status: 4,
+        newstatus: 4,
+        status: 4,
+        risk: 5,
+        duration: 6,
+        performed_by: 7,
+        performedby: 7,
+        by: 7,
+        remarks: 8
+      };
+
+      // ── Alias map for type:pc / type:device ──
+      // These search the Asset column (index 1) for specific text
+      const TYPE_ALIASES = {
+        pc: ["PC"],
+        device: ["DEV", "Device"]
+      };
+
+      // ── Debounce helper ──
+      let debounceTimer = null;
+      function debounce(fn, ms) {
+        return function () {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(fn, ms);
+        };
+      }
+
+      // ── Parse search term into { columnFilters, globalTerm } ──
+      function parseSearchTerm(raw) {
+        const columnFilters = {};
+        let globalTerm = "";
+
+        // Split by spaces but keep quoted strings together
+        const tokens = raw.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+
+        tokens.forEach(function (token) {
+          const cleanToken = token.replace(/^"|"$/g, "");
+          const colonPos = cleanToken.indexOf(":");
+
+          if (colonPos > 0) {
+            const colKey = cleanToken.substring(0, colonPos).toLowerCase().trim();
+            const colVal = cleanToken.substring(colonPos + 1).trim().toLowerCase();
+
+            if (colKey === "type" && TYPE_ALIASES[colVal]) {
+              // type:pc / type:device → search asset column
+              columnFilters[1] = TYPE_ALIASES[colVal];
+            } else if (COL_INDEX[colKey] !== undefined) {
+              columnFilters[COL_INDEX[colKey]] = [colVal];
+            } else {
+              // Unknown column prefix → treat as global
+              globalTerm += (globalTerm ? " " : "") + cleanToken;
+            }
+          } else {
+            globalTerm += (globalTerm ? " " : "") + cleanToken;
+          }
+        });
+
+        return { columnFilters, globalTerm };
+      }
+
+      // ── Check if a cell matches a filter value list ──
+      function cellMatchesAny(cellText, values) {
+        const lower = cellText.toLowerCase();
+        return values.some(function (v) { return lower.includes(v); });
+      }
+
+      // ── Highlight matching text in a cell ──
+      function highlightCell(cell, searchTerm) {
+        // Only walk direct text nodes inside the cell (skip nested elements like chips)
+        if (!searchTerm) return;
+
+        const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT, null, false);
+        const textNodes = [];
+        while (walker.nextNode()) {
+          textNodes.push(walker.currentNode);
+        }
+
+        textNodes.forEach(function (node) {
+          const text = node.textContent;
+          const lowerText = text.toLowerCase();
+          const idx = lowerText.indexOf(searchTerm.toLowerCase());
+          if (idx === -1) return;
+
+          const before = text.substring(0, idx);
+          const match = text.substring(idx, idx + searchTerm.length);
+          const after = text.substring(idx + searchTerm.length);
+
+          const mark = document.createElement("mark");
+          mark.className = "mh-highlight";
+          mark.textContent = match;
+
+          const parent = node.parentNode;
+          const frag = document.createDocumentFragment();
+          if (before) frag.appendChild(document.createTextNode(before));
+          frag.appendChild(mark);
+          if (after) frag.appendChild(document.createTextNode(after));
+          parent.replaceChild(frag, node);
+        });
+      }
+
+      // ── Remove all existing highlights ──
+      function clearHighlights(container) {
+        container.querySelectorAll("mark.mh-highlight").forEach(function (mark) {
+          const parent = mark.parentNode;
+          parent.replaceChild(document.createTextNode(mark.textContent), mark);
+          parent.normalize();
+        });
+      }
+
+      // ── Store original cell text for safe comparison ──
+      let originalTextMap = new WeakMap();
+
+      function getOriginalText(cell) {
+        if (!originalTextMap.has(cell)) {
+          originalTextMap.set(cell, (cell.textContent || "").trim());
+        }
+        return originalTextMap.get(cell);
+      }
+
+      // ── Main filter function ──
+      function applyMaintenanceQuickSearchFilter() {
+        const tbody = document.getElementById("maintenance-history-tbody");
+
+        if (!tbody || !quickSearchInput) {
+          return;
+        }
+
+        const rawTerm = (quickSearchInput.value || "").trim();
+        const hasSearchTerm = rawTerm.length > 0;
+
+        // Toggle clear button & wrap class
+        if (quickSearchClearBtn) {
+          quickSearchClearBtn.classList.toggle("hidden", !hasSearchTerm);
+        }
+        if (quickSearchWrap) {
+          quickSearchWrap.classList.toggle("has-value", hasSearchTerm);
+        }
+
+        // Remove old no-match row
+        const existingNoMatchRow = document.getElementById("maintenance-quick-no-match-row");
+        if (existingNoMatchRow) {
+          existingNoMatchRow.remove();
+        }
+
+        // Clear previous highlights
+        clearHighlights(tbody);
+
+        const rows = Array.from(tbody.querySelectorAll("tr")).filter(function (row) {
+          return row.id !== "maintenance-quick-no-match-row";
+        });
+        const dataRows = rows.filter(function (row) { return !row.querySelector("td[colspan]"); });
+        const placeholderRows = rows.filter(function (row) { return !!row.querySelector("td[colspan]"); });
+
+        if (dataRows.length === 0) {
+          placeholderRows.forEach(function (row) { row.hidden = false; });
+          if (quickSearchStatus) {
+            quickSearchStatus.textContent = hasSearchTerm
+              ? "No maintenance records to search on this page."
+              : "Type to auto-filter current page.";
+          }
+          return;
+        }
+
+        let matchCount = dataRows.length;
+
+        if (hasSearchTerm) {
+          const { columnFilters, globalTerm } = parseSearchTerm(rawTerm.toLowerCase());
+          const hasColumnFilters = Object.keys(columnFilters).length > 0;
+          const hasGlobalTerm = globalTerm.length > 0;
+
+          matchCount = 0;
+
+          dataRows.forEach(function (row) {
+            const cells = row.querySelectorAll("td");
+            let isMatch = true;
+
+            // Column-specific filters (AND logic)
+            if (hasColumnFilters) {
+              for (const colIdx in columnFilters) {
+                const idx = parseInt(colIdx, 10);
+                const filterValues = columnFilters[colIdx];
+                const cellText = cells[idx] ? getOriginalText(cells[idx]) : "";
+                if (!cellMatchesAny(cellText, filterValues)) {
+                  isMatch = false;
+                  break;
+                }
+              }
+            }
+
+            // Global term (search all visible text)
+            if (isMatch && hasGlobalTerm) {
+              const rowText = (row.textContent || "").toLowerCase();
+              if (!rowText.includes(globalTerm)) {
+                isMatch = false;
+              }
+            }
+
+            row.hidden = !isMatch;
+            if (isMatch) matchCount++;
+
+            // Highlight matches in visible rows
+            if (isMatch && (hasGlobalTerm || hasColumnFilters)) {
+              // Highlight global term in all cells
+              if (hasGlobalTerm) {
+                cells.forEach(function (cell) { highlightCell(cell, globalTerm); });
+              }
+              // Highlight column-specific terms in their respective cells
+              if (hasColumnFilters) {
+                for (const colIdx in columnFilters) {
+                  const idx = parseInt(colIdx, 10);
+                  const filterValues = columnFilters[colIdx];
+                  if (cells[idx]) {
+                    filterValues.forEach(function (v) { highlightCell(cells[idx], v); });
+                  }
+                }
+              }
+            }
+          });
+        } else {
+          dataRows.forEach(function (row) { row.hidden = false; });
+        }
+
+        placeholderRows.forEach(function (row) { row.hidden = true; });
+
+        if (hasSearchTerm && matchCount === 0) {
+          const noMatchRow = document.createElement("tr");
+          noMatchRow.id = "maintenance-quick-no-match-row";
+          noMatchRow.innerHTML = '<td colspan="9" class="mh-empty-state"><div class="mh-empty-icon"><i data-lucide="search-x" class="w-5 h-5"></i></div><div class="mh-empty-title">No matching records</div><div class="mh-empty-sub">Try a different search term or column filter.</div></td>';
+          tbody.appendChild(noMatchRow);
+          lucide.createIcons();
+        }
+
+        if (quickSearchStatus) {
+          if (!hasSearchTerm) {
+            quickSearchStatus.textContent = "Type to auto-filter current page.";
+          } else if (matchCount === 0) {
+            quickSearchStatus.textContent = "No matching rows on this page.";
+          } else {
+            quickSearchStatus.textContent = `Showing ${matchCount} of ${dataRows.length} rows on this page.`;
+          }
+        }
+
+        // Sync filter chip active states
+        syncChipActiveState(rawTerm.toLowerCase());
+      }
+
+      // ── Sync chip active state with current search ──
+      function syncChipActiveState(lowerTerm) {
+        if (!filterChipsContainer) return;
+        filterChipsContainer.querySelectorAll(".mh-filter-chip").forEach(function (chip) {
+          const filter = chip.getAttribute("data-filter") || "";
+          const isActive = lowerTerm === filter || lowerTerm.includes(filter + " ") || lowerTerm.includes(" " + filter);
+          chip.classList.toggle("mh-filter-chip-active", isActive && lowerTerm.includes(filter));
+        });
+      }
+
+      // ── Debounced filter for typing ──
+      const debouncedFilter = debounce(applyMaintenanceQuickSearchFilter, 180);
+
+      // ── AJAX page update ──
+      async function updatePage(url, pushState) {
+        try {
+          const response = await fetch(url, {
+            headers: {
+              "X-Requested-With": "XMLHttpRequest"
+            }
+          });
+
+          if (!response.ok) {
+            window.location.href = url;
+            return;
+          }
+
+          const html = await response.text();
+          const parsed = new DOMParser().parseFromString(html, "text/html");
+
+          const nextTable = parsed.getElementById(tableContainerId);
+          const nextPagination = parsed.getElementById(paginationContainerId);
+          const currentTable = document.getElementById(tableContainerId);
+          const currentPagination = document.getElementById(paginationContainerId);
+
+          if (!nextTable || !currentTable) {
+            window.location.href = url;
+            return;
+          }
+
+          currentTable.replaceWith(nextTable);
+
+          if (currentPagination) {
+            if (nextPagination) {
+              currentPagination.replaceWith(nextPagination);
+            } else {
+              currentPagination.remove();
+            }
+          }
+
+          // Clear WeakMap cache since DOM changed
+          originalTextMap = new WeakMap();
+
+          lucide.createIcons();
+          applyMaintenanceQuickSearchFilter();
+
+          if (pushState !== false) {
+            window.history.pushState({}, "", url);
+          }
+        } catch (error) {
+          window.location.href = url;
+        }
+      }
+
+      // ── Pagination click handler ──
+      document.addEventListener("click", function (event) {
+        const link = event.target.closest("a");
+        if (!link) return;
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+        const paginationRoot = event.target.closest("#" + paginationContainerId);
+        if (!paginationRoot) return;
+
+        event.preventDefault();
+        updatePage(link.href, true);
+      });
+
+      // ── Per-page select handler ──
+      document.addEventListener("change", function (event) {
+        const select = event.target.closest("#" + paginationContainerId + " select[name='per_page']");
+        if (!select || !select.form) return;
+
+        const form = select.form;
+        const action = form.getAttribute("action") || window.location.pathname;
+        const query = new URLSearchParams(new FormData(form)).toString();
+        const url = action + "?" + query;
+
+        updatePage(url, true);
+      });
+
+      // ── Popstate handler ──
+      window.addEventListener("popstate", function () {
+        updatePage(window.location.href, false);
+      });
+
+      // ── Input listener (debounced) ──
+      if (quickSearchInput) {
+        quickSearchInput.addEventListener("input", debouncedFilter);
+      }
+
+      // ── Clear button ──
+      if (quickSearchClearBtn && quickSearchInput) {
+        quickSearchClearBtn.addEventListener("click", function () {
+          quickSearchInput.value = "";
+          applyMaintenanceQuickSearchFilter();
+          quickSearchInput.focus();
+        });
+      }
+
+      // ── Keyboard shortcut: Ctrl+K / Cmd+K to focus, Escape to clear ──
+      document.addEventListener("keydown", function (event) {
+        const isModKey = event.ctrlKey || event.metaKey;
+
+        // Ctrl/Cmd + K → focus search
+        if (isModKey && event.key.toLowerCase() === "k") {
+          // Don't intercept if user is in an input that isn't our search
+          const activeEl = document.activeElement;
+          if (activeEl && activeEl.tagName === "INPUT" && activeEl !== quickSearchInput) return;
+
+          event.preventDefault();
+          if (quickSearchInput) {
+            quickSearchInput.focus();
+            quickSearchInput.select();
+          }
+        }
+
+        // Escape → clear & blur search
+        if (event.key === "Escape" && document.activeElement === quickSearchInput) {
+          quickSearchInput.value = "";
+          applyMaintenanceQuickSearchFilter();
+          quickSearchInput.blur();
+        }
+      });
+
+      // ── Filter chip click handler ──
+      if (filterChipsContainer) {
+        filterChipsContainer.addEventListener("click", function (event) {
+          const chip = event.target.closest(".mh-filter-chip");
+          if (!chip || !quickSearchInput) return;
+
+          const filterValue = chip.getAttribute("data-filter") || "";
+
+          // Toggle: if already active, remove the filter; otherwise set it
+          const currentVal = (quickSearchInput.value || "").trim().toLowerCase();
+          const isActive = currentVal === filterValue;
+
+          if (isActive) {
+            quickSearchInput.value = "";
+          } else {
+            quickSearchInput.value = filterValue;
+          }
+
+          applyMaintenanceQuickSearchFilter();
+          quickSearchInput.focus();
+        });
+      }
+
+      // ── Show correct kbd hint for OS ──
+      if (kbdHint) {
+        const isMac = /Mac|iPhone|iPad/.test(navigator.userAgent);
+        kbdHint.textContent = isMac ? "⌘K" : "Ctrl+K";
+      }
+
+      // ── Initial run ──
+      applyMaintenanceQuickSearchFilter();
+    })();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Submit Ticket</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Base typography and palette */
+    html, body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; color: #0f172a; background: #f1f5f9; }
+
+    /* Toggle sidebar: when body has .sidebar-collapsed */
+    .sidebar-collapsed #sidebar { transform: translateX(-100%) !important; }
+    .sidebar-collapsed main { margin-left: 0 !important; }
+    .content-max { max-width: none; }
+    .form-icon { left: 0.75rem; }
+
+    /* Ensure form text and controls use readable dark color */
+    #main-content form label,
+    #main-content form input,
+    #main-content form textarea,
+    #main-content form select,
+    #main-content form option,
+    #main-content form p { color: #071123 !important; }
+
+    #main-content form input::placeholder,
+    #main-content form textarea::placeholder { color: #6b7280 !important; opacity: 1; }
+    #main-content form select,
+    #main-content form option { color: #071123 !important; background: #ffffff !important; }
+    #main-content form .pointer-events-none { color: #374151 !important; }
+
+    :root {
+      --accent-50: #eff6ff;
+      --accent-100: #dbeafe;
+      --accent-200: #bfdbfe;
+      --accent-400: #60a5fa;
+      --accent-500: #2563eb;
+      --accent-600: #1e40af;
+      --muted: #6b7280;
+      --card-radius: 1rem;
+      --control-radius: 0.6rem;
+      --shadow-lg: 0 8px 18px rgba(2,6,23,0.06);
+    }
+
+    /* Card and hero styles */
+    #main-content .rounded-3xl { border-radius: var(--card-radius) !important; box-shadow: var(--shadow-lg); border: 1px solid rgba(2,6,23,0.04); overflow: hidden; }
+    .page-hero { box-shadow: inset 0 -2px 12px rgba(0,0,0,0.06); }
+
+    /* Inputs, selects and textarea polish */
+    #main-content form input,
+    #main-content form textarea,
+    #main-content form select,
+    #main-content form .rounded-lg,
+    #main-content form .rounded-xl,
+    #main-content form button {
+      border-radius: var(--control-radius) !important;
+      border: 1px solid rgba(15,23,42,0.06);
+      background: linear-gradient(180deg,#ffffff,#fbfdff);
+      box-shadow: inset 0 -2px 6px rgba(2,6,23,0.03);
+      transition: box-shadow .18s ease, transform .12s ease, border-color .12s ease;
+    }
+    #main-content form input:focus,
+    #main-content form textarea:focus,
+    #main-content form select:focus,
+    #main-content form button:focus {
+      box-shadow: 0 8px 28px rgba(37,99,235,0.12);
+      border-color: rgba(37,99,235,0.6) !important;
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    /* Dropdown options hover */
+    #facility-options [role="option"] { transition: background-color .12s ease, color .12s ease; }
+    #facility-options [role="option"]:hover { background: linear-gradient(90deg, var(--accent-500), var(--accent-600)); color: #fff; }
+
+    /* Primary button styling */
+    #submit-btn {
+      border-radius: calc(var(--control-radius) * 1.2) !important;
+      box-shadow: 0 10px 24px rgba(37,99,235,0.12);
+      background-image: linear-gradient(180deg, var(--accent-500), var(--accent-600));
+      border: none;
+    }
+    #submit-btn:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(37,99,235,0.14); }
+
+    /* Ensure disabled state remains visible (not white-on-white) */
+    #submit-btn[disabled] {
+      /* keep the strong blue even when disabled */
+      background-image: linear-gradient(180deg, var(--accent-500), var(--accent-600)) !important;
+      background-color: transparent !important;
+      color: #ffffff !important;
+      border: none !important;
+      opacity: 0.95 !important;
+      cursor: not-allowed !important;
+      box-shadow: 0 8px 20px rgba(2,6,23,0.06) !important;
+    }
+
+    /* Neutral controls */
+    .btn-ghost { background: linear-gradient(180deg,#ffffff,#f7f9fc); border: 1px solid rgba(2,6,23,0.04); }
+    .btn-ghost:hover { background: var(--accent-50); border-color: rgba(37,99,235,0.12); }
+
+    /* Alerts and messages */
+    #main-content .rounded-xl { border-radius: 1rem !important; border-left: 4px solid rgba(37,99,235,0.18); }
+
+    /* Micro UI elements */
+    .icon-bg { background: rgba(255,255,255,0.12); padding: .35rem; border-radius: .45rem; display:inline-flex; align-items:center; justify-content:center; color: #fff; }
+
+    /* Boxed header styling */
+    .header-card { border-left: 4px solid var(--accent-500); background: linear-gradient(180deg,#ffffff,#f8fbff); }
+
+    /* Make left icons use the blue accent for better affordance */
+    #main-content .pointer-events-none i { color: var(--accent-600); }
+
+    /* Stronger, blue-focused focus state for inputs */
+    #main-content form input:focus,
+    #main-content form textarea:focus,
+    #main-content form select:focus {
+      box-shadow: 0 10px 30px rgba(37,99,235,0.14);
+      border-color: var(--accent-500) !important;
+    }
+
+    /* Facility option hover uses blue gradient */
+    #facility-options [role="option"]:hover { background: linear-gradient(90deg, var(--accent-500), var(--accent-600)); color: #fff; }
+
+    /* Stronger primary button appearance */
+    #submit-btn {
+      background-image: linear-gradient(180deg, var(--accent-500), var(--accent-600));
+      font-weight: 600;
+      padding-top: .55rem;
+      padding-bottom: .55rem;
+    }
+
+    /* Header title accent */
+    .header-card h2 { color: var(--accent-600); }
+
+    /* Smooth transitions & responsive tweaks */
+    #main-content form input, #main-content form textare a, #main-content form select, #main-content form button { transition: box-shadow .18s ease, transform .12s ease, background-color .12s ease; }
+    @media (max-width: 768px) { #submit-btn { width: 100%; } }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900">
+  {% include 'sidebar_submit_ticket.html' %}
+
+  <main id="main-content" class="flex-1 ml-0 md:ml-64 p-3 md:p-3 transition-all duration-200">
+    <div class="w-full max-w-full grid grid-cols-1 gap-3 px-2 md:px-4">
+      <div class="md:col-span-12 col-span-1">
+        <!-- Page header -->
+        <div class="mb-4">
+          <div class="bg-white border border-slate-200 rounded-lg p-3 flex items-center justify-between gap-4 shadow-sm header-card">
+            <div class="flex items-center gap-3">
+              <div class="icon-bg">
+                <i data-lucide="file-text" class="h-5 w-5 text-slate-700"></i>
+              </div>
+              <div>
+                <h2 class="text-xl md:text-2xl font-extrabold text-slate-900 mb-0">Submit New Concern</h2>
+                <p class="text-xs text-slate-500 mt-0">Report an IT issue or request technical assistance</p>
+              </div>
+            </div>
+
+            <div class="ml-4">
+              <a href="{{ url_for('concern_bp.concern_list') }}" class="inline-flex items-center gap-2 bg-gray-100 hover:bg-blue-100 text-slate-700 px-3 py-1.5 rounded-md text-sm">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                Back to My Concerns
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="md:col-span-12 col-span-1">
+        <div class="rounded-xl shadow-md mb-4 bg-white border border-slate-200 relative w-full overflow-visible">
+          <div class="page-hero bg-gradient-to-r from-blue-600 to-blue-700 p-3 md:p-4 text-white flex items-center gap-4 relative overflow-hidden">
+            <div class="absolute -right-16 -top-10 w-48 h-48 rounded-full bg-white opacity-5 transform rotate-12 pointer-events-none"></div>
+            <div class="absolute -left-16 -bottom-10 w-36 h-36 rounded-full bg-white opacity-5 transform rotate-45 pointer-events-none"></div>
+
+            <div class="inline-flex items-center gap-4">
+              <div class="icon-bg">
+                <i data-lucide="edit-3" class="h-5 w-5"></i>
+              </div>
+              <div class="leading-tight">
+                <h3 class="text-xl md:text-2xl font-semibold">Concern Details</h3>
+                <p class="text-xs opacity-90 mt-1">Report an IT issue or request technical assistance</p>
+              </div>
+            </div>
+
+            <div class="ml-auto flex items-center gap-3 text-xs">
+              <div class="text-right">
+                <div class="text-xs opacity-80">Last Updated</div>
+                <div class="font-semibold">12:55 AM</div>
+              </div>
+              <button type="button" class="bg-white/10 hover:bg-white/20 p-2 rounded-full">
+                <i data-lucide="refresh-ccw" class="h-4 w-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="p-3 md:p-4 card-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="space-y-2 mb-4">
+                  {% for category, message in messages %}
+                    <div class="rounded-xl border px-4 py-3 text-sm font-medium
+                      {% if category == 'error' %} border-red-200 bg-red-50 text-red-700
+                      {% elif category == 'success' %} border-emerald-200 bg-emerald-50 text-emerald-700
+                      {% else %} border-blue-200 bg-blue-50 text-blue-700 {% endif %}">
+                      {{ message }}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <form id="submit-form" method="POST" action="{{ url_for('submit_ticket_bp.submit_ticket_submit') }}" class="space-y-3">
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-800">PC Number <span class="text-red-500">*</span></label>
+                  <div class="mt-2 relative">
+                    <!-- removed lucide hash icon to avoid stray fallback character -->
+                    <input id="title" name="title" type="text" required placeholder="Enter PC number (e.g., PC-1234)" class="block w-full border border-slate-200 rounded-lg pl-3 pr-3 py-1.5 placeholder:text-slate-500 text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">Enter the assigned PC identifier</p>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-slate-800">Select Facility <span class="text-red-500">*</span></label>
+                  <div class="mt-2 relative">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                      <i data-lucide="building" class="h-4 w-4"></i>
+                    </div>
+                    <input type="hidden" id="facility" name="facility" value="" />
+                    <button type="button" id="facility-display" aria-haspopup="listbox" aria-expanded="false" class="w-full text-left border border-slate-200 rounded-lg pl-10 pr-8 py-2 bg-white text-slate-800 flex items-center gap-2 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 ring-offset-1 transition">
+                      <span id="facility-selected" class="truncate text-slate-600">-- Select a facility --</span>
+                      <span class="ml-auto pointer-events-none text-slate-500"><i data-lucide="chevron-down" class="h-4 w-4"></i></span>
+                    </button>
+                    <div id="facility-options" class="hidden absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-72 overflow-auto divide-y divide-slate-100">
+                      {% if facilities %}
+                        {% for f in facilities %}
+                          <div role="option" data-value="{{ f.id }}" class="px-4 py-2 text-slate-800 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors">{{ f.name }}</div>
+                        {% endfor %}
+                      {% else %}
+                        <div class="px-4 py-2 text-slate-500">— No facilities available —</div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <p class="mt-2 text-xs text-slate-500">Choose the facility where the IT issue is located</p>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-slate-800">Describe Your Concern <span class="text-red-500">*</span></label>
+                <textarea id="description" name="description" required rows="5" aria-describedby="desc-count" class="mt-2 block w-full border border-slate-200 rounded-lg px-3 py-3 placeholder:text-slate-500 text-slate-800 resize-vertical shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Please provide a detailed description of your IT concern or issue. Include any error messages, symptoms, or relevant information that will help us resolve your problem quickly."></textarea>
+                <div class="flex justify-between mt-2 text-xs text-slate-500">
+                  <div>Min 10 chars</div>
+                  <div id="desc-count" aria-live="polite">0 characters</div>
+                </div>
+              </div>
+
+
+              <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2 w-full justify-end">
+                <a href="{{ url_for('concern_bp.concern_list') }}" class="inline-flex items-center justify-center gap-2 py-2 px-3 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition w-full sm:w-auto text-sm">
+                  <i data-lucide="x-circle" class="h-4 w-4"></i>
+                  Cancel
+                </a>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                  <button type="reset" class="inline-flex items-center justify-center gap-2 py-2 px-3 bg-blue-50 border border-transparent text-blue-700 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition w-full sm:w-auto text-sm">
+                    <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+                    Reset
+                  </button>
+                  <button type="submit" id="submit-btn" disabled class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-lg disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition w-full sm:w-auto text-sm">
+                    <i data-lucide="send" class="h-4 w-4"></i>
+                    Submit
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script>
+    // Initialize icons and UI behaviors
+    function initSubmitTicketUI() {
+      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+
+      const desc = document.getElementById('description');
+      const descCount = document.getElementById('desc-count');
+      const titleInput = document.getElementById('title');
+      // facilityInput is the hidden input that stores the selected id
+      const facilityInput = document.getElementById('facility');
+      const facilityDisplay = document.getElementById('facility-display');
+      const facilityOptions = document.getElementById('facility-options');
+      // whether the dropdown actually contains selectable options
+      const facilityHasOptions = !!(facilityOptions && facilityOptions.querySelectorAll('[role="option"]').length);
+      const submitBtn = document.getElementById('submit-btn');
+      const minChars = 10;
+
+      const updateCount = () => {
+        if (descCount) descCount.textContent = (desc.value || '').length + ' characters';
+      };
+
+      const checkMin = () => {
+        updateCount();
+        if (!submitBtn) return;
+        const hasTitle = (titleInput && (titleInput.value || '').trim().length > 0);
+        const hasDesc = (desc && (desc.value || '').trim().length >= minChars);
+        // Only require facility when there are available facilities to choose from
+        const hasFacility = facilityHasOptions ? (facilityInput && (facilityInput.value || '').trim().length > 0) : true;
+        const ok = hasTitle && hasDesc && hasFacility;
+        submitBtn.disabled = !ok;
+        submitBtn.classList.toggle('opacity-60', !ok);
+        submitBtn.classList.toggle('cursor-not-allowed', !ok);
+      };
+
+      if (desc) desc.addEventListener('input', checkMin);
+      if (titleInput) titleInput.addEventListener('input', checkMin);
+      // facility custom dropdown events handled below (click)
+      // initial check
+      checkMin();
+
+      // focus title for quick entry
+      if (titleInput) titleInput.focus();
+
+      // keep submit disabled on reset
+      const form = desc?.closest('form') || titleInput?.closest('form');
+      if (form && submitBtn) {
+        form.addEventListener('reset', () => {
+          setTimeout(() => {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
+            if (desc) { desc.value = ''; }
+            if (titleInput) { titleInput.value = ''; titleInput.focus(); }
+            if (descCount) descCount.textContent = '0 characters';
+            // reset custom facility dropdown
+            if (facilityInput) {
+              facilityInput.value = '';
+            }
+            if (facilityDisplay) {
+              const selectedSpan = document.getElementById('facility-selected');
+              if (selectedSpan) { selectedSpan.textContent = '-- Select a facility --'; selectedSpan.classList.add('text-slate-500'); }
+              facilityDisplay.setAttribute('aria-expanded', 'false');
+              if (facilityOptions) facilityOptions.classList.add('hidden');
+            }
+          }, 0);
+        });
+      }
+
+      // AJAX submit handler
+      const formEl = document.getElementById('submit-form');
+      if (formEl) {
+        formEl.addEventListener('submit', async (e) => {
+          // if disabled by validation, prevent submit
+          if (submitBtn && submitBtn.disabled) {
+            e.preventDefault();
+            return;
+          }
+          e.preventDefault();
+          if (!submitBtn) return;
+
+          // show loading state
+          submitBtn.disabled = true;
+          const oldHtml = submitBtn.innerHTML;
+          submitBtn.innerHTML = '<i data-lucide="loader" class="h-4 w-4 animate-spin mr-2"></i> Submitting...';
+          if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+
+          try {
+            const resp = await fetch(formEl.action, {
+              method: 'POST',
+              headers: { 'X-Requested-With': 'XMLHttpRequest' },
+              body: new FormData(formEl)
+            });
+
+            const contentType = resp.headers.get('Content-Type') || '';
+            if (contentType.includes('application/json')) {
+              const data = await resp.json();
+              // remove any existing inline messages
+              const existing = document.getElementById('inline-message');
+              if (existing) existing.remove();
+
+              const msg = document.createElement('div');
+              msg.id = 'inline-message';
+              msg.className = 'mb-4 rounded-xl border px-4 py-3 text-sm font-medium';
+              if (data.status === 'success') {
+                msg.classList.add('border-emerald-200', 'bg-emerald-50', 'text-emerald-700');
+                msg.textContent = data.message || 'Submitted successfully.';
+                // reset form
+                formEl.reset();
+                if (descCount) descCount.textContent = '0 characters';
+                submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
+              } else {
+                msg.classList.add('border-red-200', 'bg-red-50', 'text-red-700');
+                msg.textContent = data.message || 'Submission failed.';
+              }
+              formEl.parentElement.insertBefore(msg, formEl);
+            } else {
+              // non-json fallback: reload page
+              window.location.reload();
+            }
+          } catch (err) {
+            // network or unexpected error
+            const existing = document.getElementById('inline-message');
+            if (existing) existing.remove();
+            const msg = document.createElement('div');
+            msg.id = 'inline-message';
+            msg.className = 'mb-4 rounded-xl border px-4 py-3 text-sm font-medium border-red-200 bg-red-50 text-red-700';
+            msg.textContent = 'Network error — please try again.';
+            formEl.parentElement.insertBefore(msg, formEl);
+          } finally {
+            // restore button
+            submitBtn.innerHTML = oldHtml;
+            if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+            // keep disabled until validation passes (it will be re-enabled via checkMin when inputs change)
+            checkMin();
+          }
+        });
+      }
+
+      // --- Custom facility dropdown behavior ---
+      if (facilityDisplay && facilityOptions && facilityInput) {
+        // toggle list
+        facilityDisplay.addEventListener('click', (ev) => {
+          const isOpen = !facilityOptions.classList.contains('hidden');
+          if (isOpen) {
+            facilityOptions.classList.add('hidden');
+            facilityDisplay.setAttribute('aria-expanded', 'false');
+          } else {
+            facilityOptions.classList.remove('hidden');
+            facilityDisplay.setAttribute('aria-expanded', 'true');
+          }
+        });
+
+        // pick an option
+        facilityOptions.querySelectorAll('[role="option"]').forEach(opt => {
+          opt.addEventListener('click', () => {
+            const val = opt.getAttribute('data-value') || '';
+            const text = opt.textContent.trim();
+            facilityInput.value = val;
+            const selectedSpan = document.getElementById('facility-selected');
+            if (selectedSpan) {
+              selectedSpan.textContent = text;
+              selectedSpan.classList.remove('text-slate-500');
+            }
+            // highlight
+            facilityOptions.querySelectorAll('[role="option"]').forEach(o => o.classList.remove('bg-blue-600','text-white'));
+            opt.classList.add('bg-blue-600','text-white');
+            facilityOptions.classList.add('hidden');
+            facilityDisplay.setAttribute('aria-expanded', 'false');
+            checkMin();
+          });
+        });
+
+        // close on outside click or Esc
+        document.addEventListener('click', (e) => {
+          if (!facilityDisplay.contains(e.target) && !facilityOptions.contains(e.target)) {
+            facilityOptions.classList.add('hidden');
+            facilityDisplay.setAttribute('aria-expanded', 'false');
+          }
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            facilityOptions.classList.add('hidden');
+            facilityDisplay.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initSubmitTicketUI);
+  </script>
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ticket Report</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+  <style>
+    :root { --ui-radius: 10px; }
+    .card-radius{border-radius:var(--ui-radius,10px); box-shadow: 0 12px 36px rgba(2,6,23,0.06); transition: transform .12s ease, box-shadow .12s ease; }
+    .card-radius:hover{ transform: translateY(-6px); box-shadow: 0 20px 40px rgba(2,6,23,0.08); }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900">
+  {% include 'sidebar.html' %}
+
+  <main class="flex-1 ml-0 md:ml-64 p-6">
+    <div class="w-full">
+      <header class="mb-6">
+        <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 rounded-3xl shadow-2xl p-6 relative overflow-hidden">
+          <div class="relative z-10 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-4">
+              <div class="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
+                <i data-lucide="bar-chart-2" class="w-8 h-8 text-white"></i>
+              </div>
+              <div>
+                <h1 class="text-2xl font-extrabold text-white">Ticket Report</h1>
+                <p class="text-sm text-white/80 mt-1">Summary counts by status.</p>
+              </div>
+            </div>
+
+            <div class="ml-auto flex items-center gap-3">
+              <a href="{{ url_for('ticket_reports_bp.ticket_history') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl shadow-md">View History</a>
+              <a id="export-report" href="{{ url_for('ticket_reports_bp.export_ticket_report_excel') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md">Export Excel</a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {# resolved/unresolved/declined are computed server-side and passed in context #}
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="p-5 rounded-2xl text-white shadow-sm bg-gradient-to-r from-emerald-500 to-cyan-400">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium">Resolved Tickets</div>
+              <div class="text-3xl font-bold">{{ resolved }}</div>
+            </div>
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-lg">
+              <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl text-white shadow-sm bg-gradient-to-r from-orange-400 to-orange-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium">Unresolved Tickets</div>
+              <div class="text-3xl font-bold">{{ unresolved }}</div>
+            </div>
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-lg">
+              <i data-lucide="alert-circle" class="w-6 h-6"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl text-white shadow-sm bg-gradient-to-r from-red-500 to-red-600">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium">Invalid Tickets</div>
+              <div class="text-3xl font-bold">{{ Invalid }}</div>
+            </div>
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-lg">
+              <i data-lucide="x-circle" class="w-6 h-6"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-6">
+        {% if stats|length == 0 %}
+          <div class="text-center text-slate-500 py-12">No report data available.</div>
+        {% else %}
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {% for s in stats %}
+              <div class="p-4 border border-gray-100 rounded-2xl flex items-center gap-4">
+                <div class="w-12 h-12 flex items-center justify-center bg-blue-50 text-blue-700 rounded-lg">
+                  <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <div class="text-sm font-semibold">{{ s.status or 'Unknown' }}</div>
+                  <div class="text-xl font-bold">{{ s.cnt }}</div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+      
+      <div class="bg-white rounded-2xl shadow p-6 mt-6">
+        <h2 class="text-lg font-bold mb-4">All Tickets</h2>
+        {% if tickets and tickets|length > 0 %}
+          <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <input id="ticket-search" name="q" type="search" placeholder="Search ticket id, title, submitter, device..." value="{{ q or '' }}" class="w-full sm:w-80 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" />
+              <button id="clear-filters" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">Clear</button>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <select id="status-filter" name="status" class="px-3 py-2 border border-gray-200 rounded-lg bg-white">
+                <option value="">All statuses</option>
+                {% for s in stats %}
+                  <option value="{{ s.status }}" {% if status==s.status %}selected{% endif %}>{{ s.status }}</option>
+                {% endfor %}
+              </select>
+              <select id="per-page-select" name="per_page" class="px-2 py-2 border border-gray-200 rounded-lg bg-white text-sm">
+                <option value="10" {% if per_page==10 %}selected{% endif %}>10</option>
+                <option value="25" {% if per_page==25 %}selected{% endif %}>25</option>
+                <option value="50" {% if per_page==50 %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page==100 %}selected{% endif %}>100</option>
+              </select>
+              <button id="apply-filters" class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm">Apply (server)</button>
+              <div class="text-sm text-gray-600" id="ticket-count">{{ total_count if total_count is defined else (tickets|length) }} tickets</div>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-gray-100 shadow-sm max-h-[60vh] overflow-y-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th data-sort-index="0" data-sort-type="number" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 z-10 cursor-pointer">Ticket <span class="sort-indicator"></span></th>
+                  <th data-sort-index="1" data-sort-type="string" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 z-10 cursor-pointer">Title <span class="sort-indicator"></span></th>
+                  <th data-sort-index="2" data-sort-type="string" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 z-10 cursor-pointer">Submitter <span class="sort-indicator"></span></th>
+                  <th data-sort-index="3" data-sort-type="string" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 z-10 cursor-pointer">Department <span class="sort-indicator"></span></th>
+                  <th data-sort-index="4" data-sort-type="string" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 z-10">Devices</th>
+                  <th data-sort-index="5" data-sort-type="string" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 z-10 cursor-pointer">Status <span class="sort-indicator"></span></th>
+                  <th data-sort-index="6" data-sort-type="date" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 z-10 cursor-pointer">Created <span class="sort-indicator"></span></th>
+                  <th data-sort-index="7" data-sort-type="date" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 z-10 cursor-pointer">Resolved <span class="sort-indicator"></span></th>
+                  <th data-sort-index="8" data-sort-type="string" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 z-10 cursor-pointer">Resolved By <span class="sort-indicator"></span></th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-100">
+                {% for t in tickets %}
+                  <tr class="odd:bg-white even:bg-slate-50 hover:bg-gray-100">
+                    <td class="px-3 py-2 text-sm text-gray-700 font-mono whitespace-nowrap">{{ t.ticket_id }}</td>
+                    <td class="px-3 py-2 text-sm text-gray-800 max-w-xs overflow-hidden whitespace-nowrap truncate">{{ t.title or '' }}</td>
+                    <td class="px-3 py-2 text-sm text-gray-700 whitespace-nowrap">{{ t.submitter_name or 'N/A' }}</td>
+                    <td class="px-3 py-2 text-sm text-gray-700 whitespace-nowrap">{{ t.facility_name or 'N/A' }}</td>
+                    <td class="px-3 py-2 text-sm text-gray-700">
+                      {% if t.devices %}
+                        {% for d in t.devices %}
+                          {% if d %}{{ d }}{% if not loop.last %}, {% endif %}{% endif %}
+                        {% endfor %}
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </td>
+                    <td class="px-3 py-2 text-sm">
+                      {% set st = (t.status or '') %}
+                      {% if st|lower == 'resolved' %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">{{ st }}</span>
+                      {% elif st|lower in ['unresolved','open','pending'] %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">{{ st }}</span>
+                      {% elif st|lower in ['invalid','declined','rejected'] %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">{{ st }}</span>
+                      {% else %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">{{ st }}</span>
+                      {% endif %}
+                    </td>
+                    <td class="px-3 py-2 text-sm text-gray-600 whitespace-nowrap">{{ t.created_at }}</td>
+                    <td class="px-3 py-2 text-sm text-gray-600 whitespace-nowrap">{{ t.resolved_at or '' }}</td>
+                    <td class="px-3 py-2 text-sm text-gray-700 whitespace-nowrap">{{ t.resolved_by or 'N/A' }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {# pagination controls (server-side) #}
+          {% if total_pages is defined and total_pages > 1 %}
+            <div class="mt-3 flex items-center justify-between">
+              <div class="text-sm text-gray-600">Showing page {{ page }} of {{ total_pages }} ({{ total_count }} tickets)</div>
+              <div class="flex items-center gap-2">
+                <button class="pagination-btn px-3 py-1 border rounded" data-page="{{ page-1 }}" {% if page <= 1 %}disabled{% endif %}>Prev</button>
+                {% set start = 1 if page-2 < 1 else page-2 %}
+                {% set end = total_pages if page+2 > total_pages else page+2 %}
+                {% for p in range(start, end+1) %}
+                  <button class="pagination-page px-3 py-1 border rounded {% if p==page %}bg-blue-600 text-white{% endif %}" data-page="{{ p }}">{{ p }}</button>
+                {% endfor %}
+                <button class="pagination-btn px-3 py-1 border rounded" data-page="{{ page+1 }}" {% if page >= total_pages %}disabled{% endif %}>Next</button>
+              </div>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="text-center text-slate-500 py-8">No tickets to display.</div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('ticket-search');
+    const statusFilter = document.getElementById('status-filter');
+    const clearBtn = document.getElementById('clear-filters');
+    const applyBtn = document.getElementById('apply-filters');
+    const perPageSelect = document.getElementById('per-page-select');
+    const table = document.querySelector('table.min-w-full');
+    const tbody = table ? table.tBodies[0] : null;
+    const countEl = document.getElementById('ticket-count');
+    const exportLink = document.getElementById('export-report');
+
+    // append current querystring to export link so it matches the UI
+    if (exportLink) {
+      try { exportLink.href = exportLink.href + window.location.search; } catch(e){}
+    }
+
+    let currentSort = '{{ sort or '' }}';
+    let currentSortDir = '{{ sort_dir or 'desc' }}';
+
+    function normalize(s){ return (s||'').toString().toLowerCase().trim(); }
+
+    function filterTickets(){
+      if (!tbody) return;
+      const q = normalize(searchInput.value);
+      const status = normalize(statusFilter.value);
+      let visible = 0;
+      Array.from(tbody.rows).forEach(function(row){
+        const cells = row.cells;
+        const rowText = normalize(
+          (cells[0] && cells[0].innerText) + ' ' +
+          (cells[1] && cells[1].innerText) + ' ' +
+          (cells[2] && cells[2].innerText) + ' ' +
+          (cells[3] && cells[3].innerText) + ' ' +
+          (cells[4] && cells[4].innerText) + ' ' +
+          (cells[8] && cells[8].innerText)
+        );
+        const statusText = normalize(cells[5] && cells[5].innerText);
+        const matchesQuery = q === '' || rowText.indexOf(q) !== -1;
+        const matchesStatus = status === '' || statusText.indexOf(status) !== -1;
+        if (matchesQuery && matchesStatus){
+          row.style.display = '';
+          visible++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+      if (countEl) countEl.textContent = visible + ' tickets';
+    }
+
+    // client-side column sorting
+    function parseDateSafe(s){
+      const d = Date.parse(s);
+      return isNaN(d) ? 0 : d;
+    }
+
+    function sortTableBy(colIndex, type, dir){
+      if (!tbody) return;
+      const rows = Array.from(tbody.rows).filter(r => r.style.display !== 'none');
+      rows.sort(function(a,b){
+        let va = (a.cells[colIndex] && a.cells[colIndex].innerText) || '';
+        let vb = (b.cells[colIndex] && b.cells[colIndex].innerText) || '';
+        if (type === 'number'){
+          const na = parseFloat(va.replace(/[^0-9.\-]/g,'')) || 0;
+          const nb = parseFloat(vb.replace(/[^0-9.\-]/g,'')) || 0;
+          return dir === 'asc' ? na - nb : nb - na;
+        } else if (type === 'date'){
+          const da = parseDateSafe(va);
+          const db = parseDateSafe(vb);
+          return dir === 'asc' ? da - db : db - da;
+        } else {
+          va = va.toLowerCase(); vb = vb.toLowerCase();
+          if (va < vb) return dir === 'asc' ? -1 : 1;
+          if (va > vb) return dir === 'asc' ? 1 : -1;
+          return 0;
+        }
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    }
+
+    function clearSortIndicators(){
+      if (!table) return;
+      table.querySelectorAll('th .sort-indicator').forEach(function(el){ el.textContent = ''; });
+    }
+
+    if (table){
+      table.querySelectorAll('th[data-sort-index]').forEach(function(th){
+        th.addEventListener('click', function(){
+          const idx = parseInt(this.dataset.sortIndex || this.getAttribute('data-sort-index'));
+          const type = this.dataset.sortType || this.getAttribute('data-sort-type') || 'string';
+          const prevDir = this.dataset.sortDir || '';
+          const dir = prevDir === 'asc' ? 'desc' : 'asc';
+          // set dataset so next click toggles
+          table.querySelectorAll('th[data-sort-index]').forEach(h => h.dataset.sortDir = '');
+          this.dataset.sortDir = dir;
+          clearSortIndicators();
+          const indicator = this.querySelector('.sort-indicator');
+          if (indicator) indicator.textContent = dir === 'asc' ? '▲' : '▼';
+          sortTableBy(idx, type, dir);
+          // remember chosen sort for server-side apply
+          const map = {0:'ticket_id',1:'title',2:'submitter',3:'department',5:'status',6:'created_at',7:'resolved_at',8:'resolved_by'};
+          currentSort = map[idx] || '';
+          currentSortDir = dir;
+        });
+      });
+    }
+
+    if (searchInput) searchInput.addEventListener('input', filterTickets);
+    if (statusFilter) statusFilter.addEventListener('change', filterTickets);
+    if (clearBtn) clearBtn.addEventListener('click', function(e){ e.preventDefault(); searchInput.value = ''; statusFilter.value = ''; perPageSelect.value = '25'; filterTickets(); });
+
+    // Apply server-side filters: build query string and navigate
+    if (applyBtn){
+      applyBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        const params = new URLSearchParams(window.location.search);
+        if (searchInput && searchInput.value) params.set('q', searchInput.value); else params.delete('q');
+        if (statusFilter && statusFilter.value) params.set('status', statusFilter.value); else params.delete('status');
+        if (perPageSelect && perPageSelect.value) params.set('per_page', perPageSelect.value); else params.delete('per_page');
+        params.set('page', '1');
+        if (currentSort) params.set('sort', currentSort);
+        if (currentSortDir) params.set('sort_dir', currentSortDir);
+        window.location.href = window.location.pathname + '?' + params.toString();
+      });
+    }
+
+    // pagination buttons
+    Array.from(document.querySelectorAll('.pagination-btn, .pagination-page')).forEach(function(btn){
+      btn.addEventListener('click', function(){
+        const target = parseInt(this.dataset.page || this.getAttribute('data-page')) || 1;
+        const params = new URLSearchParams(window.location.search);
+        params.set('page', String(target));
+        // keep current filters in the querystring
+        window.location.href = window.location.pathname + '?' + params.toString();
+      });
+    });
+
+    filterTickets();
+  });
+  </script>
+
+  <script> if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons(); </script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Submit New Concern</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900">
+  {% include 'sidebar.html' %}
+
+  <main class="flex-1 ml-0 md:ml-64 p-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="bg-white shadow-lg p-4 mb-4 rounded-2xl">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <i class="bi bi-plus-circle-fill text-blue-600"></i>
+              Submit New Concern
+            </h1>
+            <p class="text-gray-600 text-sm mt-0.5">Report an IT issue or request technical assistance</p>
+          </div>
+          <a href="{{ url_for('concern_bp.concern_list') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors">
+            <i class="bi bi-arrow-left"></i> Back to My Concerns
+          </a>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-6">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="space-y-2 mb-4">
+            {% for category, message in messages %}
+              <div class="rounded-xl border px-4 py-3 text-sm font-medium
+                {% if category == 'error' %} border-red-200 bg-red-50 text-red-700
+                {% elif category == 'success' %} border-emerald-200 bg-emerald-50 text-emerald-700
+                {% else %} border-blue-200 bg-blue-50 text-blue-700 {% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" id="concernForm" class="space-y-4 bg-white rounded-xl shadow-lg overflow-hidden">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 rounded-t-xl">
+          <h2 class="text-white font-bold text-lg flex items-center gap-2">
+            <i class="bi bi-pencil-square"></i>
+            Concern Details
+          </h2>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Describe Your Concern <span class="text-red-500">*</span></label>
+            <textarea name="description" id="description" rows="6" required minlength="10"
+                      class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 resize-none"
+                      placeholder="Please provide a detailed description of your IT concern or issue. Include any error messages or relevant info."></textarea>
+            <div class="flex justify-between items-center mt-2">
+              <p class="text-xs text-gray-500">Minimum 10 characters required</p>
+              <p class="text-xs text-gray-500"><span id="charCount">0</span> characters</p>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Select Facility <span class="text-red-500">*</span></label>
+            <p class="text-xs text-gray-600 mb-3">Choose the facility where the IT issue is located</p>
+            <select id="facilitySelect" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500" required>
+              <option value="">-- Select a facility --</option>
+              {% for facility_id, facility in facilities.items() %}
+                <option value="{{ facility_id }}" data-device-count="{{ facility.devices|length }}">{{ facility.facility_name }} ({{ facility.devices|length }} {{ 'device' if facility.devices|length == 1 else 'devices' }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div id="deviceSelectionSection" class="hidden">
+            <label class="block text-sm font-bold text-gray-700 mb-2">Select Affected Device(s) <span class="text-red-500">*</span></label>
+            <p class="text-xs text-gray-600 mb-3">Choose one or more devices related to your concern</p>
+
+            <div id="selectedDevices" class="hidden mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p class="text-sm font-semibold text-green-800 mb-2">Selected Devices (<span id="selectedCount">0</span>)</p>
+              <div id="selectedList" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <div id="devicesContainer" class="border border-gray-200 rounded-lg p-4 bg-gray-50 max-h-80 overflow-y-auto">
+              {% for facility_id, facility in facilities.items() %}
+                <div id="devices_{{ facility_id }}" class="facility-devices hidden space-y-2">
+                  {% if facility.devices %}
+                    {% for device in facility.devices %}
+                      <label class="device-item flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-blue-50 cursor-pointer transition-colors border border-gray-200 hover:border-blue-300">
+                        <input type="checkbox" name="devices" value="{{ device.device_id }}" class="device-checkbox w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500" data-device-name="{{ device.device_name }}" data-facility-id="{{ facility_id }}">
+                        <div class="flex-1"><span class="text-sm font-medium text-gray-800">{{ device.device_name }}</span></div>
+                        <i class="bi bi-hdd text-blue-600"></i>
+                      </label>
+                    {% endfor %}
+                  {% else %}
+                    <div class="text-center py-8 text-gray-500">
+                      <i class="bi bi-inbox text-3xl mb-2"></i>
+                      <p class="text-sm">No devices available in this facility</p>
+                    </div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+
+              <div id="noFacilitySelected" class="text-center py-8 text-gray-400">
+                <i class="bi bi-arrow-up-circle text-4xl mb-2"></i>
+                <p class="text-sm">Please select a facility first</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-200">
+          <a href="{{ url_for('concern_bp.concern_list') }}" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Cancel</a>
+          <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">Submit Concern</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+<script>
+// Character counter
+const descriptionField = document.getElementById('description');
+const charCount = document.getElementById('charCount');
+if (descriptionField) {
+  descriptionField.addEventListener('input', function() {
+    charCount.textContent = this.value.length;
+  });
+}
+
+// Facility selection handling
+const facilitySelect = document.getElementById('facilitySelect');
+const deviceSelectionSection = document.getElementById('deviceSelectionSection');
+const noFacilitySelected = document.getElementById('noFacilitySelected');
+const selectedDevicesContainer = document.getElementById('selectedDevices');
+const selectedList = document.getElementById('selectedList');
+const selectedCount = document.getElementById('selectedCount');
+
+facilitySelect.addEventListener('change', function() {
+  const selectedFacilityId = this.value;
+  document.querySelectorAll('.facility-devices').forEach(div => div.classList.add('hidden'));
+  document.querySelectorAll('.device-checkbox').forEach(cb => {
+    cb.checked = false;
+    cb.disabled = true;
+  });
+
+  if (selectedFacilityId) {
+    deviceSelectionSection.classList.remove('hidden');
+    noFacilitySelected.classList.add('hidden');
+    const facilityDevices = document.getElementById('devices_' + selectedFacilityId);
+    if (facilityDevices) facilityDevices.classList.remove('hidden');
+    // enable checkboxes for selected facility
+    document.querySelectorAll(`.device-checkbox[data-facility-id="${selectedFacilityId}"]`).forEach(cb => cb.disabled = false);
+  } else {
+    deviceSelectionSection.classList.add('hidden');
+    noFacilitySelected.classList.remove('hidden');
+  }
+  updateSelectedDevices();
+});
+
+// Device handling
+const deviceCheckboxes = document.querySelectorAll('.device-checkbox');
+function updateSelectedDevices() {
+  const selected = Array.from(document.querySelectorAll('.device-checkbox')).filter(cb => cb.checked);
+  if (selected.length > 0) {
+    selectedDevicesContainer.classList.remove('hidden');
+    selectedCount.textContent = selected.length;
+    selectedList.innerHTML = selected.map(cb => `
+      <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-green-300 rounded-lg text-sm shadow-sm">
+        <i class="bi bi-hdd text-green-600"></i>
+        <span class="font-medium text-gray-800">${cb.dataset.deviceName}</span>
+        <button type="button" onclick="uncheckDevice(${cb.value})" class="ml-1 text-gray-400 hover:text-red-600">
+          <i class="bi bi-x-circle-fill"></i>
+        </button>
+      </span>
+    `).join('');
+  } else {
+    selectedDevicesContainer.classList.add('hidden');
+  }
+}
+
+function uncheckDevice(deviceId) {
+  const checkbox = document.querySelector(`.device-checkbox[value="${deviceId}"]`);
+  if (checkbox) { checkbox.checked = false; updateSelectedDevices(); }
+}
+
+document.querySelectorAll('.device-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedDevices));
+
+// Client-side validation on submit
+const concernForm = document.getElementById('concernForm');
+concernForm.addEventListener('submit', function(e) {
+  const selectedFacility = facilitySelect.value;
+  const selectedDevices = Array.from(document.querySelectorAll('.device-checkbox')).filter(cb => cb.checked);
+  if (!selectedFacility) { e.preventDefault(); alert('Please select a facility'); facilitySelect.focus(); return false; }
+  if (selectedDevices.length === 0) { e.preventDefault(); alert('Please select at least one device'); return false; }
+  if (descriptionField.value.trim().length < 10) { e.preventDefault(); alert('Description must be at least 10 characters long'); descriptionField.focus(); return false; }
+});
+</script>
+
+ 
+</body>
+</html>

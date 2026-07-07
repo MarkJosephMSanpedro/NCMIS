@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Manage Item</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  {% include 'includes/lucide.html' %}
+
+  
+</head>
+
+<body class="flex min-h-screen bg-gray-200 text-gray-800">
+
+  <!-- Sidebar -->
+  <aside id="sidebar"
+    class="fixed top-0 left-0 h-full w-64 bg-[#1E293B] text-gray-100 flex flex-col justify-between shadow-xl z-50 transform transition-transform duration-300 md:translate-x-0 -translate-x-full">
+
+    <!-- Logo -->
+    <div>
+      <div class="mb-8 text-center border-b border-blue-500 pb-5 mt-4">
+        <h4 class="text-3xl font-extrabold tracking-wide text-white">NCMIS</h4>
+        <span class="text-blue-300 text-sm">Inventory Dashboard</span>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex flex-col gap-2 px-4">
+        <!-- Dashboard -->
+        <a href="{{ url_for('dashboard_bp.dashboard_load') }}"
+           class="flex items-center px-4 py-3 rounded-lg font-medium text-gray-200 transition-all duration-200
+                  {% if request.endpoint == 'invendash_bp.dashboard_page' %}
+                    bg-blue-600 text-white shadow-md
+                  {% else %}
+                    hover:bg-blue-600/30 hover:text-white
+                  {% endif %}">
+          <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+        </a>
+
+        <!-- Manage Items -->
+        <a href="{{ url_for('manage_inventory_bp.inventory_load') }}"
+           class="flex items-center px-4 py-3 rounded-lg font-medium text-gray-200 transition-all duration-200 hover:bg-blue-600/30 hover:text-white">
+          <i data-lucide="package" class="w-5 h-5 mr-3"></i> Manage Items
+        </a>
+
+        <!-- Inventory -->
+        <a href="{{ url_for('manage_pc_bp.inventory') }}"
+           class="flex items-center px-4 py-3 rounded-lg font-medium text-gray-200 transition-all duration-200 hover:bg-blue-600/30 hover:text-white">
+          <i data-lucide="cpu" class="w-5 h-5 mr-3"></i> Inventory
+        </a>
+
+        <!-- QR List -->
+        <a href="{{ url_for('qrcode_bp.qrcode_generator_page') }}"
+           class="flex items-center px-4 py-3 rounded-lg font-medium text-gray-200 transition-all duration-200 hover:bg-blue-600/30 hover:text-white">
+          <i data-lucide="qr-code" class="w-5 h-5 mr-3"></i> QR List
+        </a>
+
+        <!-- Report -->
+        <a href="{{ url_for('report_bp.report_generator_page') }}"
+           class="flex items-center px-4 py-3 rounded-lg font-medium text-gray-200 transition-all duration-200 hover:bg-blue-600/30 hover:text-white">
+          <i data-lucide="bar-chart-3" class="w-5 h-5 mr-3"></i> Report
+        </a>
+       
+        <!-- Report --> 
+        <a href="{{ url_for('manage_user_bp.manage_user_page') }}"
+           class="flex items-center px-4 py-3 rounded-lg font-medium text-gray-200 transition-all duration-200 hover:bg-blue-600/30 hover:text-white">
+          <i data-lucide="users" class="w-5 h-5 mr-3"></i> Manage User
+        </a>
+
+        <a href="{{ url_for('manage_department_bp.manage_department_page') }}"
+           class="flex items-center px-4 py-3 rounded-lg font-medium text-gray-200 transition-all duration-200 hover:bg-blue-600/30 hover:text-white">
+          <i data-lucide="building-2" class="w-5 h-5 mr-3"></i> Manage Department
+        </a>
+      </nav>
+    </div>
+
+    <!-- Logout Button -->
+    <div class="p-4">
+      <button id="logoutBtn"
+        class="flex items-center justify-center w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition font-semibold shadow-md">
+        <i data-lucide="log-out" class="w-5 h-5 mr-2"></i> Logout
+      </button>
+    </div>
+  </aside>
+
+
+  <!-- Overlay for mobile -->
+  <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/50 z-40"></div>
+
+  <!-- Main Content -->
+  <main class="flex-1 ml-0 md:ml-64 p-6 space-y-6 transition-all duration-300">
+
+      <div class="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white rounded-3xl shadow-2xl p-4 sm:p-5 mb-6 border border-blue-500/40">
+            <div class="pointer-events-none absolute -top-24 -right-20 h-56 w-56 rounded-full bg-white/15"></div>
+            <div class="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-blue-200/20"></div>
+
+            <div class="relative z-10 flex items-center justify-between gap-3">
+              <div class="flex min-w-0 items-center gap-3">
+                <button id="sidebarToggle" class="md:hidden p-2 rounded-lg bg-white/15 border border-white/30 text-white hover:bg-white/25 transition">
+                  <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+                  <i data-lucide="package" class="w-6 h-6 text-white"></i>
+                </div>
+                <div class="min-w-0">
+                  <h2 class="text-xl sm:text-2xl font-bold leading-tight">Manage Items</h2>
+                  <p class="text-xs sm:text-sm text-blue-100">Create, update, and track inventory devices</p>
+                </div>
+              </div>
+
+              <div class="hidden md:block w-8"></div>
+            </div>
+      </div>
+
+    <!-- Feedback Message -->
+    {% if message %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="p-3 mb-4 rounded-lg 
+        {% if category == 'success' %} bg-green-500 text-white 
+        {% elif category == 'danger' %} bg-red-500 text-white 
+        {% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+    {% endif %}
+
+    <!-- Filter and Add Button Section -->
+    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div class="flex flex-col sm:flex-row gap-4">
+          <div>
+            <label class="block text-sm text-gray-600 mb-2 font-medium">Department</label>
+            <select id="filterDepartment" class="bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">All Departments</option>
+              {% for dept in departments %}
+                <option value="{{ dept.department_name }}">{{ dept.department_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        
+        <button id="openAddItemModal" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-md transition flex items-center gap-2 font-medium">
+          <i data-lucide="plus"></i> Add New Item
+        </button>
+      </div>
+    </div>
+
+    <!-- Add/Edit Item Modal -->
+<div id="itemAddEditModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-200 animate-in fade-in zoom-in duration-200">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-5">
+      <h2 id="modalTitle" class="text-2xl font-bold text-white flex items-center gap-3">
+        <div class="p-2 bg-white/20 rounded-lg">
+          <i data-lucide="plus-circle" class="w-6 h-6 text-white"></i>
+        </div>
+        <span>Add New Item</span>
+      </h2>
+      <p class="text-blue-100 text-sm mt-1 ml-12">Fill in the details below to add a new item to inventory</p>
+    </div>
+
+    <form id="itemForm" method="post" action="{{ url_for('manage_item_bp.add_device') }}" class="p-8 overflow-y-auto max-h-[calc(90vh-140px)]">
+      <input type="hidden" name="accession_id" id="accession_id">
+
+      <!-- Basic Information Section -->
+      <div class="mb-6">
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 flex items-center gap-2">
+          <i data-lucide="info" class="w-4 h-4"></i>
+          Basic Information
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Device Name -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium mb-2 text-gray-700">
+              Device Name <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i data-lucide="package" class="w-5 h-5 text-gray-400"></i>
+              </div>
+              <input type="text" name="item_name" id="item_name" required
+                     class="w-full border border-gray-300 rounded-xl pl-10 pr-4 py-2.5 bg-white text-gray-800 
+                            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200
+                            hover:border-gray-400">
+            </div>
+          </div>
+
+          <!-- Brand/Model -->
+          <div>
+            <label class="block text-sm font-medium mb-2 text-gray-700">Brand / Model</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i data-lucide="tag" class="w-5 h-5 text-gray-400"></i>
+              </div>
+              <input type="text" name="brand_model" id="brand_model"
+                     class="w-full border border-gray-300 rounded-xl pl-10 pr-4 py-2.5 bg-white text-gray-800 
+                            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200
+                            hover:border-gray-400">
+            </div>
+          </div>
+
+          <!-- Serial Number -->
+          <div>
+            <label class="block text-sm font-medium mb-2 text-gray-700">Serial Number</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i data-lucide="hash" class="w-5 h-5 text-gray-400"></i>
+              </div>
+              <input type="text" name="serial_number" id="serial_number"
+                     class="w-full border border-gray-300 rounded-xl pl-10 pr-4 py-2.5 bg-white text-gray-800 
+                            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200
+                            hover:border-gray-400">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Classification Section -->
+      <div class="mb-6">
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 flex items-center gap-2">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+          Classification
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Device Type -->
+          <div>
+            <label class="block text-sm font-medium mb-2 text-gray-700">Device Type</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i data-lucide="monitor" class="w-5 h-5 text-gray-400"></i>
+              </div>
+              <input type="text" name="device_type" id="device_type" list="itemTypeOptions"
+                     class="w-full border border-gray-300 rounded-xl pl-10 pr-4 py-2.5 bg-white text-gray-800 
+                            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200
+                            hover:border-gray-400">
+              <datalist id="itemTypeOptions">
+                <option value="Device"></option>
+                <option value="PC"></option>
+                <option value="Consumable"></option>
+              </datalist>
+            </div>
+          </div>
+
+          <!-- Quantity -->
+          <div>
+            <label class="block text-sm font-medium mb-2 text-gray-700">Quantity</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i data-lucide="boxes" class="w-5 h-5 text-gray-400"></i>
+              </div>
+              <input type="number" name="quantity" id="quantity" min="1"
+                autocomplete="off"
+                     class="w-full border border-gray-300 rounded-xl pl-10 pr-4 py-2.5 bg-white text-gray-800 
+                            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200
+                            hover:border-gray-400">
+            </div>
+          </div>
+
+          <!-- Department -->
+          <div>
+            <label class="block text-sm font-medium mb-2 text-gray-700">
+              Department <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i data-lucide="building-2" class="w-5 h-5 text-gray-400"></i>
+              </div>
+              <select name="department_id" id="department_id" required
+                      class="w-full border border-gray-300 rounded-xl pl-10 pr-4 py-2.5 bg-white text-gray-800 
+                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200
+                             hover:border-gray-400 appearance-none cursor-pointer">
+                {% for dept in departments %}
+                  <option value="{{ dept.department_id }}">{{ dept.department_name }}</option>
+                {% endfor %}
+              </select>
+              <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+        <!-- Consumable Link (shown for Consumable type) -->
+        <div id="consumableRow" class="mb-6 hidden">
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <i data-lucide="box" class="w-4 h-4"></i>
+            Consumable Link
+          </h3>
+          <div>
+            <label class="block text-sm font-medium mb-2 text-gray-700">Linked Consumable</label>
+            <div class="relative">
+              <select name="consumable_id" id="consumable_select"
+                      class="w-full border border-gray-300 rounded-xl pl-4 pr-10 py-2.5 bg-white text-gray-800 appearance-none cursor-pointer">
+                <option value="">Select consumable (optional)</option>
+              </select>
+              <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status & Date Section -->
+      <div class="mb-6">
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 flex items-center gap-2">
+          <i data-lucide="settings-2" class="w-4 h-4"></i>
+          Status & Assignment
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Date Acquired -->
+          <div>
+            <label class="block text-sm font-medium mb-2 text-gray-700">Date Acquired</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i data-lucide="calendar" class="w-5 h-5 text-gray-400"></i>
+              </div>
+              <input type="date" name="date_acquired" id="date_acquired"
+                     class="w-full border border-gray-300 rounded-xl pl-10 pr-4 py-2.5 bg-white text-gray-800 
+                            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200
+                            hover:border-gray-400">
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div>
+            <label class="block text-sm font-medium mb-2 text-gray-700">Status</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i data-lucide="activity" class="w-5 h-5 text-gray-400"></i>
+              </div>
+              <select name="status" id="status"
+                      class="w-full border border-gray-300 rounded-xl pl-10 pr-4 py-2.5 bg-white text-gray-800 
+                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200
+                             hover:border-gray-400 appearance-none cursor-pointer">
+                <option value="Available">Available</option>
+                <option value="Borrowed">In-service</option>
+                <option value="Damaged">Damaged</option>
+              </select>
+              <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Maintenance Schedule Section -->
+      <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200">
+        <h3 class="text-sm font-semibold text-blue-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+          <i data-lucide="wrench" class="w-4 h-4"></i>
+          Maintenance Schedule
+        </h3>
+        <div class="flex gap-3">
+          <div class="flex-1">
+            <label class="block text-sm font-medium mb-2 text-gray-700">Duration Value</label>
+            <input type="number" name="maintenance_duration_value" id="maintenance_duration_value" value="30" min="1" max="3650"
+                   class="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white text-gray-800 
+                          focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+          </div>
+          <div class="w-40">
+            <label class="block text-sm font-medium mb-2 text-gray-700">Unit</label>
+            <div class="relative">
+              <select name="maintenance_duration_unit" id="maintenance_duration_unit"
+                      class="w-full border border-gray-300 rounded-xl pl-4 pr-10 py-2.5 bg-white text-gray-800 
+                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200
+                             appearance-none cursor-pointer">
+                <option value="days">Days</option>
+                <option value="weeks">Weeks</option>
+                <option value="months">Months</option>
+                <option value="years">Years</option>
+              </select>
+              <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Indicator removed as requested -->
+        <input type="hidden" name="maintenance_interval_days" id="maintenance_interval_days" value="30">
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
+        <button type="button" id="closeItemModal"
+                class="px-6 py-2.5 rounded-xl text-gray-700 font-medium 
+                       border border-gray-300 hover:bg-gray-50 hover:border-gray-400 
+                       transition-all duration-200 flex items-center gap-2">
+          <i data-lucide="x" class="w-4 h-4"></i>
+          Cancel
+        </button>
+        <button id="submitBtn" type="submit"
+                class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold 
+                       shadow-lg shadow-blue-600/30 transition-all duration-200 
+                       flex items-center gap-2 hover:shadow-xl hover:shadow-blue-600/40 
+                       transform hover:-translate-y-0.5">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span>Add Item</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+    <!-- Search -->
+    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h3 class="text-lg font-semibold text-gray-800">Search Items</h3>
+        <input type="text" placeholder="Search items..." id="searchInput"
+               class="border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 w-full sm:w-1/3">
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+      <h3 class="text-xl font-semibold flex items-center gap-3 mb-6 text-blue-600">
+        <i data-lucide="package"></i> Items List
+      </h3>
+
+      {% if items|length == 0 %}
+      <div class="bg-gray-100 text-gray-600 p-6 rounded-lg text-center border border-gray-200">
+        <i data-lucide="box" class="mx-auto mb-3"></i>
+        <p class="text-lg">No items found.</p>
+        <p class="text-sm">Click "Add New Item" to get started.</p>
+      </div>
+      {% else %}
+      <div class="overflow-x-auto rounded-xl border border-gray-200">
+        <table class="min-w-full text-sm text-gray-800">
+          <thead class="bg-gray-50 text-gray-700 border-b border-gray-200">
+            <tr>
+              <th class="px-6 py-3 text-left font-medium">Accession ID</th>
+              <th class="px-6 py-3 text-left font-medium">Device Name</th>
+              <th class="px-6 py-3 text-left font-medium">Brand/Model</th>
+              <th class="px-6 py-3 text-left font-medium">Serial Number</th>
+              <th class="px-6 py-3 text-left font-medium">Date Acquired</th>
+              <th class="px-6 py-3 text-left font-medium">Department</th>
+              <th class="px-6 py-3 text-left font-medium">Status</th>
+              <th class="px-6 py-3 text-left font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="itemsTable" class="divide-y divide-gray-200">
+            {% for item in items %}
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 font-medium">{{ item.accession_id }}</td>
+              <td class="px-6 py-4">{{ item.item_name }}</td>
+              <td class="px-6 py-4">{{ item.brand_model or '' }}</td>
+              <td class="px-6 py-4">{{ item.serial_number }}</td>
+              <td class="px-6 py-4">{{ item.date_acquired or 'N/A' }}</td>
+              <td class="px-6 py-4">{{ item.department_name }}</td>
+              <td class="px-6 py-4">
+                <span class="px-3 py-1 text-xs font-semibold rounded-full 
+                      {% if item.unit_status == 'Available' %}bg-green-100 text-green-800
+                      {% elif item.unit_status == 'Borrowed' %}bg-yellow-100 text-yellow-800
+                      {% elif item.unit_status == 'Damaged' %}bg-red-100 text-red-800
+                      {% else %}bg-gray-100 text-gray-800{% endif %}">
+                      {{ item.unit_status }}
+                </span>
+              </td>
+              <td class="px-6 py-4 space-x-2">
+                <button type="button"
+                        class="editBtn bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded text-xs font-medium transition"
+                        data-id="{{ item.accession_id }}"
+                        data-name="{{ item.item_name }}"
+                        data-brand="{{ item.brand_model or '' }}"
+                        data-serial="{{ item.serial_number or '' }}"
+                  data-quantity="{{ item.quantity or 1 }}"
+                        data-date_acquired="{{ item.date_acquired or '' }}"
+                        data-dept="{{ item.department_id }}"
+                        data-type="{{ item.device_type or '' }}"
+                        data-status="{{ item.unit_status }}"
+                        data-maintenance_interval="{{ item.maintenance_interval_days or '30' }}">
+                    Edit
+                </button>
+                <form 
+                  action="{{ url_for('manage_item_bp.delete_item', id=item.accession_id) }}" 
+                  method="post" 
+                  class="inline" 
+                  onsubmit="return confirm('Are you sure you want to archive this item?');">
+                  <button class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded text-xs font-medium transition">
+                    Archive
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Mobile Card View -->
+      <div class="sm:hidden space-y-4" id="mobileItemsList">
+        {% for item in items %}
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h4 class="font-semibold text-gray-900">{{ item.item_name }}</h4>
+              <p class="text-sm text-gray-600">ID: {{ item.accession_id }}</p>
+            </div>
+            <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                  {% if item.unit_status == 'Available' %}bg-green-100 text-green-800
+                  {% elif item.unit_status == 'Borrowed' %}bg-yellow-100 text-yellow-800
+                  {% elif item.unit_status == 'Damaged' %}bg-red-100 text-red-800
+                  {% else %}bg-gray-100 text-gray-800{% endif %}">
+                  {{ item.unit_status }}
+            </span>
+          </div>
+          
+          <div class="space-y-1 text-sm text-gray-600 mb-3">
+            {% if item.brand_model %}<p><span class="font-medium">Brand/Model:</span> {{ item.brand_model }}</p>{% endif %}
+            {% if item.serial_number %}<p><span class="font-medium">Serial:</span> {{ item.serial_number }}</p>{% endif %}
+            {% if item.date_acquired %}<p><span class="font-medium">Date Acquired:</span> {{ item.date_acquired }}</p>{% endif %}
+            <p><span class="font-medium">Department:</span> {{ item.department_name }}</p>
+          </div>
+          
+          <div class="flex gap-2">
+            <button type="button"
+                    class="editBtn bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded text-xs font-medium transition flex-1"
+                    data-id="{{ item.accession_id }}"
+                    data-name="{{ item.item_name }}"
+                    data-brand="{{ item.brand_model or '' }}"
+                    data-serial="{{ item.serial_number or '' }}"
+                  data-quantity="{{ item.quantity or 1 }}"
+                    data-date_acquired="{{ item.date_acquired or '' }}"
+                    data-dept="{{ item.department_id }}"
+                    data-type="{{ item.device_type or '' }}"
+                    data-status="{{ item.unit_status }}"
+                    data-maintenance_interval="{{ item.maintenance_interval_days or '30' }}">
+                Edit
+            </button>
+            <form 
+              action="{{ url_for('manage_item_bp.delete_item', id=item.accession_id) }}" 
+              method="post" 
+              class="inline flex-1" 
+              onsubmit="return confirm('Are you sure you want to archive this item?');">
+              <button class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded text-xs font-medium transition w-full">
+                Archive
+              </button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </main>
+  <!-- Logout Confirmation Modal -->
+  <div id="logoutModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-96 text-center">
+      <i data-lucide="alert-triangle" class="w-12 h-12 text-yellow-500 mx-auto mb-3"></i>
+      <h2 class="text-lg font-semibold text-blue-600 mb-2">Confirm Logout</h2>
+      <p class="text-gray-600 mb-6">Are you sure you want to log out of your account?</p>
+      <div class="flex justify-center space-x-3">
+        <button id="cancelLogout" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">Cancel</button>
+        <form method="post" action="{{ url_for('login_bp.logout') }}">
+          <button type="submit" id="confirmLogout" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Logout</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = document.getElementById('sidebarToggle');
+
+    toggle.addEventListener('click', () => {
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    });
+
+    overlay.addEventListener('click', () => {
+      sidebar.classList.add('-translate-x-full');
+      overlay.classList.add('hidden');
+    });
+
+    // Maintenance duration conversion and validation
+    function updateMaintenanceDays() {
+      const value = parseInt(document.getElementById('maintenance_duration_value').value) || 0;
+      const unit = document.getElementById('maintenance_duration_unit').value;
+      const daysField = document.getElementById('maintenance_interval_days');
+      const valueField = document.getElementById('maintenance_duration_value');
+      
+      let days = value;
+      let maxValue = 3650;
+      
+      switch(unit) {
+        case 'weeks':
+          days = value * 7;
+          maxValue = 520;
+          break;
+        case 'months':
+          days = value * 30;
+          maxValue = 120;
+          break;
+        case 'years':
+          days = value * 365;
+          maxValue = 10;
+          break;
+        default:
+          maxValue = 3650;
+      }
+      
+      // Update max value for the input field
+      valueField.max = maxValue;
+      
+      // Validate and update days
+      if (days > 3650) {
+        days = 3650;
+        // Adjust the value back to fit the limit
+        switch(unit) {
+          case 'weeks':
+            valueField.value = Math.floor(3650 / 7);
+            break;
+          case 'months':
+            valueField.value = Math.floor(3650 / 30);
+            break;
+          case 'years':
+            valueField.value = Math.floor(3650 / 365);
+            break;
+          default:
+            valueField.value = 3650;
+        }
+      }
+      
+      daysField.value = days;
+    }
+
+    // Add event listeners for maintenance duration
+    document.getElementById('maintenance_duration_value')?.addEventListener('input', updateMaintenanceDays);
+    document.getElementById('maintenance_duration_unit')?.addEventListener('change', updateMaintenanceDays);
+
+      const itemModal = document.getElementById('itemAddEditModal');
+  const openAddItemModal = document.getElementById('openAddItemModal');
+  const closeItemModal = document.getElementById('closeItemModal');
+  const form = document.getElementById('itemForm');
+  const modalTitle = document.getElementById('modalTitle');
+  const submitBtn = document.getElementById('submitBtn');
+  const deviceTypeInput = document.getElementById('device_type');
+  const quantityInput = document.getElementById('quantity');
+
+  function applyItemTypeRules(typeValue) {
+    const isConsumable = String(typeValue || '').trim().toLowerCase() === 'consumable';
+    const consumableRow = document.getElementById('consumableRow');
+    if (consumableRow) {
+      if (isConsumable) consumableRow.classList.remove('hidden'); else consumableRow.classList.add('hidden');
+    }
+
+    quantityInput.readOnly = false;
+    quantityInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+    quantityInput.classList.add('bg-white');
+  }
+
+  // Open Add Modal
+  openAddItemModal?.addEventListener('click', () => {
+    form.reset();
+    quantityInput.value = '';
+    form.action = "{{ url_for('manage_item_bp.add_device') }}";
+    modalTitle.innerHTML = `
+      <div class="p-2 bg-white/20 rounded-lg">
+        <i data-lucide='plus-circle' class="w-6 h-6 text-white"></i>
+      </div>
+      <span>Add New Item</span>
+    `;
+    submitBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Add Item</span>`;
+    // Load consumables so admin can choose when adding a Consumable
+    try { loadConsumables(); } catch (e) { /* ignore */ }
+    itemModal.classList.remove('hidden');
+    lucide.createIcons();
+    
+    // Initialize maintenance days
+    console.log('Initializing maintenance days...');
+    updateMaintenanceDays();
+    
+    // Debug: Check if elements exist
+    const durationValue = document.getElementById('maintenance_duration_value');
+    const durationUnit = document.getElementById('maintenance_duration_unit');
+    const daysField = document.getElementById('maintenance_interval_days');
+    
+    console.log('Maintenance elements found:', {
+      durationValue: !!durationValue,
+      durationUnit: !!durationUnit,
+      daysField: !!daysField
+    });
+    applyItemTypeRules(deviceTypeInput.value);
+  });
+
+  // Open Edit Modal
+  document.querySelectorAll('.editBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      form.action = `/edit-item/${btn.dataset.id}`; // or use url_for with dynamic route
+      modalTitle.innerHTML = `
+        <div class="p-2 bg-white/20 rounded-lg">
+          <i data-lucide='edit-3' class="w-6 h-6 text-white"></i>
+        </div>
+        <span>Edit Item</span>
+      `;
+      submitBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Save Changes</span>`;
+
+      // Populate fields
+      document.getElementById('accession_id').value = btn.dataset.id;
+      document.getElementById('item_name').value = btn.dataset.name;
+      document.getElementById('brand_model').value = btn.dataset.brand;
+      document.getElementById('serial_number').value = btn.dataset.serial;
+      document.getElementById('date_acquired').value = btn.dataset.date_acquired || '';
+      document.getElementById('device_type').value = btn.dataset.type;
+      document.getElementById('quantity').value = btn.dataset.quantity || '';
+      document.getElementById('department_id').value = btn.dataset.dept;
+      document.getElementById('status').value = btn.dataset.status;
+      
+      // Set maintenance duration from days
+      const maintenanceDays = parseInt(btn.dataset.maintenance_interval) || 30;
+      document.getElementById('maintenance_interval_days').value = maintenanceDays;
+      
+      // Default to days for editing, user can change unit
+      document.getElementById('maintenance_duration_value').value = maintenanceDays;
+      document.getElementById('maintenance_duration_unit').value = 'days';
+
+      applyItemTypeRules(deviceTypeInput.value);
+      // Load consumables and try to select matching consumable for this item
+      loadConsumables().then(() => {
+        try {
+          const sel = document.getElementById('consumable_select');
+          if (sel) {
+            for (const opt of sel.options) {
+              if (opt.value && opt.dataset.itemName === btn.dataset.name && (opt.dataset.brand || '') === (btn.dataset.brand || '')) {
+                sel.value = opt.value;
+                break;
+              }
+            }
+          }
+        } catch (e) { /* ignore */ }
+      }).catch(() => {});
+
+      itemModal.classList.remove('hidden');
+      lucide.createIcons();
+    });
+  });
+
+  deviceTypeInput?.addEventListener('input', (event) => {
+    applyItemTypeRules(event.target.value);
+  });
+
+  // Load consumables list and wire selection
+  async function loadConsumables() {
+    try {
+      const res = await fetch('/get-consumables');
+      const data = await res.json();
+      const sel = document.getElementById('consumable_select');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Select consumable (optional)</option>';
+      (Array.isArray(data) ? data : []).forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.accession_id;
+        opt.textContent = `${c.item_name}${c.brand ? ' — ' + c.brand : ''}${c.quantity ? ' (' + c.quantity + ')' : ''}`;
+        opt.dataset.itemName = c.item_name || '';
+        opt.dataset.brand = c.brand || '';
+        opt.dataset.quantity = c.quantity ?? '';
+        opt.dataset.departmentId = c.department_id ?? '';
+        sel.appendChild(opt);
+      });
+    } catch (err) {
+      console.error('Failed to load consumables', err);
+    }
+  }
+
+  document.getElementById('consumable_select')?.addEventListener('change', (e) => {
+    const sel = e.target;
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) return;
+    const itemName = opt.dataset.itemName || '';
+    const brand = opt.dataset.brand || '';
+    const qty = opt.dataset.quantity || '';
+    const deptId = opt.dataset.departmentId || '';
+    if (itemName) document.getElementById('item_name').value = itemName;
+    if (brand) document.getElementById('brand_model').value = brand;
+    if (qty) document.getElementById('quantity').value = qty;
+    if (deptId) document.getElementById('department_id').value = deptId;
+  });
+
+  // Close modal
+  closeItemModal?.addEventListener('click', () => itemModal.classList.add('hidden'));
+  itemModal.addEventListener('click', e => { if (e.target === itemModal) itemModal.classList.add('hidden'); });
+
+
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+     // Logout modal
+     const logoutBtn = document.getElementById('logoutBtn');
+    const logoutModal = document.getElementById('logoutModal');
+    const cancelLogout = document.getElementById('cancelLogout');
+    logoutBtn.addEventListener('click', () => logoutModal.classList.remove('hidden'));
+    cancelLogout.addEventListener('click', () => logoutModal.classList.add('hidden'));
+  </script>
+</body>
+<script>
+// AJAX delete for item forms
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('form[action*="delete-item"]').forEach(function(form) {
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!confirm('Are you sure you want to delete this item?')) return;
+      const action = form.getAttribute('action');
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch(action, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await res.json();
+        if (data.success) {
+          // Remove the row from the table
+          const row = form.closest('tr');
+          if (row) row.remove();
+          alert('Item deleted successfully!');
+        } else {
+          alert(data.error || 'Failed to delete item.');
+        }
+      } catch (err) {
+        alert('Failed to delete item.');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+  });
+});
+</script>
+</html>

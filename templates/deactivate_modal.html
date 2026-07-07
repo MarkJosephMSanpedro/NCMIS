@@ -1,0 +1,49 @@
+<!-- deactivate_modal.html -->
+<div id="deactivateModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl shadow-2xl p-6 w-96 text-center">
+    <i data-lucide="alert-triangle" class="w-12 h-12 text-yellow-500 mx-auto mb-3"></i>
+    <h2 class="text-lg font-semibold text-blue-600 mb-2">Confirm Deactivation</h2>
+    <p class="text-gray-600 mb-6">Are you sure you want to deactivate this user?</p>
+
+    <form method="post" action="{{ url_for('manage_user_bp.deactivate_user') }}">
+      <input type="hidden" id="deactivateItemId" name="user_id" />
+      <div class="flex justify-center space-x-3">
+        <button type="button" id="cancelDeactivate"
+                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
+          Cancel
+        </button>
+        <button type="submit"
+                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+          Deactivate
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  // Initialize lucide icons
+  lucide.createIcons();
+
+  // Elements
+  const deactivateModal = document.getElementById("deactivateModal");
+  const cancelDeactivate = document.getElementById("cancelDeactivate");
+  const deactivateItemId = document.getElementById("deactivateItemId");
+
+  // Open modal with user ID
+  function openDeactivateModal(userId) {
+    deactivateItemId.value = userId;
+    deactivateModal.classList.remove("hidden");
+  }
+
+  // Close modal on cancel
+  cancelDeactivate.addEventListener("click", () => {
+    deactivateModal.classList.add("hidden");
+  });
+
+  // Optional: close modal when clicking outside modal content
+  deactivateModal.addEventListener("click", (e) => {
+    if (e.target === deactivateModal) {
+      deactivateModal.classList.add("hidden");
+    }
+  });
+</script>

@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Tickets</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+  <style>
+    /* small helper for thin scrollbar in overflow areas */
+    .thin-scrollbar::-webkit-scrollbar { height:8px; width:8px; }
+    .thin-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius:8px; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900">
+  {% include 'sidebar.html' %}
+
+  <main class="flex-1 ml-0 md:ml-64 p-6 transition-all duration-200">
+    <div class="max-w-full">
+      <div class="pt-4">
+        <header class="mb-6">
+          <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 rounded-3xl shadow-2xl p-6 relative overflow-hidden">
+            <div class="relative z-10 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-4">
+                <div class="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
+                  <i data-lucide="inbox" class="w-8 h-8 text-white"></i>
+                </div>
+                <div>
+                  <h2 class="text-2xl md:text-3xl font-extrabold text-white">Admin — Ticket Queue</h2>
+                  <p class="text-sm text-white/80 mt-1">Approve or reject incoming tickets</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+      <!-- Summary cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="rounded-2xl overflow-hidden shadow bg-slate-700 text-white p-4 flex items-center justify-between">
+          <div>
+            <div class="text-sm opacity-90">Pending Tickets</div>
+            <div id="pending-summary-count" class="text-3xl md:text-4xl font-extrabold mt-1">0</div>
+          </div>
+          <div class="p-3 bg-slate-800/60 rounded-full">
+            <i data-lucide="hourglass" class="w-6 h-6"></i>
+          </div>
+        </div>
+
+        <div class="rounded-2xl overflow-hidden shadow bg-amber-500 text-white p-4 flex items-center justify-between">
+          <div>
+            <div class="text-sm opacity-90">Ongoing Tickets</div>
+            <div id="ongoing-summary-count" class="text-3xl md:text-4xl font-extrabold mt-1">0</div>
+          </div>
+          <div class="p-3 bg-amber-600/70 rounded-full">
+            <i data-lucide="settings" class="w-6 h-6"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-2xl overflow-hidden shadow mb-6 bg-white">
+        <div class="p-4 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="text-sm text-slate-600">Tickets overview</div>
+            <div class="ml-auto flex items-center gap-3 w-full md:w-auto">
+              <input id="ticket-search" type="search" placeholder="Search by description, faculty name, or email..." class="px-4 py-2 border border-gray-300 rounded-xl flex-1 min-w-0 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+              <select id="facility-filter" class="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                <option value="">All Facilities</option>
+              </select>
+              <select id="device-filter" class="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                <option value="">All Devices</option>
+              </select>
+              <button id="clear-filters" class="inline-flex items-center gap-2 px-3 py-2 bg-slate-200 text-slate-700 rounded-xl shadow-sm">Clear</button>
+              <button id="refresh-list" class="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-xl shadow-sm">Refresh</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <section class="bg-slate-50 rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-semibold text-slate-800">Pending Approval</h3>
+              <span id="pending-count" class="inline-flex items-center text-slate-600 bg-slate-200 px-3 py-1 rounded-full text-sm">0</span>
+            </div>
+            <div id="pending-list" class="space-y-4 min-h-[220px] thin-scrollbar overflow-auto p-1">
+              <div class="text-slate-500">Loading…</div>
+            </div>
+          </section>
+
+          <section class="bg-amber-50 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-semibold text-amber-800">In Progress</h3>
+                <span id="ongoing-count" class="inline-flex items-center text-amber-700 bg-amber-100 px-3 py-1 rounded-full text-sm">0</span>
+              </div>
+              <div id="ongoing-list" class="space-y-4 min-h-[220px] thin-scrollbar overflow-auto p-1 text-slate-600">
+                <div class="text-center py-8 text-slate-400">
+                  <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-3"></i>
+                  No ongoing tickets
+                </div>
+              </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Resolve/Unresolve feedback modal -->
+  <div id="resolve-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/50" aria-hidden="true"></div>
+    <div class="bg-white w-full max-w-lg mx-4 relative z-10 shadow-2xl overflow-hidden rounded-2xl border border-gray-100">
+      <div id="resolve-modal-header" class="px-6 py-4 text-white flex items-center gap-3 rounded-t-2xl">
+        <div id="resolve-modal-icon" class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20">
+          <i data-lucide="check-circle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="resolve-modal-title" class="text-lg font-semibold">Mark as Resolved - Feedback</h3>
+          <p id="resolve-modal-sub" class="text-sm opacity-90">Optional: leave a short note explaining the resolution.</p>
+        </div>
+      </div>
+      <div class="p-6">
+        <label class="block text-sm text-slate-700 mb-2">Provide feedback or notes:</label>
+        <textarea id="resolve-feedback" rows="5" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Enter resolution details..."></textarea>
+        <div class="mt-4 flex justify-end gap-3">
+          <button id="resolve-cancel" class="px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white inline-flex items-center gap-2 rounded-xl shadow-sm">
+            <i data-lucide="x-circle" class="w-4 h-4"></i> Cancel
+          </button>
+          <button id="resolve-submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white inline-flex items-center gap-2 rounded-xl shadow-sm">
+            <i id="resolve-submit-icon" data-lucide="check-circle" class="w-4 h-4"></i> Submit
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    const initialStatusFilter = {{ active_filter|tojson|safe }};
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"]/g, function(s) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]); });
+    }
+
+    function shortText(s, len = 180) {
+      if (!s) return '';
+      return s.length > len ? s.slice(0, len) + '…' : s;
+    }
+
+    function debounce(fn, ms = 300) {
+      let t;
+      return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), ms); };
+    }
+
+    async function loadFilters() {
+      try {
+        const [facRes, devRes] = await Promise.all([
+          fetch('/admin/tickets/filters/facilities', { headers: { 'X-Requested-With': 'XMLHttpRequest' } }),
+          fetch('/admin/tickets/filters/devices', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        ]);
+
+        if (facRes && facRes.ok) {
+          const facs = await facRes.json();
+          const facilitySelect = document.getElementById('facility-filter');
+          if (facilitySelect) {
+            facilitySelect.innerHTML = '<option value="">All Facilities</option>';
+            facs.forEach(f => {
+              const o = document.createElement('option');
+              o.value = f.department_id ?? f.id ?? f.departmentId ?? f.department_id;
+              o.textContent = f.department_name ?? f.name ?? String(o.value);
+              facilitySelect.appendChild(o);
+            });
+          }
+        }
+
+        if (devRes && devRes.ok) {
+          const devs = await devRes.json();
+          const deviceSelect = document.getElementById('device-filter');
+          if (deviceSelect) {
+            deviceSelect.innerHTML = '<option value="">All Devices</option>';
+            devs.forEach(d => {
+              const id = d.id ?? d.device_id ?? d.accession_id ?? d.deviceId;
+              const name = d.name ?? d.item_name ?? Object.values(d)[1] ?? String(id);
+              const dept = d.department_id ?? d.departmentId ?? null;
+              const o = document.createElement('option');
+              o.value = id;
+              o.textContent = name;
+              if (dept) o.dataset.dept = String(dept);
+              deviceSelect.appendChild(o);
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load filter options', err);
+      }
+    }
+
+    async function loadTickets() {
+      const pendingEl = document.getElementById('pending-list');
+      const ongoingEl = document.getElementById('ongoing-list');
+      const pendingCountEl = document.getElementById('pending-count');
+      const ongoingCountEl = document.getElementById('ongoing-count');
+      const pendingSummaryEl = document.getElementById('pending-summary-count');
+      const ongoingSummaryEl = document.getElementById('ongoing-summary-count');
+      pendingEl.innerHTML = '<div class="text-slate-500 px-2 py-6">Loading…</div>';
+      ongoingEl.innerHTML = '<div class="text-slate-500 px-2 py-6">Loading…</div>';
+      pendingCountEl.textContent = '0';
+      ongoingCountEl.textContent = '0';
+      try {
+        // build query params from search + filters
+        const qEl = document.getElementById('ticket-search');
+        const facilityEl = document.getElementById('facility-filter');
+        const deviceEl = document.getElementById('device-filter');
+        const params = new URLSearchParams();
+        if (qEl && qEl.value.trim()) params.set('q', qEl.value.trim());
+        if (facilityEl && facilityEl.value) params.set('facility', facilityEl.value);
+        if (deviceEl && deviceEl.value) params.set('device', deviceEl.value);
+        // include an initial `status` param if provided by the server
+        if (initialStatusFilter && !params.has('status')) params.set('status', initialStatusFilter);
+        const url = '/admin/tickets/list' + (params.toString() ? '?' + params.toString() : '');
+        const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        // If unauthorized or forbidden, redirect to login page
+        if (resp.status === 401 || resp.status === 403) {
+          window.location.href = '/login';
+          return;
+        }
+        if (!resp.ok) throw new Error('Failed to fetch');
+        // Ensure we received JSON (not an HTML login page)
+        const contentType = resp.headers.get('Content-Type') || '';
+        if (!contentType.includes('application/json')) {
+          // likely a redirect to login or an HTML error page
+          window.location.href = '/login';
+          return;
+        }
+        const data = await resp.json();
+        if (!Array.isArray(data) || data.length === 0) {
+          pendingEl.innerHTML = '<div class="text-slate-500 px-2 py-6">No tickets found.</div>';
+          ongoingEl.innerHTML = '<div class="text-slate-500 px-2 py-6">No ongoing tickets</div>';
+          return;
+        }
+
+        const pendingStatuses = ['open','pending'];
+        const ongoingStatuses = ['in progress','accepted','ongoing','processing','assigned'];
+
+        const pending = [];
+        const ongoing = [];
+
+        data.forEach(t => {
+          const s = (t.status || '').toLowerCase();
+          if (pendingStatuses.includes(s) || s === '') pending.push(t);
+          else if (ongoingStatuses.includes(s)) ongoing.push(t);
+        });
+
+        // Render pending
+        if (pending.length === 0) {
+          pendingEl.innerHTML = '<div class="text-slate-500 px-2 py-6">No pending tickets</div>';
+        } else {
+          pendingEl.innerHTML = '';
+            pending.forEach(t => {
+            const created = t.created_at ? new Date(t.created_at).toLocaleString() : '';
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-2xl shadow-sm p-4 border border-slate-100';
+            const title = escapeHtml(t.title || '(no title)');
+            const facility = escapeHtml(t.facility_name || '');
+            const desc = escapeHtml(shortText(t.description || ''));
+            card.innerHTML = `
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                  <span class="bg-slate-100 text-slate-700 px-3 py-2 rounded font-semibold text-sm">#${t.ticket_id}</span>
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <h4 class="text-sm font-semibold text-slate-800">${title}</h4>
+                      <div class="text-xs text-slate-500 mt-1">${facility} • ${escapeHtml(t.user_id || '')}</div>
+                    </div>
+                    <div class="text-xs text-slate-400">${created}</div>
+                  </div>
+                  <p class="text-sm text-slate-600 mt-3">${desc}</p>
+                  
+                  <div class="mt-3">
+                    <!-- device badges -->
+                  </div>
+
+                  <div class="mt-3 grid grid-cols-2 gap-3">
+                    <button data-id="${t.ticket_id}" data-action="accept" class="accept-btn bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl shadow-sm flex items-center justify-center gap-2">
+                      <i data-lucide="check-circle" class="w-4 h-4"></i> Accept
+                    </button>
+                    <button data-id="${t.ticket_id}" data-action="reject" class="reject-btn bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl shadow-sm flex items-center justify-center gap-2">
+                      <i data-lucide="x-circle" class="w-4 h-4"></i> Decline
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+            // append device badges if present
+            if (Array.isArray(t.devices) && t.devices.length) {
+              const badgeWrap = card.querySelector('div.mt-3');
+              if (badgeWrap) {
+                badgeWrap.className = 'mt-3 flex flex-wrap gap-2';
+                t.devices.forEach(d => {
+                  const s = document.createElement('span');
+                  s.className = 'text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded';
+                  s.textContent = d.name || String(d.id || 'Device');
+                  badgeWrap.appendChild(s);
+                });
+              }
+            }
+            pendingEl.appendChild(card);
+          });
+        }
+
+        // Render ongoing (cards with resolve/unresolve actions)
+        if (ongoing.length === 0) {
+          ongoingEl.innerHTML = '<div class="text-slate-500 px-2 py-6 text-center">No ongoing tickets</div>';
+        } else {
+          ongoingEl.innerHTML = '';
+          ongoing.forEach(t => {
+            const created = t.created_at ? new Date(t.created_at).toLocaleString() : '';
+            const card = document.createElement('div');
+            card.className = 'bg-amber-50 rounded-2xl p-4 border border-amber-100 shadow-sm';
+            const title = escapeHtml(t.title || '(no title)');
+            const ticketNum = t.ticket_id ? `#${t.ticket_id}` : '';
+            card.innerHTML = `
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                  <span class="bg-amber-100 text-amber-800 px-3 py-2 rounded font-semibold text-sm">${ticketNum}</span>
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <h4 class="text-sm font-semibold text-amber-800">${title}</h4>
+                      <div class="text-xs text-amber-700 mt-1">${escapeHtml(t.facility_name || '')} • ${escapeHtml(t.user_id || '')}</div>
+                    </div>
+                    <div class="text-xs text-slate-400">${created}</div>
+                  </div>
+                  <p class="text-sm text-amber-700 mt-3">${escapeHtml(shortText(t.description || ''))}</p>
+
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <!-- device badges -->
+                  </div>
+
+                  <div class="mt-3 grid grid-cols-2 gap-3">
+                    <button data-id="${t.ticket_id}" data-action="resolve" class="resolve-btn bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl shadow-sm flex items-center justify-center gap-2">
+                      <i data-lucide="check-circle" class="w-4 h-4"></i> Resolved
+                    </button>
+                    <button data-id="${t.ticket_id}" data-action="unresolve" class="unresolve-btn bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl shadow-sm flex items-center justify-center gap-2">
+                      <i data-lucide="alert-circle" class="w-4 h-4"></i> Unresolved
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+
+            // append device badges if present
+            if (Array.isArray(t.devices) && t.devices.length) {
+              const badgeWrap = card.querySelector('div.mt-3.flex');
+              if (badgeWrap) {
+                t.devices.forEach(d => {
+                  const s = document.createElement('span');
+                  s.className = 'text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded';
+                  s.textContent = d.name || String(d.id || 'Device');
+                  badgeWrap.appendChild(s);
+                });
+              }
+            }
+
+            ongoingEl.appendChild(card);
+          });
+        }
+
+        // filter selects are populated from dedicated endpoints via loadFilters()
+
+        // update counts
+        pendingCountEl.textContent = String(pending.length);
+        ongoingCountEl.textContent = String(ongoing.length);
+        if (pendingSummaryEl) pendingSummaryEl.textContent = String(pending.length);
+        if (ongoingSummaryEl) ongoingSummaryEl.textContent = String(ongoing.length);
+
+        // If the page was opened with a status hint, scroll that section into view
+        try {
+          if (initialStatusFilter === 'pending') {
+            const el = document.getElementById('pending-list');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else if (initialStatusFilter === 'ongoing' || initialStatusFilter === 'inprogress') {
+            const el = document.getElementById('ongoing-list');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        } catch (e) {
+          // ignore scrolling errors
+        }
+
+        // modal elements for resolve/unresolve feedback
+        const modalEl = document.getElementById('resolve-modal');
+        const feedbackEl = document.getElementById('resolve-feedback');
+        const modalTitleEl = document.getElementById('resolve-modal-title');
+        const modalHeaderEl = document.getElementById('resolve-modal-header');
+        const modalIconWrapper = document.getElementById('resolve-modal-icon');
+        const modalIconEl = modalIconWrapper ? modalIconWrapper.querySelector('i') : null;
+        const modalSubEl = document.getElementById('resolve-modal-sub');
+        const submitFeedbackBtn = document.getElementById('resolve-submit');
+        const submitIconEl = document.getElementById('resolve-submit-icon');
+        const cancelFeedbackBtn = document.getElementById('resolve-cancel');
+        let currentTicketForModal = null;
+        let currentActionForModal = null;
+        let lastClickedButton = null;
+
+        // submit handler for modal
+        if (submitFeedbackBtn) {
+          submitFeedbackBtn.addEventListener('click', async () => {
+            if (!currentTicketForModal || !currentActionForModal) return;
+            submitFeedbackBtn.disabled = true;
+            const ticketId = currentTicketForModal;
+            const action = currentActionForModal;
+            const feedback = feedbackEl ? feedbackEl.value.trim() : '';
+            try {
+              const resp = await fetch(`/admin/tickets/${ticketId}/action`, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, feedback })
+              });
+              const json = await resp.json();
+              if (resp.ok && json.status === 'success') {
+                if (modalEl) modalEl.classList.add('hidden');
+                const card = lastClickedButton ? lastClickedButton.closest('div.rounded-2xl, div.rounded-lg, div.rounded-md') : null;
+                if (card && card.parentElement) card.parentElement.removeChild(card);
+                loadTickets();
+              } else {
+                alert(json.message || 'Failed to perform action');
+              }
+            } catch (err) {
+              alert('Network error');
+            } finally {
+              submitFeedbackBtn.disabled = false;
+              if (lastClickedButton) lastClickedButton.disabled = false;
+              currentTicketForModal = null;
+              currentActionForModal = null;
+            }
+          });
+        }
+
+        if (cancelFeedbackBtn) {
+          cancelFeedbackBtn.addEventListener('click', () => {
+            if (modalEl) modalEl.classList.add('hidden');
+            if (lastClickedButton) lastClickedButton.disabled = false;
+            currentTicketForModal = null;
+            currentActionForModal = null;
+          });
+        }
+
+        // wire up action buttons (accept/reject act immediately; resolve/unresolve open modal)
+        document.querySelectorAll('.accept-btn, .reject-btn, .resolve-btn, .unresolve-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const ticketId = btn.getAttribute('data-id');
+            const action = btn.getAttribute('data-action');
+
+            if (action === 'resolve' || action === 'unresolve') {
+              // open modal to capture feedback with contextual styling/icon
+              lastClickedButton = btn;
+              currentTicketForModal = ticketId;
+              currentActionForModal = action;
+              const isResolve = action === 'resolve';
+              if (modalTitleEl) modalTitleEl.textContent = isResolve ? 'Mark as Resolved - Feedback' : 'Mark as Unresolved - Feedback';
+              if (modalSubEl) modalSubEl.textContent = isResolve ? 'Optional: leave a short note explaining the resolution.' : 'Optional: explain why this ticket remains unresolved.';
+              if (feedbackEl) { feedbackEl.value = ''; feedbackEl.placeholder = isResolve ? 'Enter resolution details...' : 'Enter reason for unresolved status...'; }
+
+              if (modalHeaderEl) {
+                modalHeaderEl.className = 'px-6 py-4 text-white flex items-center gap-3 rounded-t-2xl ' + (isResolve ? 'bg-emerald-600' : 'bg-orange-500');
+              }
+              if (modalIconEl) {
+                modalIconEl.setAttribute('data-lucide', isResolve ? 'check-circle' : 'alert-circle');
+                modalIconEl.className = 'w-5 h-5';
+              }
+              if (submitFeedbackBtn) {
+                submitFeedbackBtn.className = 'px-4 py-2 text-white rounded inline-flex items-center gap-2 ' + (isResolve ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-orange-500 hover:bg-orange-600');
+              }
+              if (submitIconEl) {
+                submitIconEl.setAttribute('data-lucide', isResolve ? 'check-circle' : 'alert-circle');
+                submitIconEl.className = 'w-4 h-4';
+              }
+
+              if (modalEl) modalEl.classList.remove('hidden');
+              if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+              setTimeout(() => { if (feedbackEl) feedbackEl.focus(); }, 120);
+              return;
+            }
+
+            btn.disabled = true;
+            try {
+              const resp = await fetch(`/admin/tickets/${ticketId}/action`, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+              });
+              const json = await resp.json();
+              if (resp.ok && json.status === 'success') {
+                const card = btn.closest('div.rounded-2xl, div.rounded-lg, div.rounded-md');
+                if (card && card.parentElement) card.parentElement.removeChild(card);
+                loadTickets();
+              } else {
+                alert(json.message || 'Failed to perform action');
+                btn.disabled = false;
+              }
+            } catch (err) {
+              alert('Network error');
+              btn.disabled = false;
+            }
+          });
+        });
+
+        // make lucide icons render for newly added icons
+        if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+
+      } catch (err) {
+        pendingEl.innerHTML = '<div class="text-red-600 px-2 py-6">Could not load tickets.</div>';
+        ongoingEl.innerHTML = '<div class="text-red-600 px-2 py-6">Could not load tickets.</div>';
+      }
+    }
+
+    const debouncedLoad = debounce(loadTickets, 350);
+    const refreshBtn = document.getElementById('refresh-list');
+    const searchEl = document.getElementById('ticket-search');
+    const facilityEl = document.getElementById('facility-filter');
+    const deviceEl = document.getElementById('device-filter');
+    const clearBtn = document.getElementById('clear-filters');
+    if (refreshBtn) refreshBtn.addEventListener('click', (e) => { loadTickets(); });
+    function filterDeviceOptions() {
+      const deviceSelectEl = document.getElementById('device-filter');
+      if (!deviceSelectEl) return;
+      const facilityVal = facilityEl ? facilityEl.value : '';
+      Array.from(deviceSelectEl.options).forEach(opt => {
+        const dept = opt.dataset.dept || '';
+        if (facilityVal && dept && String(dept) !== String(facilityVal)) {
+          opt.hidden = true;
+        } else {
+          opt.hidden = false;
+        }
+      });
+    }
+
+    if (searchEl) searchEl.addEventListener('input', () => debouncedLoad());
+    if (facilityEl) facilityEl.addEventListener('change', () => { filterDeviceOptions(); loadTickets(); });
+    if (deviceEl) deviceEl.addEventListener('change', () => loadTickets());
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+      if (searchEl) searchEl.value = '';
+      if (facilityEl) facilityEl.value = '';
+      if (deviceEl) deviceEl.value = '';
+      loadTickets();
+    });
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadFilters();
+      loadTickets();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+</head>
+<body class="flex bg-gray-100 text-gray-800 min-h-screen">
+
+  {% include 'sidebar.html' %}
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 ml-64 p-8 space-y-8 overflow-y-auto">
+
+    <!-- HOME PAGE -->
+    <section id="homePage">
+      <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+        <h2 class="text-3xl font-bold text-blue-600 mb-4">Welcome, Admin!</h2>
+        <p class="text-gray-600">
+          Use the sidebar to navigate your management tools.  
+          Click “Inventory” to view and manage PCs and items.
+        </p>
+      </div>
+    </section>
+
+    <!-- INVENTORY PAGE (combined Inventory + Items) -->
+    <section id="inventoryPage" class="hidden">
+      <div class="flex flex-col md:flex-row gap-6">
+        <!-- INNER SIDEBAR -->
+        <aside class="md:w-64 bg-[#1E293B] text-gray-100 rounded-xl p-4 shadow-md">
+          <div class="text-center mb-6">
+            <h3 class="text-xl font-bold">Inventory Panel</h3>
+          </div>
+          <nav class="flex flex-col gap-2">
+            <button onclick="showInventorySection('inventorySection')" id="inventoryTab"
+                    class="flex items-center px-4 py-3 rounded-lg font-medium text-gray-200 hover:bg-blue-600/40 hover:text-white">
+              <i data-lucide="cpu" class="w-5 h-5 mr-3"></i> Manage PC
+            </button>
+            <button onclick="showInventorySection('itemsSection')" id="itemsTab"
+                    class="flex items-center px-4 py-3 rounded-lg font-medium text-gray-200 hover:bg-blue-600/40 hover:text-white">
+              <i data-lucide="package" class="w-5 h-5 mr-3"></i> Manage Items
+            </button>
+          </nav>
+        </aside>
+
+        <!-- MAIN INVENTORY CONTENT -->
+        <div class="flex-1 bg-white rounded-xl shadow-lg p-6">
+          <!-- INVENTORY SECTION -->
+          <section id="inventorySection">
+            <h3 class="text-xl font-bold text-blue-600 mb-4 flex items-center gap-2">
+              <i data-lucide="cpu" class="w-6 h-6"></i> PC Inventory
+            </h3>
+
+            {% if pc_list|length == 0 %}
+            <div class="bg-gray-200 text-gray-600 p-4 rounded-lg text-center">No PCs found.</div>
+            {% else %}
+            <div class="overflow-x-auto rounded-xl bg-white shadow">
+              <table class="min-w-full border border-gray-200 text-sm text-gray-800">
+                <thead class="bg-gray-200 text-gray-700">
+                  <tr>
+                    <th class="px-4 py-2 border-b text-left">PC Name</th>
+                    <th class="px-4 py-2 border-b text-left">PC ID</th>
+                    <th class="px-4 py-2 border-b text-left">Department</th>
+                    <th class="px-4 py-2 border-b text-left">Status</th>
+                    <th class="px-4 py-2 border-b text-left">Note</th>
+                    <th class="px-4 py-2 border-b text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for pc in pc_list %}
+                  <tr class="hover:bg-gray-100 transition">
+                    <td class="px-4 py-2 border-b">{{ pc.pcname }}</td>
+                    <td class="px-4 py-2 border-b">{{ pc.pcid }}</td>
+                    <td class="px-4 py-2 border-b">{{ pc.department_name }}</td>
+                    <td class="px-4 py-2 border-b">{{ pc.status }}</td>
+                    <td class="px-4 py-2 border-b">{{ pc.note }}</td>
+                    <td class="px-4 py-2 border-b flex gap-2">
+                      <button onclick='openPcModal({{ pc|tojson|safe }})'
+                              class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs shadow">Edit</button>
+                      <form action="{{ url_for('manage_pc_bp.delete_pc', pcid=pc.pcid) }}" method="post"
+                            onsubmit="return confirm('Delete this PC?');">
+                        <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs shadow">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% endif %}
+          </section>
+
+          <!-- MANAGE ITEMS SECTION -->
+          <section id="itemsSection" class="hidden">
+            <h3 class="text-xl font-bold text-blue-600 mb-4 flex items-center gap-2">
+              <i data-lucide="package" class="w-6 h-6"></i> Manage Items
+            </h3>
+
+            {% if item_list|length == 0 %}
+            <div class="bg-gray-200 text-gray-600 p-4 rounded-lg text-center">No items found.</div>
+            {% else %}
+            <div class="overflow-x-auto rounded-xl bg-white shadow">
+              <table class="min-w-full border border-gray-200 text-sm text-gray-800">
+                <thead class="bg-gray-200 text-gray-700">
+                  <tr>
+                    <th class="px-4 py-2 border-b text-left">Item Name</th>
+                    <th class="px-4 py-2 border-b text-left">Category</th>
+                    <th class="px-4 py-2 border-b text-left">Quantity</th>
+                    <th class="px-4 py-2 border-b text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in item_list %}
+                  <tr class="hover:bg-gray-100 transition">
+                    <td class="px-4 py-2 border-b">{{ item.name }}</td>
+                    <td class="px-4 py-2 border-b">{{ item.category }}</td>
+                    <td class="px-4 py-2 border-b">{{ item.quantity }}</td>
+                    <td class="px-4 py-2 border-b flex gap-2">
+                      <button onclick='openItemModal({{ item|tojson|safe }})'
+                              class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs shadow">Edit</button>
+                      <form action="{{ url_for('manage_item_bp.delete_item', item_id=item.id) }}" method="post"
+                            onsubmit="return confirm('Delete this item?');">
+                        <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs shadow">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% endif %}
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPORTS PAGE -->
+    <section id="reportsPage" class="hidden">
+      <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+        <h2 class="text-2xl font-bold text-blue-600 mb-4">Reports</h2>
+        <p class="text-gray-600">Reports section under development.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Show different main pages (Home, Inventory, Reports)
+    function showPage(id) {
+      document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    // Show inner sections (Inventory / Manage Items)
+    function showInventorySection(id) {
+      document.querySelectorAll('#inventoryPage section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

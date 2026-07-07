@@ -1,0 +1,874 @@
+<!-- Lucide Icons -->
+{% include 'includes/lucide.html' %}
+
+<!-- PC Modal -->
+<div id="pcModal" class="hidden fixed inset-0 inventory-modal-backdrop flex items-center justify-center z-50 transition-all duration-300 p-4">
+  <div id="pcModalContent" class="bg-white p-8 rounded-2xl w-full max-w-5xl shadow-2xl overflow-y-auto max-h-[90vh] transform scale-95 transition-transform duration-300">
+
+    <!-- Header -->
+    <div class="pc-modal-header flex items-center justify-between mb-6 border-b pb-3">
+      <div class="flex items-center gap-3">
+        <i data-lucide="computer" class="w-6 h-6 text-blue-600"></i>
+        <h3 id="modalTitle" class="text-2xl font-semibold text-blue-600">Add PC</h3>
+      </div>
+      <button type="button" onclick="closePcModal()" class="pc-modal-close text-gray-500 hover:text-gray-700 transition">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+    </div>
+
+    <!-- Form -->
+    <form id="pcForm" class="space-y-6">
+      <input type="hidden" id="modalPcId" name="pcid">
+
+      <!-- Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="label">PC Name</label>
+          <input type="text" id="modalPcName" name="pcname" required class="input">
+        </div>
+
+        <div>
+          <label class="label">Office and Facility</label>
+          <select id="modalDepartment" name="department_id" required class="input">
+            <option value="">Select Office and Facility</option>
+            {% for dep in departments %}
+            <option value="{{ dep.department_id }}">{{ dep.department_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Location removed per UI change -->
+
+        <div>
+          <label class="label">Quantity</label>
+          <input type="number" id="modalQuantity" name="quantity" min="1" value="1" class="input">
+        </div>
+
+        <div>
+          <label class="label">Acquisition Cost (₱)</label>
+          <input type="number" id="modalAcquisitionCost" name="acquisition_cost" step="0.01" min="0" class="input" placeholder="e.g., 35000">
+        </div>
+
+        <div>
+          <label class="label">Date Acquired</label>
+          <input type="date" id="modalDateAcquired" name="date_acquired" class="input">
+        </div>
+
+        <div>
+          <label class="label">Duration (Years)</label>
+          <input 
+            type="number" 
+            id="modalMaintenanceInterval" 
+            name="maintenance_interval_days" 
+            min="1"
+            step="1"
+            class="input"
+            placeholder="e.g., 5">
+        </div>
+
+        <div>
+          <label class="label">Accountable</label>
+          <input type="text" id="modalAccountable" name="accountable" class="input" placeholder="e.g., John Doe">
+        </div>
+
+        <div>
+          <label class="label">Serial No</label>
+          <input type="text" id="modalSerialNo" name="serial_no" class="input" placeholder="e.g., SN-123456" readonly>
+        </div>
+
+        <div>
+          <label class="label">Municipal Serial No</label>
+          <input type="text" id="modalMunicipalSerialNo" name="municipal_serial_no" class="input" placeholder="e.g., MSN-987654">
+        </div>
+
+        <div>
+          <label class="label">Status</label>
+          <select id="modalStatus" name="status" class="input">
+              <option value="Available">Available</option>
+              <option value="Inactive">Inactive</option>
+              <option value="IN USE">IN USE</option>
+              <option value="Damaged">Damaged</option>
+            </select>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="label">Note</label>
+          <textarea id="modalNote" name="note" rows="2" class="input"></textarea>
+        </div>
+      </div>
+
+      <hr class="my-6 border-gray-300">
+
+      <!-- PC Parts -->
+      <div>
+        <div class="flex items-center gap-2 mb-3">
+          <i data-lucide="cpu" class="w-5 h-5 text-blue-600"></i>
+          <h4 class="text-lg font-semibold text-blue-600">PC Parts</h4>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {% for part in ['Monitor','Motherboard', 'RAM', 'Storage', 'GPU', 'PSU', 'Casing', 'Mouse', 'Keyboard', 'Other Parts'] %}
+          <div>
+            <label class="label">{{ part }}</label>
+            <input type="text" id="{{ part|lower|replace(' ', '_') }}" name="{{ part|lower|replace(' ', '_') }}" class="input">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Batch Add -->
+      <div id="batchAddSection" class="hidden mt-4">
+        <label class="label">Number of identical PCs to add</label>
+        <input type="number" id="batchCount" name="batch_count" value="1" min="1" class="input">
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex justify-end gap-3 mt-8 pt-4 border-t">
+        <button 
+          id="batchAddBtn"
+          type="button" 
+          onclick="toggleBatchAdd()" 
+          class="btn-blue">
+          <i data-lucide="layers" class="w-4 h-4"></i> Batch Add
+        </button>
+
+        <div class="flex gap-3">
+          <button type="button" onclick="closePcModal()" class="btn-gray">
+            <i data-lucide="x-circle" class="w-4 h-4"></i> Cancel
+          </button>
+          <button id="modalSubmitBtn" type="submit" class="btn-blue">
+            <i data-lucide="save" class="w-4 h-4"></i> Add PC
+          </button>
+        </div>
+        
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #374151; /* Dark gray for labels */
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  color: #000000; /* Text color black */
+  placeholder-color: #9ca3af;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input::placeholder {
+  color: #9ca3af; /* Gray placeholder */
+}
+
+.input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); /* Blue focus ring */
+  outline: none;
+}
+
+.btn-blue {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #2563eb;
+  color: white;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.btn-blue:hover {
+  background-color: #1e40af;
+}
+
+.btn-gray {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #9ca3af;
+  color: white;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.btn-gray:hover {
+  background-color: #6b7280;
+}
+
+.pc-modal-header {
+  margin: -2rem -2rem 1.5rem;
+  padding: 1rem 1.35rem;
+  border-bottom: 0;
+  border-radius: 0.85rem 0.85rem 0 0;
+  background: linear-gradient(112deg, #2563eb 0%, #4f46e5 58%, #4338ca 100%);
+  color: #ffffff;
+}
+
+.pc-modal-header i,
+.pc-modal-header h3 {
+  color: #ffffff !important;
+}
+
+.pc-modal-close {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.16s ease, background-color 0.16s ease;
+}
+
+.pc-modal-close:hover {
+  transform: rotate(90deg);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-open-pc #pcPaginationNav,
+.modal-open-pc #pcPaginationSummary,
+.modal-open-pc #pcPerPageForm {
+  display: none !important;
+}
+
+/* Replace Part autocomplete styles */
+.rp-field { position: relative; }
+.rp-suggestions {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+  border-radius: 0.5rem;
+  max-height: 260px;
+  overflow: auto;
+  z-index: 1100;
+  padding: 0.25rem;
+}
+.rp-suggestion {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-radius: 0.375rem;
+}
+.rp-suggestion:hover,
+.rp-suggestion[aria-selected="true"] {
+  background: #f8fafc;
+}
+.rp-suggestion-label {
+  color: #0f172a;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rp-suggestion-id {
+  color: #64748b;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+.rp-suggestions::-webkit-scrollbar {
+  width: 8px;
+}
+.rp-suggestions::-webkit-scrollbar-thumb {
+  background: rgba(100,116,139,0.24);
+  border-radius: 9999px;
+}
+
+/* Scoped styles for Replace Part modal enhancements */
+#replacePartModalContent {
+  --rp-input-padding: 0.78rem 1rem;
+  --rp-input-font: 1rem;
+}
+
+#replacePartModalContent .rp-input {
+  padding: var(--rp-input-padding);
+  font-size: var(--rp-input-font);
+  border-radius: 0.75rem;
+  border: 1px solid #e6eef9;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+#replacePartModalContent .label {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+#replacePartModalContent .rp-field { margin-bottom: 0.25rem; }
+
+/* Larger, more prominent action buttons only inside replace modal */
+#replacePartModalContent .rp-btn {
+  padding: 0.72rem 1.1rem;
+  font-size: 0.98rem;
+  border-radius: 0.675rem;
+  box-shadow: 0 8px 18px rgba(14,30,70,0.08);
+}
+
+#replacePartModalContent .btn-blue {
+  background: linear-gradient(140deg, #2563eb 0%, #4338ca 100%);
+  border: 1px solid rgba(37,99,235,0.18);
+}
+
+#replacePartModalContent .btn-gray {
+  background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%);
+  color: #111827;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Make suggestions feel like cards */
+.rp-suggestion { transition: box-shadow 0.14s ease, transform 0.08s ease; }
+.rp-suggestion:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(2,6,23,0.06); }
+
+@media (min-width: 768px) {
+  #replacePartModalContent .grid { gap: 1rem; }
+}
+</style>
+
+<!-- Replace Part Modal -->
+<div id="replacePartModal" class="hidden fixed inset-0 inventory-modal-backdrop flex items-center justify-center z-50 transition-all duration-300 p-4">
+  <div id="replacePartModalContent" class="bg-white p-8 rounded-2xl w-full max-w-4xl shadow-2xl overflow-y-auto max-h-[90vh] transform scale-95 transition-transform duration-300">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="text-2xl font-semibold">Replace PC Part</h3>
+        <p class="text-sm text-gray-500 mt-1">Choose replacement parts from your item catalog. Click an entry to select.</p>
+      </div>
+      <button type="button" onclick="closeReplacePartModal()" class="text-gray-500 hover:text-gray-700">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <form id="replacePartForm" class="space-y-4">
+      <input type="hidden" id="replacePcId" name="pcid">
+      <div id="replacePcIdWrapper" class="hidden">
+        <label class="label">PC ID</label>
+        <input type="text" id="replacePcIdInput" class="input" placeholder="Enter PC ID (e.g., 123)">
+      </div>
+
+      <div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="rp-field">
+            <label class="label">Monitor</label>
+            <input type="text" id="new-monitor" class="input rp-input" placeholder="">
+            <div class="rp-suggestions" id="sug-monitor" aria-hidden="true"></div>
+          </div>
+          <div class="rp-field">
+            <label class="label">Motherboard</label>
+            <input type="text" id="new-motherboard" class="input rp-input" placeholder="">
+            <div class="rp-suggestions" id="sug-motherboard" aria-hidden="true"></div>
+          </div>
+          <div class="rp-field">
+            <label class="label">RAM</label>
+            <input type="text" id="new-ram" class="input rp-input" placeholder="">
+            <div class="rp-suggestions" id="sug-ram" aria-hidden="true"></div>
+          </div>
+          <div class="rp-field">
+            <label class="label">Storage</label>
+            <input type="text" id="new-storage" class="input rp-input" placeholder="">
+            <div class="rp-suggestions" id="sug-storage" aria-hidden="true"></div>
+          </div>
+          <div class="rp-field">
+            <label class="label">GPU</label>
+            <input type="text" id="new-gpu" class="input rp-input" placeholder="">
+            <div class="rp-suggestions" id="sug-gpu" aria-hidden="true"></div>
+          </div>
+          <div class="rp-field">
+            <label class="label">PSU</label>
+            <input type="text" id="new-psu" class="input rp-input" placeholder="">
+            <div class="rp-suggestions" id="sug-psu" aria-hidden="true"></div>
+          </div>
+          <div class="rp-field">
+            <label class="label">Casing</label>
+            <input type="text" id="new-casing" class="input rp-input" placeholder="">
+            <div class="rp-suggestions" id="sug-casing" aria-hidden="true"></div>
+          </div>
+          <div class="rp-field">
+            <label class="label">Mouse</label>
+            <input type="text" id="new-mouse" class="input rp-input" placeholder="">
+            <div class="rp-suggestions" id="sug-mouse" aria-hidden="true"></div>
+          </div>
+          <div class="rp-field">
+            <label class="label">Keyboard</label>
+            <input type="text" id="new-keyboard" class="input rp-input" placeholder="">
+            <div class="rp-suggestions" id="sug-keyboard" aria-hidden="true"></div>
+          </div>
+          <div class="rp-field">
+            <label class="label">Other Parts</label>
+            <input type="text" id="new-other_parts" class="input rp-input" placeholder="">
+            <div class="rp-suggestions" id="sug-other_parts" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 pt-4">
+        <button type="button" onclick="closeReplacePartModal()" class="btn-gray rp-btn">Cancel</button>
+        <button type="submit" class="btn-blue rp-btn"><i data-lucide="save" class="w-4 h-4"></i> Replace</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+
+let isEditMode = false;
+
+function updateBatchUI() {
+  const batchBtn = document.getElementById("batchAddBtn");
+  const batchInput = document.getElementById("batchCount");
+  const batchSection = document.getElementById("batchAddSection");
+
+  if (isEditMode) {
+    batchBtn.disabled = true;
+    batchBtn.classList.add("opacity-50", "cursor-not-allowed");
+
+    batchInput.disabled = true;
+    batchSection.classList.add("hidden"); // auto-hide
+  } else {
+    batchBtn.disabled = false;
+    batchBtn.classList.remove("opacity-50", "cursor-not-allowed");
+
+    batchInput.disabled = false;
+  }
+}
+
+function convertStoredDaysToDisplayYears(rawValue) {
+  const numericValue = Number(rawValue);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) return "";
+  if (numericValue >= 365) {
+    return String(Math.max(1, Math.round(numericValue / 365)));
+  }
+  return String(Math.round(numericValue));
+}
+
+function convertDisplayYearsToStoredDays(rawValue) {
+  const numericValue = Number(rawValue);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) return "";
+  return String(Math.round(numericValue * 365));
+}
+
+async function openPcModal(pcData = null) {
+  const modal = document.getElementById('pcModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const form = document.getElementById('pcForm');
+  const submitBtn = document.getElementById('modalSubmitBtn');
+  const departmentSelect = document.getElementById('modalDepartment');
+  const res = await fetch('/notifications/get_notifications');
+
+  // Reset form first
+  form.reset();
+
+  // 🔹 Fetch departments dynamically
+  try {
+    const depResponse = await fetch("/get-departments");
+    const departments = await depResponse.json();
+
+    // Clear and repopulate dropdown
+    departmentSelect.innerHTML = '<option value="">Select Department</option>';
+    departments.forEach(dep => {
+      const opt = document.createElement("option");
+      opt.value = dep.department_id;
+      opt.textContent = dep.department_name;
+      departmentSelect.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("❌ Failed to load departments:", err);
+  }
+
+  // 🟦 EDIT MODE
+  if (pcData) {
+    isEditMode = true;
+    modalTitle.textContent = "Edit PC";
+     
+    form.action = "{{ url_for('manage_pc_bp.update_pcinfofull') }}";
+    submitBtn.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4"></i> Update PC';
+
+    const fieldMap = {
+      pcid: 'modalPcId',
+      pcname: 'modalPcName',
+      department_id: 'modalDepartment',
+      /* location removed */
+      quantity: 'modalQuantity',
+      acquisition_cost: 'modalAcquisitionCost',
+      date_acquired: 'modalDateAcquired',
+      accountable: 'modalAccountable',
+      serial_no: 'modalSerialNo',
+      municipal_serial_no: 'modalMunicipalSerialNo',
+      status: 'modalStatus',
+      note: 'modalNote',
+      maintenance_interval_days: 'modalMaintenanceInterval', // ⭐ ADD THIS
+      monitor: 'monitor',
+      motherboard: 'motherboard',
+      ram: 'ram',
+      storage: 'storage',
+      gpu: 'gpu',
+      psu: 'psu',
+      casing: 'casing',
+      mouse: 'mouse',
+      keyboard: 'keyboard',
+      other_parts: 'other_parts'
+    };
+
+    // Try to read current table row attributes as a fallback. When some
+    // part columns don't exist in the schema (e.g. `mouse`) the server
+    // response won't include them. The replace UI writes `data-*` attrs
+    // on the row; prefer those when server values are missing.
+    let tableRow = null;
+    if (pcData && pcData.pcid) {
+      const cb = document.querySelector(`#pcTableBody input.pc-checkbox[value="${pcData.pcid}"]`);
+      tableRow = cb ? cb.closest('tr') : null;
+    }
+
+    // If we have a recent replacement cached (from replace_part.js), merge
+    // those values into the pcData for display. This helps when the DB
+    // schema lacks certain columns and values were cached client-side.
+    try {
+      if (window.__lastPcReplacements && pcData && pcData.pcid && window.__lastPcReplacements[pcData.pcid]) {
+        const cacheEntry = window.__lastPcReplacements[pcData.pcid];
+        const recent = cacheEntry && cacheEntry.replacements ? cacheEntry.replacements : cacheEntry;
+        for (const k of Object.keys(recent || {})) {
+          if (pcData[k] === undefined || pcData[k] === null || pcData[k] === '') {
+            pcData[k] = recent[k];
+          }
+        }
+        // remove cache so it doesn't persist indefinitely
+        try { delete window.__lastPcReplacements[pcData.pcid]; } catch (e) { /* ignore */ }
+      }
+    } catch (e) {
+      /* ignore */
+    }
+
+    for (const [key, inputId] of Object.entries(fieldMap)) {
+      const element = document.getElementById(inputId);
+      if (!element) continue;
+
+      let value = (pcData && (pcData[key] !== undefined && pcData[key] !== null)) ? pcData[key] : '';
+
+      // If server didn't return a value, try DOM row `data-*` attribute
+      if ((value === '' || value === null || value === undefined) && tableRow) {
+        try {
+          const attrName = 'data-' + key.replace(/_/g, '-');
+          const attrVal = tableRow.getAttribute(attrName);
+          if (attrVal !== null && attrVal !== undefined) {
+            value = attrVal;
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      if (key === 'date_acquired' && value) {
+        const dateObj = new Date(value);
+        value = dateObj.toISOString().split('T')[0];
+      } else if (key === 'maintenance_interval_days' && value) {
+        value = convertStoredDaysToDisplayYears(value);
+      }
+
+      element.value = value ?? '';
+    }
+
+    // 🧩 Select department by ID
+    if (pcData.department_id) {
+      departmentSelect.value = pcData.department_id;
+    }
+
+  } else {
+    // 🟩 ADD MODE
+    
+    modalTitle.textContent = "Add PC";
+    isEditMode = false;
+    form.action = "{{ url_for('manage_pc_bp.add_pcinfofull') }}";
+    submitBtn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Add PC';
+
+    const serialField = document.getElementById('modalSerialNo');
+    if (serialField && (!serialField.value || serialField.value.trim() === '')) {
+      serialField.value = generateSerial("SN");
+    }
+
+    const municipalField = document.getElementById('modalMunicipalSerialNo');
+    if (municipalField && (!municipalField.value || municipalField.value.trim() === '')) {
+      municipalField.value = generateSerial("MSN");
+    }
+  }
+
+  updateBatchUI();
+
+  // 🪟 Show modal
+  modal.classList.remove('hidden');
+  // Add body class to hide underlying pagination while modal is open
+  document.body.classList.add('modal-open-pc');
+  setTimeout(() => document.getElementById('pcModalContent').classList.add('scale-100'), 50);
+  lucide.createIcons();
+  
+}
+function closePcModal() {
+  const modal = document.getElementById('pcModal');
+  const content = document.getElementById('pcModalContent');
+  if (content) {
+    content.classList.remove('scale-100');
+  }
+  if (modal) {
+    modal.classList.add('hidden');
+    // Remove body class when closing modal so pagination returns
+    document.body.classList.remove('modal-open-pc');
+  }
+}
+
+function refreshPcListAfterSubmit() {
+  if (typeof window.refreshPcTableWithoutReload === "function") {
+    window.refreshPcTableWithoutReload();
+  }
+  // Also refresh the Manage Items table so status changes are visible immediately
+  if (typeof window.refreshItemTableWithoutReload === "function") {
+    window.refreshItemTableWithoutReload();
+  }
+}
+document.getElementById("pcForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const form = e.target;
+  const formData = new FormData(form);
+  const durationYears = formData.get("maintenance_interval_days");
+  const durationDays = convertDisplayYearsToStoredDays(durationYears);
+  if (durationDays) {
+    formData.set("maintenance_interval_days", durationDays);
+  }
+
+  if (!validatePcForm(formData)) {
+    return;
+  }
+  const pcid = formData.get("pcid"); // will be filled during edit
+  const batchCount = parseInt(document.getElementById("batchCount").value || "1", 10);
+
+  // 🟡 If editing an existing PC
+  if (pcid) {
+    try {
+      // Debug: log submitted form values so we can confirm the `status` being sent
+      try {
+        console.debug("Submitting PC update - form entries:", Object.fromEntries(formData.entries()));
+      } catch (e) {
+        console.debug("Submitting PC update - failed to enumerate FormData", e);
+      }
+
+      const res = await fetch("{{ url_for('manage_pc_bp.update_pcinfofull') }}", {
+        method: "POST",
+        body: formData
+      });
+
+      try {
+        const data = await res.json();
+        console.debug("Update response:", res.status, data);
+        if (res.ok) {
+          showPopup("success", "PC updated successfully!");
+
+          // Optimistic UI: update status cell in table row for this PC if present
+          try {
+            const submittedStatus = formData.get("status");
+            const submittedPcid = formData.get("pcid");
+            if (submittedPcid && submittedStatus) {
+              const checkbox = document.querySelector(`#pcTableBody input.pc-checkbox[value="${submittedPcid}"]`);
+              if (checkbox) {
+                const row = checkbox.closest('tr');
+                if (row) {
+                  const tds = row.querySelectorAll('td');
+                  const statusCellIndex = 9; // 0-based index of status column in table
+                  if (tds && tds.length > statusCellIndex) {
+                    tds[statusCellIndex].textContent = submittedStatus;
+                    try { tds[statusCellIndex].className = "px-4 py-2 border-b font-medium " + getPcStatusTextClass(submittedStatus); } catch (e) { /* ignore */ }
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.debug('Could not update table DOM after PC update', e);
+          }
+
+          closePcModal();
+          refreshPcListAfterSubmit();
+        } else {
+          showPopup("error", data.error || "Failed to update PC.");
+        }
+      } catch (parseErr) {
+        console.warn("Could not parse update response JSON", parseErr);
+        if (res.ok) {
+          showPopup("success", "PC updated successfully!");
+
+          // Optimistic UI fallback: update status in table DOM
+          try {
+            const submittedStatus = formData.get("status");
+            const submittedPcid = formData.get("pcid");
+            if (submittedPcid && submittedStatus) {
+              const checkbox = document.querySelector(`#pcTableBody input.pc-checkbox[value="${submittedPcid}"]`);
+              if (checkbox) {
+                const row = checkbox.closest('tr');
+                if (row) {
+                  const tds = row.querySelectorAll('td');
+                  const statusCellIndex = 9;
+                  if (tds && tds.length > statusCellIndex) {
+                    tds[statusCellIndex].textContent = submittedStatus;
+                    try { tds[statusCellIndex].className = "px-4 py-2 border-b font-medium " + getPcStatusTextClass(submittedStatus); } catch (e) { /* ignore */ }
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.debug('Could not update table DOM after PC update (fallback)', e);
+          }
+
+          closePcModal();
+          refreshPcListAfterSubmit();
+        } else {
+          showPopup("error", "Failed to update PC.");
+        }
+      }
+    } catch (err) {
+      console.error("❌ Update error:", err);
+      showPopup("error", "Something went wrong while updating PC.");
+    }
+    return; // Stop here
+  }
+
+  // 🟩 ADD MODE (supports batch add)
+  if (batchCount > 1) {
+    // Batch add logic...
+    const baseName = formData.get("pcname").trim() || "PC";
+    const batchPcs = [];
+
+    for (let i = 1; i <= batchCount; i++) {
+      const pcCopy = Object.fromEntries(formData.entries());
+      pcCopy.pcname = `${baseName}-${String(i).padStart(2, "0")}`;
+      pcCopy.serial_no = generateSerial("SN");
+      pcCopy.municipal_serial_no = generateSerial("MSN");
+      batchPcs.push(pcCopy);
+    }
+
+    try {
+      const res = await fetch("{{ url_for('manage_pc_bp.batch_add_pcinfofull') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(batchPcs)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showPopup("success", `${batchCount} PCs added successfully!`);
+        closePcModal();
+        refreshPcListAfterSubmit();
+      } else {
+        showPopup("error", data.error || "Batch add failed.");
+      }
+    } catch (err) {
+      console.error("❌ Batch Add Error:", err);
+      showPopup("error", "Something went wrong during batch add.");
+    }
+
+  } else {
+    // Single Add
+    try {
+      const res = await fetch("{{ url_for('manage_pc_bp.add_pcinfofull') }}", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showPopup("error", data.error || "Failed to add PC.");
+        openPcModal(Object.fromEntries(formData));
+        return;
+      }
+
+      showPopup("success", data.message);
+      closePcModal();
+      refreshPcListAfterSubmit();
+    } catch (err) {
+      console.error("❌ Submission error:", err);
+      showPopup("error", "Something went wrong while adding PC.");
+    }
+  }
+});
+
+
+function showPopup(type, message) {
+  if (typeof showToast === "function") {
+    showToast(message, type === "error" ? "error" : "success");
+    return;
+  }
+
+  const popup = document.createElement("div");
+  popup.className = `fixed top-5 right-5 px-4 py-3 rounded-lg shadow-lg text-white z-50 ${
+    type === "error" ? "bg-red-600" : "bg-green-600"
+  }`;
+  popup.textContent = message;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 3000);
+}
+
+function toggleBatchAdd() {
+  const batchSection = document.getElementById("batchAddSection");
+  batchSection.classList.toggle("hidden");
+}
+
+/** Helper to generate unique serials */
+function generateSerial(prefix = "SN") {
+  const randomPart = Math.floor(100000 + Math.random() * 900000); // 6 digits
+  return `${prefix}-${Date.now()}-${randomPart}`;
+}
+function validatePcForm(formData) {
+  const requiredFields = [
+    { name: "pcname", label: "PC Name" },
+    { name: "department_id", label: "Department" },
+    { name: "date_acquired", label: "Date Acquired" },
+    { name: "status", label: "Status" }
+  ];
+
+  for (const field of requiredFields) {
+    const value = formData.get(field.name);
+
+    if (!value || value.trim() === "") {
+      showPopup("error", `${field.label} is required.`);
+      return false;
+    }
+  }
+
+  // Require at least one identifier
+  const serialVal = (formData.get('serial_no') || '').trim();
+  const municipalVal = (formData.get('municipal_serial_no') || '').trim();
+  if (!serialVal && !municipalVal) {
+    showPopup('error', 'Provide at least Serial No or Municipal Serial No.');
+    return false;
+  }
+// Quantity validation
+  const quantity = parseInt(formData.get("quantity"), 10);
+  if (isNaN(quantity) || quantity < 1) {
+    showPopup("error", "Quantity must be at least 1.");
+    return false;
+  }
+
+  // Acquisition cost validation
+  const cost = parseFloat(formData.get("acquisition_cost"));
+  if (cost < 0) {
+    showPopup("error", "Acquisition cost cannot be negative.");
+    return false;
+  }
+
+  return true;
+}
+</script>
+

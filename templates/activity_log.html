@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activity Log</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+  <style>
+    .log-table-shell {
+      border: 1px solid #d9e4f2;
+      border-radius: 1rem;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      box-shadow: 0 16px 30px -24px rgba(15, 23, 42, 0.5);
+      overflow: hidden;
+    }
+
+    .log-table-scroll {
+      max-height: calc(100vh - 405px);
+      overflow: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .log-table-scroll::-webkit-scrollbar {
+      height: 10px;
+      width: 10px;
+    }
+
+    .log-table-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 999px;
+    }
+
+    .log-table-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 999px;
+    }
+
+    .log-table {
+      width: 100%;
+      min-width: 1100px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .log-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+      color: #334155;
+      font-size: 0.67rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.75rem 0.8rem;
+      border-bottom: 1px solid #d8e2f0;
+      white-space: nowrap;
+    }
+
+    .log-table tbody tr:nth-child(even) {
+      background: #fbfdff;
+    }
+
+    .log-table tbody tr:hover {
+      background: #edf4ff;
+    }
+
+    .log-table tbody td {
+      padding: 0.68rem 0.8rem;
+      border-bottom: 1px solid #edf2f7;
+      vertical-align: top;
+    }
+
+    .log-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .truncate-col {
+      max-width: 260px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .log-chip {
+      display: inline-flex;
+      align-items: center;
+      max-width: 210px;
+      padding: 0.28rem 0.58rem;
+      border-radius: 9999px;
+      border: 1px solid #dbe6f4;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 0.72rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .log-chip.log-chip-action {
+      border-color: #c7d2fe;
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .log-chip.log-chip-module {
+      border-color: #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .method-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.2rem 0.52rem;
+      border-radius: 9999px;
+      border: 1px solid transparent;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .method-pill.method-get {
+      background: #dcfce7;
+      color: #166534;
+      border-color: #86efac;
+    }
+
+    .method-pill.method-post {
+      background: #dbeafe;
+      color: #1d4ed8;
+      border-color: #93c5fd;
+    }
+
+    .method-pill.method-put {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #fcd34d;
+    }
+
+    .method-pill.method-patch {
+      background: #e0e7ff;
+      color: #4338ca;
+      border-color: #a5b4fc;
+    }
+
+    .method-pill.method-delete {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: #fca5a5;
+    }
+
+    .method-pill.method-default {
+      background: #e2e8f0;
+      color: #334155;
+      border-color: #cbd5e1;
+    }
+
+    .route-col {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      font-size: 0.74rem;
+    }
+
+    .quick-search-card {
+      border: 1px solid #d7e4f3;
+      border-radius: 0.9rem;
+      background:
+        radial-gradient(140% 120% at 100% 0%, rgba(191, 219, 254, 0.3) 0%, rgba(191, 219, 254, 0) 56%),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      box-shadow: 0 14px 26px -24px rgba(30, 64, 175, 0.65);
+    }
+
+    .quick-search-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-bottom: 0.58rem;
+      color: #334155;
+      font-size: 0.72rem;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .quick-search-label-dot {
+      width: 0.52rem;
+      height: 0.52rem;
+      border-radius: 9999px;
+      flex-shrink: 0;
+      background: linear-gradient(145deg, #2563eb 0%, #1d4ed8 100%);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .quick-search-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 27rem;
+    }
+
+    .quick-search-icon {
+      position: absolute;
+      left: 0.8rem;
+      top: 50%;
+      width: 1rem;
+      height: 1rem;
+      transform: translateY(-50%);
+      color: #64748b;
+      pointer-events: none;
+      transition: color 0.16s ease;
+    }
+
+    .quick-search-input {
+      width: 100%;
+      border: 1px solid #bfdbfe;
+      border-radius: 0.82rem;
+      padding: 0.6rem 4.6rem 0.6rem 2.45rem;
+      font-size: 0.9rem;
+      line-height: 1.2;
+      color: #1e293b;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      box-shadow: inset 0 1px 1px rgba(15, 23, 42, 0.05);
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+      outline: none;
+    }
+
+    .quick-search-input::placeholder {
+      color: #94a3b8;
+    }
+
+    .quick-search-input:hover {
+      border-color: #93c5fd;
+    }
+
+    .quick-search-input:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), inset 0 1px 1px rgba(15, 23, 42, 0.04);
+      background: #ffffff;
+    }
+
+    .quick-search-wrap:focus-within .quick-search-icon {
+      color: #2563eb;
+    }
+
+    .quick-search-clear {
+      position: absolute;
+      right: 0.42rem;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 1px solid #c7d2fe;
+      border-radius: 9999px;
+      padding: 0.2rem 0.56rem;
+      background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
+      color: #334155;
+      font-size: 0.68rem;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      transition: border-color 0.16s ease, color 0.16s ease, background-color 0.16s ease;
+    }
+
+    .quick-search-clear:hover {
+      border-color: #93c5fd;
+      color: #1d4ed8;
+      background: #eff6ff;
+    }
+
+    .quick-search-clear:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .quick-search-status {
+      margin-top: 0.56rem;
+      font-size: 0.74rem;
+      color: #64748b;
+    }
+
+    @media (max-width: 1024px) {
+      .log-table {
+        min-width: 960px;
+      }
+
+      .truncate-col {
+        max-width: 200px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .log-table {
+        min-width: 760px;
+      }
+
+      .log-table thead th,
+      .log-table tbody td {
+        padding: 0.58rem 0.62rem;
+      }
+
+      .truncate-col {
+        max-width: 170px;
+      }
+
+      .method-pill {
+        font-size: 0.63rem;
+      }
+    }
+
+    .filter-toast {
+      pointer-events: none;
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 90;
+      transform: translateY(8px);
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .filter-toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body class="flex min-h-screen bg-slate-100 text-slate-900">
+  {% include 'sidebar.html' %}
+
+  <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/50 z-40"></div>
+
+  <div id="filterToast" class="filter-toast">
+    <div class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 shadow-lg">
+      <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
+      <span id="filterToastText" class="text-sm font-semibold text-emerald-700">Filters applied</span>
+    </div>
+  </div>
+
+  <main class="flex-1 ml-0 md:ml-64 p-3 sm:p-4 lg:p-5 xl:p-6 transition-all duration-300">
+    <div class="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white rounded-3xl shadow-2xl px-4 py-4 sm:px-5 sm:py-5 mb-4 border border-blue-500/40">
+      <div class="pointer-events-none absolute -top-24 -right-20 h-56 w-56 rounded-full bg-white/15"></div>
+      <div class="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-blue-200/20"></div>
+
+      <div class="relative z-10 flex items-center justify-between gap-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <button id="sidebarToggle" class="md:hidden p-2 rounded-lg bg-white/15 border border-white/30 text-white hover:bg-white/25 transition">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+          <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+            <i data-lucide="history" class="w-6 h-6 text-white"></i>
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-xl sm:text-2xl font-bold tracking-tight">Activity Log</h2>
+            <p class="text-xs sm:text-sm text-blue-100">Audit trail for admin and staff actions</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <article class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+        <p class="text-xs uppercase tracking-wider text-slate-500">Total Records</p>
+        <p id="totalRecordsCount" class="text-2xl font-bold text-slate-800 mt-1">{{ total_items }}</p>
+      </article>
+      <article class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+        <p class="text-xs uppercase tracking-wider text-slate-500">Admin Logs</p>
+        <p id="adminLogsCount" class="text-2xl font-bold text-blue-700 mt-1">{{ admin_count }}</p>
+      </article>
+      <article class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+        <p class="text-xs uppercase tracking-wider text-slate-500">Staff Logs</p>
+        <p id="staffLogsCount" class="text-2xl font-bold text-emerald-700 mt-1">{{ staff_count }}</p>
+      </article>
+    </section>
+
+    <section class="bg-white rounded-2xl shadow-lg p-4 sm:p-5 lg:p-6 border border-slate-200">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <p class="text-sm text-slate-500">Refine results using the filter modal.</p>
+        <div class="flex items-center gap-2">
+          <button id="openFilterModalBtn" type="button" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            Filter
+          </button>
+          <span id="activeFilterCount" class="hidden text-xs font-semibold text-blue-700 bg-blue-100 border border-blue-200 rounded-full px-2.5 py-1">0 active</span>
+        </div>
+      </div>
+
+      {% set has_applied_filters = (applied_filters.log_date or applied_filters.search or applied_filters.role != 'all' or (applied_filters.per_page|string) != '20') %}
+      <div id="appliedFilterSummary" class="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 {% if not has_applied_filters %}hidden{% endif %}">
+        Applied: date=<span class="font-semibold text-slate-800">{{ applied_filters.log_date or 'none' }}</span>, search=<span class="font-semibold text-slate-800">{{ applied_filters.search or 'none' }}</span>, role=<span class="font-semibold text-slate-800">{{ applied_filters.role }}</span>, rows=<span class="font-semibold text-slate-800">{{ applied_filters.per_page }}</span>
+      </div>
+
+      <div class="mb-3">
+        <div class="quick-search-card p-3 sm:p-4">
+          <label for="activityQuickSearchInput" class="quick-search-label">
+            <span class="quick-search-label-dot"></span>
+            Quick Search
+          </label>
+          <div class="quick-search-wrap">
+            <i data-lucide="search" class="quick-search-icon"></i>
+            <input
+              id="activityQuickSearchInput"
+              type="text"
+              autocomplete="off"
+              placeholder="Search current page logs..."
+              class="quick-search-input"
+            >
+            <button
+              type="button"
+              id="activityQuickSearchClearBtn"
+              class="hidden quick-search-clear"
+            >
+              Clear
+            </button>
+          </div>
+          <p id="activityQuickSearchStatus" class="quick-search-status">Type to auto-filter current page.</p>
+        </div>
+      </div>
+
+      <div id="activityFilterModal" class="hidden fixed inset-0 z-[80]">
+        <div id="activityFilterBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-[1px]"></div>
+        <div class="relative z-10 flex min-h-full items-center justify-center p-4">
+          <div class="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50">
+              <div>
+                <h3 class="text-base font-bold text-slate-800">Activity Log Filters</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Apply filters to narrow down audit records.</p>
+              </div>
+              <button type="button" data-close-filter-modal class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <form id="activityLogFilterForm" method="get" action="{{ url_for('activity_log_bp.activity_log_page', _external=False) }}" class="p-5 space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label for="search" class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Search</label>
+                  <input
+                    id="search"
+                    name="search"
+                    value="{{ search }}"
+                    placeholder="Username, action, module, details"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label for="role" class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Role</label>
+                  <select
+                    id="role"
+                    name="role"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  >
+                    <option value="all" {% if role_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admin</option>
+                    <option value="staff" {% if role_filter == 'staff' %}selected{% endif %}>Staff</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="per_page" class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Rows</label>
+                  <select
+                    id="per_page"
+                    name="per_page"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  >
+                    {% for size in [10, 20, 50, 100] %}
+                      <option value="{{ size }}" {% if per_page == size %}selected{% endif %}>{{ size }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div>
+                  <label for="log_date" class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Date</label>
+                  <input
+                    id="log_date"
+                    name="log_date"
+                    type="date"
+                    value="{{ log_date or '' }}"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-end gap-2 pt-1">
+                <button id="resetFiltersBtn" type="button" class="inline-flex items-center justify-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-lg text-sm transition">
+                  <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                  Reset
+                </button>
+                <button type="button" data-close-filter-modal class="inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-100 text-slate-700 font-semibold px-4 py-2 rounded-lg text-sm border border-slate-300 transition">
+                  Cancel
+                </button>
+                <button id="filterBtn" type="submit" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition">
+                  <i data-lucide="search" class="w-4 h-4"></i>
+                  Apply Filter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div id="emptyLogState" class="bg-slate-100 text-slate-600 p-4 rounded-lg text-center {% if logs|length > 0 %}hidden{% endif %}">
+        No activity logs found.
+      </div>
+
+      <div id="logTableWrapper" class="log-table-shell {% if logs|length == 0 %}hidden{% endif %}">
+        <div class="log-table-scroll">
+          <table class="log-table w-full text-sm text-slate-800">
+            <thead class="text-[11px] uppercase tracking-wide text-slate-600">
+              <tr>
+                <th class="px-3 py-3 text-left border-b border-slate-200 whitespace-nowrap">Date & Time</th>
+                <th class="px-3 py-3 text-left border-b border-slate-200">Username</th>
+                <th class="px-3 py-3 text-left border-b border-slate-200">Role</th>
+                <th class="px-3 py-3 text-left border-b border-slate-200">Action</th>
+                <th class="px-3 py-3 text-left border-b border-slate-200">Module</th>
+                <th class="px-3 py-3 text-left border-b border-slate-200">Details</th>
+                <th class="px-3 py-3 text-left border-b border-slate-200">Method</th>
+                <th class="px-3 py-3 text-left border-b border-slate-200">Route</th>
+                <th class="px-3 py-3 text-left border-b border-slate-200">IP Address</th>
+              </tr>
+            </thead>
+            <tbody id="logTableBody">
+              {% for log in logs %}
+              <tr class="hover:bg-blue-50/60 transition border-b border-slate-100 last:border-b-0 align-top">
+                <td class="px-3 py-2.5 text-slate-700 whitespace-nowrap">{{ log.created_at }}</td>
+                <td class="px-3 py-2.5 font-semibold text-slate-800">{{ log.username }}</td>
+                <td class="px-3 py-2.5">
+                  {% if log.role == 'Admin' %}
+                    <span class="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2.5 py-1 text-xs font-semibold">Admin</span>
+                  {% else %}
+                    <span class="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-1 text-xs font-semibold">Staff</span>
+                  {% endif %}
+                </td>
+                <td class="px-3 py-2.5 text-slate-700">
+                  <span class="log-chip log-chip-action" title="{{ log.action or '-' }}">{{ log.action or '-' }}</span>
+                </td>
+                <td class="px-3 py-2.5 text-slate-700">
+                  <span class="log-chip log-chip-module" title="{{ log.module or '-' }}">{{ log.module or '-' }}</span>
+                </td>
+                <td class="px-3 py-2.5 text-slate-700 truncate-col" title="{{ log.details or '' }}">{{ log.details or '-' }}</td>
+                {% set method_key = (log.http_method or '')|lower %}
+                <td class="px-3 py-2.5 text-slate-700">
+                  <span class="method-pill {% if method_key == 'get' %}method-get{% elif method_key == 'post' %}method-post{% elif method_key == 'put' %}method-put{% elif method_key == 'patch' %}method-patch{% elif method_key == 'delete' %}method-delete{% else %}method-default{% endif %}">{{ log.http_method or '-' }}</span>
+                </td>
+                <td class="px-3 py-2.5 text-slate-700 truncate-col route-col" title="{{ log.route or '' }}">{{ log.route or '-' }}</td>
+                <td class="px-3 py-2.5 text-slate-700 whitespace-nowrap">{{ log.ip_address or '-' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="logPaginationSection" class="flex flex-col sm:flex-row items-center justify-between mt-5 pt-4 gap-4 border-t border-slate-200">
+        <div id="pagingSummary" class="text-sm text-slate-600">
+          Showing <span class="font-medium">{{ (page - 1) * per_page + 1 if total_items > 0 else 0 }}</span> -
+          <span class="font-medium">{{ [page * per_page, total_items]|min }}</span> of
+          <span class="font-medium">{{ total_items }}</span> records
+        </div>
+        <nav id="logPaginationNav" class="flex items-center gap-1 flex-wrap justify-center" aria-label="Pagination">
+          {% if page > 1 %}
+            <button type="button" data-page="{{ page - 1 }}" class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors">Prev</button>
+          {% else %}
+            <span class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed">Prev</span>
+          {% endif %}
+
+          {% set start_page = [1, page - 2]|max %}
+          {% set end_page = [total_pages, page + 2]|min %}
+          {% for p in range(start_page, end_page + 1) %}
+            {% if p == page %}
+              <span class="flex items-center justify-center w-9 h-9 text-sm font-semibold rounded-lg z-10 bg-blue-600 text-white border border-blue-600">{{ p }}</span>
+            {% else %}
+              <button type="button" data-page="{{ p }}" class="flex items-center justify-center w-9 h-9 text-sm font-semibold rounded-lg text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 hover:text-blue-600 transition-colors">{{ p }}</button>
+            {% endif %}
+          {% endfor %}
+
+          {% if page < total_pages %}
+            <button type="button" data-page="{{ page + 1 }}" class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors">Next</button>
+          {% else %}
+            <span class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed">Next</span>
+          {% endif %}
+        </nav>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const ACTIVITY_LOG_ENDPOINT = "{{ url_for('activity_log_bp.activity_log_data', _external=False) }}";
+    const ACTIVITY_LOG_PAGE_URL = "{{ url_for('activity_log_bp.activity_log_page', _external=False) }}";
+    const INITIAL_PAGE = Number('{{ page }}') || 1;
+    const INITIAL_TOTAL_PAGES = Number('{{ total_pages }}') || 1;
+
+    const filterForm = document.getElementById('activityLogFilterForm');
+    const searchInput = document.getElementById('search');
+    const roleSelect = document.getElementById('role');
+    const perPageSelect = document.getElementById('per_page');
+    const logDateInput = document.getElementById('log_date');
+    const openFilterModalBtn = document.getElementById('openFilterModalBtn');
+    const activityFilterModal = document.getElementById('activityFilterModal');
+    const activityFilterBackdrop = document.getElementById('activityFilterBackdrop');
+    const closeFilterModalButtons = document.querySelectorAll('[data-close-filter-modal]');
+    const activeFilterCount = document.getElementById('activeFilterCount');
+    const filterToast = document.getElementById('filterToast');
+    const filterToastText = document.getElementById('filterToastText');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    const filterBtn = document.getElementById('filterBtn');
+    const appliedFilterSummary = document.getElementById('appliedFilterSummary');
+    const activityQuickSearchInput = document.getElementById('activityQuickSearchInput');
+    const activityQuickSearchClearBtn = document.getElementById('activityQuickSearchClearBtn');
+    const activityQuickSearchStatus = document.getElementById('activityQuickSearchStatus');
+    const DEFAULT_EMPTY_LOG_TEXT = 'No activity logs found.';
+    const QUICK_SEARCH_EMPTY_TEXT = 'No matching activity logs on this page.';
+    let filterToastTimer = null;
+
+    const totalRecordsCount = document.getElementById('totalRecordsCount');
+    const adminLogsCount = document.getElementById('adminLogsCount');
+    const staffLogsCount = document.getElementById('staffLogsCount');
+
+    const emptyLogState = document.getElementById('emptyLogState');
+    const logTableWrapper = document.getElementById('logTableWrapper');
+    const logTableBody = document.getElementById('logTableBody');
+    const pagingSummary = document.getElementById('pagingSummary');
+    const logPaginationNav = document.getElementById('logPaginationNav');
+
+    function escapeHtml(value) {
+      return String(value ?? '-')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function buildRoleBadge(role) {
+      if (String(role || '').toLowerCase() === 'admin') {
+        return '<span class="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2.5 py-1 text-xs font-semibold">Admin</span>';
+      }
+      return '<span class="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-1 text-xs font-semibold">Staff</span>';
+    }
+
+    function buildMethodBadge(method) {
+      const normalized = String(method || '').trim().toLowerCase();
+      let toneClass = 'method-default';
+
+      if (normalized === 'get') {
+        toneClass = 'method-get';
+      } else if (normalized === 'post') {
+        toneClass = 'method-post';
+      } else if (normalized === 'put') {
+        toneClass = 'method-put';
+      } else if (normalized === 'patch') {
+        toneClass = 'method-patch';
+      } else if (normalized === 'delete') {
+        toneClass = 'method-delete';
+      }
+
+      return `<span class="method-pill ${toneClass}">${escapeHtml(method || '-')}</span>`;
+    }
+
+    function buildLogChip(value, toneClass) {
+      const safeValue = escapeHtml(value || '-');
+      return `<span class="log-chip ${toneClass}" title="${safeValue}">${safeValue}</span>`;
+    }
+
+    function setLoadingState(isLoading) {
+      if (!filterBtn) {
+        return;
+      }
+      filterBtn.disabled = isLoading;
+      filterBtn.classList.toggle('opacity-70', isLoading);
+      filterBtn.classList.toggle('cursor-not-allowed', isLoading);
+    }
+
+    function openFilterModal() {
+      if (!activityFilterModal) {
+        return;
+      }
+      activityFilterModal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    }
+
+    function closeFilterModal() {
+      if (!activityFilterModal) {
+        return;
+      }
+      activityFilterModal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    function getActiveFilterTotal() {
+      let total = 0;
+
+      if ((searchInput?.value || '').trim()) {
+        total += 1;
+      }
+
+      if ((roleSelect?.value || 'all') !== 'all') {
+        total += 1;
+      }
+
+      if ((String(perPageSelect?.value || '20')) !== '20') {
+        total += 1;
+      }
+
+      if ((logDateInput?.value || '').trim()) {
+        total += 1;
+      }
+
+      return total;
+    }
+
+    function updateActiveFilterBadge() {
+      if (!activeFilterCount) {
+        return;
+      }
+
+      const total = getActiveFilterTotal();
+      activeFilterCount.textContent = `${total} active`;
+      activeFilterCount.classList.toggle('hidden', total === 0);
+    }
+
+    function showFilterToast(message) {
+      if (!filterToast || !filterToastText) {
+        return;
+      }
+
+      filterToastText.textContent = message || 'Filters applied';
+      filterToast.classList.add('show');
+
+      if (filterToastTimer) {
+        window.clearTimeout(filterToastTimer);
+      }
+
+      filterToastTimer = window.setTimeout(() => {
+        filterToast.classList.remove('show');
+      }, 1800);
+    }
+
+    function renderAppliedFilterSummary(values = {}) {
+      if (!appliedFilterSummary) {
+        return;
+      }
+
+      const dateText = String(values.date ?? '').trim() || 'none';
+      const searchText = String(values.search ?? '').trim() || 'none';
+      const roleText = String(values.role ?? 'all').trim().toLowerCase() || 'all';
+      const rowsText = String(values.rows ?? 20).trim() || '20';
+
+      const hasActiveFilters = dateText !== 'none'
+        || searchText !== 'none'
+        || roleText !== 'all'
+        || rowsText !== '20';
+
+      appliedFilterSummary.classList.toggle('hidden', !hasActiveFilters);
+
+      if (!hasActiveFilters) {
+        return;
+      }
+
+      appliedFilterSummary.innerHTML = `Applied: date=<span class="font-semibold text-slate-800">${escapeHtml(dateText)}</span>, search=<span class="font-semibold text-slate-800">${escapeHtml(searchText)}</span>, role=<span class="font-semibold text-slate-800">${escapeHtml(roleText)}</span>, rows=<span class="font-semibold text-slate-800">${escapeHtml(rowsText)}</span>`;
+    }
+
+    function applyQuickSearchFilter() {
+      if (!logTableBody || !emptyLogState || !logTableWrapper || !activityQuickSearchInput) {
+        return;
+      }
+
+      const rawTerm = (activityQuickSearchInput.value || '').trim().toLowerCase();
+      const hasSearchTerm = rawTerm.length > 0;
+      const rows = Array.from(logTableBody.querySelectorAll('tr'));
+      const totalRows = rows.length;
+
+      if (activityQuickSearchClearBtn) {
+        activityQuickSearchClearBtn.classList.toggle('hidden', !hasSearchTerm);
+      }
+
+      if (totalRows === 0) {
+        emptyLogState.textContent = DEFAULT_EMPTY_LOG_TEXT;
+        if (activityQuickSearchStatus) {
+          activityQuickSearchStatus.textContent = hasSearchTerm
+            ? 'No activity logs to search on this page.'
+            : 'Type to auto-filter current page.';
+        }
+        return;
+      }
+
+      let matchCount = totalRows;
+
+      if (hasSearchTerm) {
+        matchCount = 0;
+        rows.forEach((row) => {
+          const isMatch = (row.textContent || '').toLowerCase().includes(rawTerm);
+          row.hidden = !isMatch;
+          if (isMatch) {
+            matchCount += 1;
+          }
+        });
+      } else {
+        rows.forEach((row) => {
+          row.hidden = false;
+        });
+      }
+
+      if (!hasSearchTerm) {
+        emptyLogState.textContent = DEFAULT_EMPTY_LOG_TEXT;
+        emptyLogState.classList.add('hidden');
+        logTableWrapper.classList.remove('hidden');
+        if (activityQuickSearchStatus) {
+          activityQuickSearchStatus.textContent = 'Type to auto-filter current page.';
+        }
+        return;
+      }
+
+      const hasMatches = matchCount > 0;
+      emptyLogState.textContent = hasMatches ? DEFAULT_EMPTY_LOG_TEXT : QUICK_SEARCH_EMPTY_TEXT;
+      emptyLogState.classList.toggle('hidden', hasMatches);
+      logTableWrapper.classList.toggle('hidden', !hasMatches);
+
+      if (activityQuickSearchStatus) {
+        activityQuickSearchStatus.textContent = hasMatches
+          ? `Showing ${matchCount} of ${totalRows} logs on this page.`
+          : 'No matching logs on this page.';
+      }
+    }
+
+    function renderTable(logs) {
+      if (!Array.isArray(logs) || logs.length === 0) {
+        logTableBody.innerHTML = '';
+        emptyLogState.classList.remove('hidden');
+        logTableWrapper.classList.add('hidden');
+        applyQuickSearchFilter();
+        return;
+      }
+
+      const rows = logs.map((log) => {
+        const details = escapeHtml(log.details || '-');
+        const route = escapeHtml(log.route || '-');
+
+        return `
+          <tr class="hover:bg-blue-50/60 transition border-b border-slate-100 last:border-b-0 align-top">
+            <td class="px-3 py-2.5 text-slate-700 whitespace-nowrap">${escapeHtml(log.created_at)}</td>
+            <td class="px-3 py-2.5 font-semibold text-slate-800">${escapeHtml(log.username)}</td>
+            <td class="px-3 py-2.5">${buildRoleBadge(log.role)}</td>
+            <td class="px-3 py-2.5 text-slate-700">${buildLogChip(log.action, 'log-chip-action')}</td>
+            <td class="px-3 py-2.5 text-slate-700">${buildLogChip(log.module || '-', 'log-chip-module')}</td>
+            <td class="px-3 py-2.5 text-slate-700 truncate-col" title="${details}">${details}</td>
+            <td class="px-3 py-2.5 text-slate-700">${buildMethodBadge(log.http_method || '-')}</td>
+            <td class="px-3 py-2.5 text-slate-700 truncate-col route-col" title="${route}">${route}</td>
+            <td class="px-3 py-2.5 text-slate-700 whitespace-nowrap">${escapeHtml(log.ip_address || '-')}</td>
+          </tr>
+        `;
+      }).join('');
+
+      logTableBody.innerHTML = rows;
+      emptyLogState.classList.add('hidden');
+      logTableWrapper.classList.remove('hidden');
+      applyQuickSearchFilter();
+    }
+
+    function renderSummary(page, perPage, totalItems) {
+      const start = totalItems === 0 ? 0 : ((page - 1) * perPage) + 1;
+      const end = totalItems === 0 ? 0 : Math.min(page * perPage, totalItems);
+      pagingSummary.innerHTML = `Showing <span class="font-medium">${start}</span> - <span class="font-medium">${end}</span> of <span class="font-medium">${totalItems}</span> records`;
+    }
+
+    function renderPagination(page, totalPages) {
+      const safeTotalPages = Math.max(1, totalPages || 1);
+      const safePage = Math.min(Math.max(1, page || 1), safeTotalPages);
+
+      const startPage = Math.max(1, safePage - 2);
+      const endPage = Math.min(safeTotalPages, safePage + 2);
+
+      let html = '';
+
+      if (safePage > 1) {
+        html += `<button type="button" data-page="${safePage - 1}" class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors">Prev</button>`;
+      } else {
+        html += '<span class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed">Prev</span>';
+      }
+
+      for (let p = startPage; p <= endPage; p += 1) {
+        if (p === safePage) {
+          html += `<span class="flex items-center justify-center w-9 h-9 text-sm font-semibold rounded-lg z-10 bg-blue-600 text-white border border-blue-600">${p}</span>`;
+        } else {
+          html += `<button type="button" data-page="${p}" class="flex items-center justify-center w-9 h-9 text-sm font-semibold rounded-lg text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 hover:text-blue-600 transition-colors">${p}</button>`;
+        }
+      }
+
+      if (safePage < safeTotalPages) {
+        html += `<button type="button" data-page="${safePage + 1}" class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors">Next</button>`;
+      } else {
+        html += '<span class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed">Next</span>';
+      }
+
+      logPaginationNav.innerHTML = html;
+    }
+
+    function buildQuery(page, includeCacheBust = false) {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('per_page', String(perPageSelect.value || 20));
+      params.set('role', roleSelect.value || 'all');
+      params.set('search', (searchInput.value || '').trim());
+      params.set('log_date', (logDateInput?.value || '').trim());
+
+      if (includeCacheBust) {
+        params.set('_ts', String(Date.now()));
+      }
+
+      return params;
+    }
+
+    async function loadLogs(page, syncUrl = true) {
+      const requestParams = buildQuery(page, true);
+      const historyParams = buildQuery(page, false);
+      setLoadingState(true);
+
+      try {
+        const response = await fetch(`${ACTIVITY_LOG_ENDPOINT}?${requestParams.toString()}`, {
+          cache: 'no-store',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load activity log data.');
+        }
+
+        const data = await response.json();
+
+        searchInput.value = data.search || '';
+        roleSelect.value = data.role_filter || 'all';
+        perPageSelect.value = String(data.per_page || 20);
+        if (logDateInput) {
+          logDateInput.value = data.log_date || '';
+        }
+
+        updateActiveFilterBadge();
+        renderAppliedFilterSummary({
+          date: data.log_date || 'none',
+          search: data.search || 'none',
+          role: data.role_filter || 'all',
+          rows: data.per_page || 20,
+        });
+
+        totalRecordsCount.textContent = data.total_items || 0;
+        adminLogsCount.textContent = data.admin_count || 0;
+        staffLogsCount.textContent = data.staff_count || 0;
+
+        renderTable(data.logs || []);
+        renderSummary(data.page || 1, data.per_page || 20, data.total_items || 0);
+        renderPagination(data.page || 1, data.total_pages || 1);
+
+        if (syncUrl) {
+          window.history.replaceState({}, '', `${ACTIVITY_LOG_PAGE_URL}?${historyParams.toString()}`);
+        }
+
+        initializeIcons();
+        return true;
+      } catch (error) {
+        console.error(error);
+        if (syncUrl) {
+          window.location.href = `${ACTIVITY_LOG_PAGE_URL}?${historyParams.toString()}`;
+        }
+        return false;
+      } finally {
+        setLoadingState(false);
+      }
+    }
+
+    function applyFilters() {
+      const params = buildQuery(1, false);
+      window.location.href = `${ACTIVITY_LOG_PAGE_URL}?${params.toString()}`;
+    }
+
+    function initializeIcons() {
+      try {
+        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+          lucide.createIcons();
+        }
+      } catch (error) {
+        console.error('Lucide initialization error:', error);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeIcons();
+      renderPagination(INITIAL_PAGE, INITIAL_TOTAL_PAGES);
+      updateActiveFilterBadge();
+      renderAppliedFilterSummary({
+        date: logDateInput?.value || 'none',
+        search: searchInput?.value || 'none',
+        role: roleSelect?.value || 'all',
+        rows: perPageSelect?.value || 20,
+      });
+      applyQuickSearchFilter();
+
+      if (openFilterModalBtn) {
+        openFilterModalBtn.addEventListener('click', openFilterModal);
+      }
+
+      if (activityFilterBackdrop) {
+        activityFilterBackdrop.addEventListener('click', closeFilterModal);
+      }
+
+      if (closeFilterModalButtons.length > 0) {
+        closeFilterModalButtons.forEach((button) => {
+          button.addEventListener('click', closeFilterModal);
+        });
+      }
+
+      if (filterForm) {
+        filterForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          applyFilters();
+        });
+      }
+
+      if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', () => {
+          searchInput.value = '';
+          roleSelect.value = 'all';
+          perPageSelect.value = '20';
+          if (logDateInput) {
+            logDateInput.value = '';
+          }
+          applyFilters();
+        });
+      }
+
+      if (searchInput) {
+        searchInput.addEventListener('input', updateActiveFilterBadge);
+      }
+
+      if (roleSelect) {
+        roleSelect.addEventListener('change', updateActiveFilterBadge);
+      }
+
+      if (perPageSelect) {
+        perPageSelect.addEventListener('change', updateActiveFilterBadge);
+      }
+
+      if (logDateInput) {
+        logDateInput.addEventListener('change', updateActiveFilterBadge);
+      }
+
+      if (activityQuickSearchInput) {
+        activityQuickSearchInput.addEventListener('input', applyQuickSearchFilter);
+      }
+
+      if (activityQuickSearchClearBtn && activityQuickSearchInput) {
+        activityQuickSearchClearBtn.addEventListener('click', () => {
+          activityQuickSearchInput.value = '';
+          applyQuickSearchFilter();
+          activityQuickSearchInput.focus();
+        });
+      }
+
+      if (logPaginationNav) {
+        logPaginationNav.addEventListener('click', (event) => {
+          const target = event.target.closest('button[data-page]');
+          if (!target) {
+            return;
+          }
+
+          const nextPage = Number(target.getAttribute('data-page'));
+          if (Number.isNaN(nextPage) || nextPage < 1) {
+            return;
+          }
+
+          loadLogs(nextPage);
+        });
+      }
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeFilterModal();
+        }
+      });
+    });
+
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = document.getElementById('sidebarToggle');
+
+    if (toggle && sidebar && overlay) {
+      toggle.addEventListener('click', () => {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+      });
+
+      overlay.addEventListener('click', () => {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      });
+    }
+  </script>
+</body>
+</html>

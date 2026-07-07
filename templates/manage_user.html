@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel - Manage Users</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+  <style>
+    .users-table-scroll {
+      max-height: calc(100vh - 315px);
+    }
+
+    .users-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #f8fafc;
+    }
+
+    .users-table tbody tr:nth-child(even) {
+      background: #fcfdff;
+    }
+  </style>
+</head>
+
+<body class="flex min-h-screen bg-slate-100 text-slate-900">
+
+  {% include 'sidebar.html' %}
+
+  <!-- Overlay for mobile -->
+  <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/50 z-40"></div>
+
+  <!-- Main Content -->
+  <main class="flex-1 ml-0 md:ml-64 p-3 sm:p-4 lg:p-5 xl:p-6 transition-all duration-300">
+
+    <!-- Top Navbar -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white rounded-3xl shadow-2xl px-4 py-4 sm:px-5 sm:py-5 mb-4 border border-blue-500/40">
+      <div class="pointer-events-none absolute -top-24 -right-20 h-56 w-56 rounded-full bg-white/15"></div>
+      <div class="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-blue-200/20"></div>
+
+      <div class="relative z-10 flex items-center justify-between gap-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <button id="sidebarToggle"
+            class="md:hidden p-2 rounded-lg bg-white/15 border border-white/30 text-white hover:bg-white/25 transition">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+          <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+            <i data-lucide="users" class="w-6 h-6 text-white"></i>
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-xl sm:text-2xl font-bold tracking-tight">Manage Users</h2>
+            <p class="text-xs sm:text-sm text-blue-100">Create and maintain user access accounts</p>
+          </div>
+        </div>
+
+        <button type="button"
+          onclick="openUserModal('add')"
+          class="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white font-semibold px-3.5 py-2 rounded-xl border border-white/25 shadow-sm transition-all duration-200">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Add User</span>
+        </button>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="space-y-2 mb-4">
+          {% for category, message in messages %}
+            <div class="rounded-xl border px-4 py-3 text-sm font-medium
+              {% if category == 'error' %}
+                border-red-200 bg-red-50 text-red-700
+              {% elif category == 'success' %}
+                border-emerald-200 bg-emerald-50 text-emerald-700
+              {% else %}
+                border-blue-200 bg-blue-50 text-blue-700
+              {% endif %}
+            ">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Users Table -->
+    <section class="bg-white rounded-2xl shadow-lg p-4 sm:p-5 lg:p-6 border border-slate-200">
+      <h3 class="text-xl font-semibold flex items-center gap-3 mb-4 text-blue-700">
+        <i data-lucide="users" class="w-5 h-5"></i> Users List
+      </h3>
+
+      {% if users|length == 0 %}
+        <div class="bg-gray-100 text-gray-500 p-4 rounded-lg text-center">
+          No users found.
+        </div>
+      {% else %}
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="users-table-scroll overflow-auto">
+            <table class="users-table min-w-[1080px] w-full text-sm text-slate-800">
+              <thead class="text-[11px] uppercase tracking-wide text-slate-600">
+                <tr>
+                  <th class="px-3 py-3 text-left border-b border-slate-200">Full Name</th>
+                  <th class="px-3 py-3 text-left border-b border-slate-200">Username</th>
+                  <th class="px-3 py-3 text-left border-b border-slate-200">Email</th>
+                  <th class="px-3 py-3 text-left border-b border-slate-200">Role</th>
+                  <th class="px-3 py-3 text-left border-b border-slate-200">Status</th>
+                  <th class="px-3 py-3 text-left border-b border-slate-200 whitespace-nowrap">Created At</th>
+                  <th class="px-3 py-3 text-left border-b border-slate-200">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in users %}
+                <tr class="hover:bg-blue-50/60 transition border-b border-slate-100 last:border-b-0 align-top">
+                  <td class="px-3 py-2.5 font-semibold text-slate-800">
+                    {{ user.last_name }}, {{ user.first_name }}{% if user.middle_name %} {{ user.middle_name[0] }}.{% endif %}
+                  </td>
+                  <td class="px-3 py-2.5 text-slate-700">{{ user.username }}</td>
+                  <td class="px-3 py-2.5 text-slate-700">{{ user.email }}</td>
+                  <td class="px-3 py-2.5">
+                    {% if user.role %}
+                      {% if user.role == 'admin' %}
+                        <span class="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2.5 py-1 text-xs font-semibold">Admin</span>
+                      {% elif user.role == 'staff' %}
+                        <span class="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-1 text-xs font-semibold">Staff</span>
+                      {% elif user.role == 'teacher' %}
+                        <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2.5 py-1 text-xs font-semibold">Teacher</span>
+                      {% elif user.role == 'dept_head' %}
+                        <span class="inline-flex items-center rounded-full bg-purple-100 text-purple-700 px-2.5 py-1 text-xs font-semibold">Dept Head</span>
+                      {% else %}
+                        <span class="inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-2.5 py-1 text-xs font-semibold">{{ user.role|replace('_', ' ')|title }}</span>
+                      {% endif %}
+                    {% else %}
+                      {% if user.is_admin == 1 %}
+                        <span class="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2.5 py-1 text-xs font-semibold">Admin</span>
+                      {% else %}
+                        <span class="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-1 text-xs font-semibold">Staff</span>
+                      {% endif %}
+                    {% endif %}
+                  </td>
+                  <td class="px-3 py-2.5">
+                    {% if user.is_active == 1 %}
+                      <span class="inline-flex items-center rounded-full bg-green-100 text-green-700 px-2.5 py-1 text-xs font-semibold">Active</span>
+                    {% else %}
+                      <span class="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2.5 py-1 text-xs font-semibold">Inactive</span>
+                    {% endif %}
+                  </td>
+                  <td class="px-3 py-2.5 text-slate-700 whitespace-nowrap">{{ user.created_at }}</td>
+
+                  <td class="px-3 py-2.5">
+                    <div class="flex flex-wrap gap-1.5">
+                      <button type="button"
+                              class="editUserBtn inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition"
+                              data-user='{{ user|tojson|safe }}'>
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                        <span>Edit</span>
+                      </button>
+
+                      <button type="button"
+                        class="deactivateUserBtn inline-flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition"
+                        data-user-id="{{ user.user_id }}">
+                        <i data-lucide="user-x" class="w-3.5 h-3.5"></i>
+                        Deactivate
+                      </button>
+
+                      <button type="button"
+                        class="activateUserBtn inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition"
+                        data-user-id="{{ user.user_id }}">
+                        <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                        Activate
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- PAGINATION -->
+      {% if total_pages > 1 %}
+      <div class="flex flex-col sm:flex-row items-center justify-between mt-5 pt-4 gap-4 border-t border-slate-200">
+        <div class="text-sm text-slate-600">
+          Showing <span class="font-medium">{{ (page - 1) * per_page + 1 }}</span> - <span class="font-medium">{{ [page * per_page, total_items]|min }}</span> of <span class="font-medium">{{ total_items }}</span> records
+        </div>
+
+        <nav class="flex items-center gap-1 flex-wrap justify-center" aria-label="Pagination">
+          {% if page > 1 %}
+            <a href="?page={{ page - 1 }}&per_page={{ per_page }}"
+               class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors">
+              <i data-lucide="chevron-left" class="w-4 h-4 mr-1"></i>
+              Prev
+            </a>
+          {% else %}
+            <span class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed">
+              <i data-lucide="chevron-left" class="w-4 h-4 mr-1"></i>
+              Prev
+            </span>
+          {% endif %}
+
+          {% set start_page = [1, page - 2]|max %}
+          {% set end_page = [total_pages, page + 2]|min %}
+          
+          {% if start_page > 1 %}
+            <a href="?page=1&per_page={{ per_page }}"
+               class="hidden sm:flex items-center justify-center w-9 h-9 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors">
+              1
+            </a>
+            {% if start_page > 2 %}
+              <span class="hidden sm:flex items-center justify-center w-9 h-9 text-sm font-medium text-slate-500">...</span>
+            {% endif %}
+          {% endif %}
+
+          {% for p in range(start_page, end_page + 1) %}
+            <a href="?page={{ p }}&per_page={{ per_page }}"
+               class="flex items-center justify-center w-9 h-9 text-sm font-semibold rounded-lg transition-colors
+               {% if p == page %}
+                 z-10 bg-blue-600 text-white border border-blue-600
+               {% else %}
+                 text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 hover:text-blue-600
+               {% endif %}">
+              {{ p }}
+            </a>
+          {% endfor %}
+
+          {% if end_page < total_pages %}
+            {% if end_page < total_pages - 1 %}
+              <span class="hidden sm:flex items-center justify-center w-9 h-9 text-sm font-medium text-slate-500">...</span>
+            {% endif %}
+            <a href="?page={{ total_pages }}&per_page={{ per_page }}"
+               class="hidden sm:flex items-center justify-center w-9 h-9 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors">
+              {{ total_pages }}
+            </a>
+          {% endif %}
+
+          {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}&per_page={{ per_page }}"
+               class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors">
+              Next
+              <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+            </a>
+          {% else %}
+            <span class="flex items-center px-3 py-1.5 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed">
+              Next
+              <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+            </span>
+          {% endif %}
+        </nav>
+
+        <!-- ROWS PER PAGE -->
+        <form method="get" class="flex items-center gap-2">
+          <label class="text-sm text-slate-600">Show:</label>
+          <select name="per_page"
+                  onchange="this.form.submit()"
+                  class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            {% for size in [5, 10, 25, 50] %}
+              <option value="{{ size }}" {% if per_page == size %}selected{% endif %}>
+                {{ size }}
+              </option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+      {% endif %}
+    </section>
+  </main>
+
+ 
+  {% include 'deactivate_modal.html' %}
+  {% include 'activate_modal.html' %}
+  {% include 'usermodal.html' %}
+
+  <script>
+    (function () {
+    // Lucide icons
+    function initializeIcons() {
+      try {
+        if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+      } catch (error) {
+        console.error('Lucide initialization error:', error);
+      }
+    }
+    document.addEventListener("DOMContentLoaded", initializeIcons);
+
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = document.getElementById('sidebarToggle');
+
+    if (toggle && sidebar && overlay) {
+      toggle.addEventListener('click', () => {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+      });
+
+      overlay.addEventListener('click', () => {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      });
+    }
+
+    // Attach manage-user action listeners
+    document.addEventListener("DOMContentLoaded", () => {
+      const userModalEl = document.getElementById("userModal");
+      const deactivateModalEl = document.getElementById("deactivateModal");
+      const activateModalEl = document.getElementById("activateModal");
+      const deactivateItemIdEl = document.getElementById("deactivateItemId");
+      const activateItemIdEl = document.getElementById("activateItemId");
+
+      const closeOnBackdrop = (event, modalEl) => {
+        if (event.target === modalEl) {
+          modalEl.classList.add("hidden");
+        }
+      };
+
+      if (deactivateModalEl) {
+        deactivateModalEl.addEventListener("click", (event) => closeOnBackdrop(event, deactivateModalEl));
+      }
+      if (activateModalEl) {
+        activateModalEl.addEventListener("click", (event) => closeOnBackdrop(event, activateModalEl));
+      }
+
+      const cancelDeactivateBtn = document.getElementById("cancelDeactivate");
+      const cancelActivateBtn = document.getElementById("cancelActivate");
+      if (cancelDeactivateBtn && deactivateModalEl) {
+        cancelDeactivateBtn.addEventListener("click", () => deactivateModalEl.classList.add("hidden"));
+      }
+      if (cancelActivateBtn && activateModalEl) {
+        cancelActivateBtn.addEventListener("click", () => activateModalEl.classList.add("hidden"));
+      }
+
+      const fallbackOpenEditModal = (user) => {
+        if (!userModalEl) return;
+
+        const modalTitle = document.getElementById("modalTitle");
+        const idField = document.getElementById("user_id");
+        const lastName = document.getElementById("lastName");
+        const firstName = document.getElementById("firstName");
+        const middleName = document.getElementById("middleName");
+        const username = document.getElementById("username");
+        const email = document.getElementById("email");
+        const roleEl = document.getElementById("role");
+        const passwordSection = document.getElementById("passwordSection");
+        const changePasswordContainer = document.getElementById("changePasswordContainer");
+        const changePasswordSection = document.getElementById("changePasswordSection");
+        const permissionCheckboxes = document.querySelectorAll(".permCheckbox");
+        const selectAllPermissions = document.getElementById("selectAllPermissions");
+
+        if (modalTitle) modalTitle.textContent = "Edit User";
+        if (idField) idField.value = user.user_id || "";
+        if (lastName) lastName.value = user.last_name || "";
+        if (firstName) firstName.value = user.first_name || "";
+        if (middleName) middleName.value = user.middle_name || "";
+        if (username) username.value = user.username || "";
+        if (email) email.value = user.email || "";
+        if (roleEl) roleEl.value = user.role || (user.is_admin ? 'admin' : 'staff');
+        if (passwordSection) passwordSection.style.display = "none";
+        if (changePasswordContainer) changePasswordContainer.classList.remove("hidden");
+        if (changePasswordSection) changePasswordSection.classList.add("hidden");
+
+        permissionCheckboxes.forEach((checkbox) => {
+          checkbox.checked = false;
+        });
+
+        if (user.permissions) {
+          try {
+            const perms = typeof user.permissions === "string" ? JSON.parse(user.permissions) : user.permissions;
+            Object.keys(perms || {}).forEach((section) => {
+              const actionMap = perms[section] || {};
+              Object.keys(actionMap).forEach((action) => {
+                if (actionMap[action]) {
+                  const checkbox = document.querySelector(`.permCheckbox[value="${section}_${action}"]`);
+                  if (checkbox) checkbox.checked = true;
+                }
+              });
+            });
+          } catch (error) {
+            console.error("Invalid permission format:", error);
+          }
+        }
+
+        if (selectAllPermissions) {
+          selectAllPermissions.checked = Array.from(permissionCheckboxes).every((checkbox) => checkbox.checked);
+        }
+
+        userModalEl.classList.remove("hidden");
+      };
+
+      document.querySelectorAll(".editUserBtn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (!btn.dataset.user) return;
+
+          let user;
+          try {
+            user = JSON.parse(btn.dataset.user);
+          } catch (error) {
+            console.error("Invalid user payload:", error);
+            return;
+          }
+
+          try {
+            if (typeof openUserModal === "function") {
+              openUserModal("edit", user);
+              return;
+            }
+          } catch (error) {
+            console.error("openUserModal failed; using fallback:", error);
+          }
+
+          fallbackOpenEditModal(user);
+        });
+      });
+
+      document.querySelectorAll(".deactivateUserBtn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const userId = btn.dataset.userId;
+          if (!userId) return;
+
+          if (deactivateItemIdEl && deactivateModalEl) {
+            deactivateItemIdEl.value = userId;
+            deactivateModalEl.classList.remove("hidden");
+            return;
+          }
+
+          if (typeof openDeactivateModal === "function") {
+            openDeactivateModal(userId);
+          }
+        });
+      });
+
+      document.querySelectorAll(".activateUserBtn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const userId = btn.dataset.userId;
+          if (!userId) return;
+
+          if (activateItemIdEl && activateModalEl) {
+            activateItemIdEl.value = userId;
+            activateModalEl.classList.remove("hidden");
+            return;
+          }
+
+          if (typeof openActivateModal === "function") {
+            openActivateModal(userId);
+          }
+        });
+      });
+    });
+
+    const forgotModal = document.getElementById('forgotModal');
+
+  // Open modal function
+  function openForgotModal(userId) {
+    if (!forgotModal) return;
+    document.getElementById('forgotUserId').value = userId;
+    forgotModal.classList.remove('hidden');
+  }
+
+  // Close modal function
+  function closeForgotModal() {
+    if (!forgotModal) return;
+    forgotModal.classList.add('hidden');
+  }
+
+  // Attach events after DOM loads
+  document.addEventListener("DOMContentLoaded", () => {
+    // Open modal on all buttons
+    document.querySelectorAll(".forgotPassBtn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const userId = btn.dataset.userId;
+        openForgotModal(userId);
+      });
+    });
+
+    // Close modal buttons
+    const forgotCloseBtn = document.getElementById('forgotCloseBtn');
+    const forgotCancelBtn = document.getElementById('forgotCancelBtn');
+    if (forgotCloseBtn) forgotCloseBtn.addEventListener('click', closeForgotModal);
+    if (forgotCancelBtn) forgotCancelBtn.addEventListener('click', closeForgotModal);
+  });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1240 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Inventory Stock Room</title>
+    <script src="{{ url_for('static', filename='js/tailwind.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lucide.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chart.js') }}"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --surface-border: #dbe5f4;
+            --surface-shadow: 0 22px 48px -30px rgba(15, 23, 42, 0.55);
+            --hero-shadow: 0 30px 55px -34px rgba(30, 64, 175, 0.85);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background:
+                radial-gradient(1000px circle at 12% -12%, rgba(14, 165, 233, 0.2), transparent 42%),
+                radial-gradient(950px circle at 92% 2%, rgba(59, 130, 246, 0.16), transparent 38%),
+                linear-gradient(180deg, #f4f8ff 0%, #eef3ff 100%);
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .surface-panel {
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid var(--surface-border);
+            box-shadow: var(--surface-shadow);
+            backdrop-filter: blur(6px);
+        }
+
+        .stock-hero {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(125deg, #0f4cc9 0%, #1d65d8 48%, #0ea5e9 100%);
+            border: 1px solid rgba(37, 99, 235, 0.45);
+            box-shadow: var(--hero-shadow);
+        }
+
+        .stock-hero::before,
+        .stock-hero::after {
+            content: '';
+            position: absolute;
+            border-radius: 999px;
+            pointer-events: none;
+        }
+
+        .stock-hero::before {
+            width: 220px;
+            height: 220px;
+            right: -70px;
+            top: -125px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .stock-hero::after {
+            width: 180px;
+            height: 180px;
+            left: -60px;
+            bottom: -110px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .header-action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .header-action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .stat-card {
+            box-shadow: 0 16px 36px -30px rgba(15, 23, 42, 0.55);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 26px 42px -30px rgba(15, 23, 42, 0.62);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        .sortable:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .sort-asc::after {
+            content: ' ▲';
+            color: #3b82f6;
+        }
+        .sort-desc::after {
+            content: ' ▼';
+            color: #3b82f6;
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .table-shell {
+            border: 1px solid #dbe7fb;
+            border-radius: 0.95rem;
+            overflow: hidden;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+        }
+
+        .table-head {
+            background: linear-gradient(90deg, #f8fbff 0%, #eef5ff 100%);
+        }
+
+        #stock-body tr {
+            transition: background-color 0.18s ease;
+        }
+
+        #stock-body tr:hover td {
+            background: #eff6ff;
+        }
+
+        .modal-card {
+            border: 1px solid #dbe7fb;
+            box-shadow: 0 30px 65px -30px rgba(15, 23, 42, 0.6);
+        }
+
+        .hero-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.14);
+            padding: 0.28rem 0.72rem;
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #eff6ff;
+        }
+
+        .hero-pill-dot {
+            width: 0.45rem;
+            height: 0.45rem;
+            border-radius: 999px;
+            background: #93c5fd;
+            box-shadow: 0 0 0 6px rgba(147, 197, 253, 0.18);
+        }
+
+        .export-menu {
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+            transition: opacity 0.16s ease, transform 0.16s ease;
+        }
+
+        .export-menu.is-open {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .quick-filter-chip {
+            border: 1px solid #d7e4fb;
+            background: #f8fbff;
+            color: #334155;
+            border-radius: 999px;
+            padding: 0.36rem 0.78rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            transition: all 0.18s ease;
+        }
+
+        .quick-filter-chip:hover {
+            border-color: #93c5fd;
+            background: #eff6ff;
+            color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .quick-filter-chip.is-active {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1d4ed8;
+            box-shadow: 0 12px 26px -22px rgba(59, 130, 246, 0.8);
+        }
+
+        .quick-filter-chip.is-reset {
+            border-color: #fecaca;
+            background: #fff1f2;
+            color: #be123c;
+        }
+
+        .stock-alert-panel {
+            border: 1px solid #fecaca;
+            background: linear-gradient(145deg, #fff7f7 0%, #fff1f2 100%);
+            box-shadow: 0 24px 42px -34px rgba(220, 38, 38, 0.5);
+        }
+
+        @media (max-width: 640px) {
+            .stock-hero {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="flex min-h-screen text-gray-800">
+    {% include 'sidebar.html' %}
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 ml-0 md:ml-64 p-4 lg:p-5 space-y-4 transition-all duration-300">
+        <!-- Header -->
+        <div class="stock-hero rounded-2xl p-5 mb-2">
+            <div class="relative z-10 flex flex-col gap-4">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="warehouse" class="w-8 h-8 text-white"></i>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h1 class="text-2xl font-bold text-white">Stock Room</h1>
+                                <span class="hero-pill">
+                                    <span class="hero-pill-dot"></span>
+                                    Live Inventory
+                                </span>
+                            </div>
+                            <p class="text-sm text-blue-100">Inventory Management</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:block text-right">
+                            <p class="text-[11px] uppercase tracking-[0.12em] text-blue-100/85">Last Refresh</p>
+                            <p id="lastUpdatedAt" class="text-sm font-semibold text-white">--</p>
+                        </div>
+
+                        <!-- Export/Import Dropdown -->
+                        <div class="relative">
+                            <button id="exportImportBtn" type="button" aria-expanded="false" aria-controls="exportMenu" class="header-action-btn p-2 rounded-lg text-white transition flex items-center gap-2">
+                                <i data-lucide="download" class="w-5 h-5"></i>
+                                <span class="hidden sm:inline">Export</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </button>
+                            <div id="exportMenu" class="export-menu absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                                <button type="button" onclick="exportToJSON()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                    <i data-lucide="file-json" class="w-4 h-4"></i>Export as JSON
+                                </button>
+                                <button type="button" onclick="exportToCSV()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>Export as CSV
+                                </button>
+                                <div class="border-t border-gray-200 my-1"></div>
+                                <label class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer flex items-center gap-2">
+                                    <i data-lucide="upload" class="w-4 h-4"></i>Import JSON
+                                    <input type="file" id="importFile" accept=".json" class="hidden" onchange="importFromJSON(this)">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 text-xs text-blue-100/90">
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1">
+                        <i data-lucide="database" class="w-3.5 h-3.5"></i>
+                        Warehouse Visibility
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1">
+                        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                        Checked Stock Health
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1">
+                        <i data-lucide="clock-3" class="w-3.5 h-3.5"></i>
+                        Real-Time Summary
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
+            <!-- Total Items -->
+            <div class="surface-panel stat-card rounded-2xl p-6 transition-all duration-300 border-l-4 border-blue-500 animate-fade-in">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Total Items</p>
+                        <p id="totalItems" class="text-2xl sm:text-3xl font-bold text-blue-600 mt-2 break-words leading-tight">0</p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-xl ml-4 shrink-0">
+                        <i data-lucide="package" class="w-8 h-8 text-blue-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-green-500 flex items-center gap-1">
+                        <i data-lucide="trending-up" class="w-4 h-4"></i> In Stock
+                    </span>
+                </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="surface-panel stat-card rounded-2xl p-6 transition-all duration-300 border-l-4 border-purple-500 animate-fade-in" style="animation-delay: 0.1s">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Categories</p>
+                        <p id="totalCategories" class="text-3xl font-bold text-purple-600 mt-2">0</p>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-xl ml-4">
+                        <i data-lucide="tags" class="w-8 h-8 text-purple-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-gray-500">Active types</span>
+                </div>
+            </div>
+
+            <!-- Low Stock -->
+            <div class="surface-panel stat-card rounded-2xl p-6 transition-all duration-300 border-l-4 border-red-500 animate-fade-in" style="animation-delay: 0.2s">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Low Stock</p>
+                        <p id="lowStockCount" class="text-3xl font-bold text-red-600 mt-2">0</p>
+                    </div>
+                    <div class="bg-red-50 p-3 rounded-xl ml-4">
+                        <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-red-500 flex items-center gap-1">
+                        <i data-lucide="trending-down" class="w-4 h-4"></i> Need restock
+                    </span>
+                </div>
+            </div>
+
+            <!-- Total Value -->
+            <div class="surface-panel stat-card rounded-2xl p-6 transition-all duration-300 border-l-4 border-green-500 animate-fade-in" style="animation-delay: 0.3s">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Total Value</p>
+                        <p id="totalValue" class="text-3xl font-bold text-green-600 mt-2">₱0</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-xl ml-4">
+                        <i data-lucide="trending-up" class="w-8 h-8 text-green-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-green-500 flex items-center gap-1">
+                        <i data-lucide="pie-chart" class="w-4 h-4"></i> Inventory worth
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Alert Panel -->
+        <div id="lowStockSection" class="hidden stock-alert-panel rounded-2xl p-5 mb-2 animate-fade-in">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <h2 class="text-base font-semibold text-red-700 flex items-center gap-2">
+                    <i data-lucide="siren" class="w-5 h-5"></i>
+                    Low Stock Alerts
+                </h2>
+                <button type="button" onclick="dismissLowStockAlerts()" class="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 transition">
+                    <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+                    Dismiss
+                </button>
+            </div>
+            <div id="lowStockList" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+
+            <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <span id="lowStockShowing" class="text-xs font-medium text-red-700/80">Showing 0 of 0</span>
+                <div class="flex items-center gap-2">
+                    <button id="lowStockPrevPage" type="button" class="p-2 rounded-lg bg-white border border-red-200 text-red-700 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                    </button>
+                    <span id="lowStockPageInfo" class="text-xs font-semibold text-red-800">Page 1 of 1</span>
+                    <button id="lowStockNextPage" type="button" class="p-2 rounded-lg bg-white border border-red-200 text-red-700 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search & Filter Section -->
+        <div class="surface-panel rounded-2xl p-6 mb-2 animate-fade-in">
+            <div class="flex flex-col md:flex-row gap-4">
+                <!-- Search -->
+                <div class="flex-1 relative">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Search by name, category, or model..." 
+                        class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    >
+                </div>
+                
+                <!-- Category Filter -->
+                <div class="relative">
+                    <i data-lucide="filter" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                    <select 
+                        id="categoryFilter" 
+                        class="w-full md:w-48 pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none cursor-pointer"
+                    >
+                        <option value="">All Categories</option>
+                        <option value="GPU">GPU / Graphics Card</option>
+                        <option value="CPU">CPU / Processor</option>
+                        <option value="RAM">RAM / Memory</option>
+                        <option value="Motherboard">Motherboard</option>
+                        <option value="Storage">Storage / SSD</option>
+                        <option value="PSU">Power Supply</option>
+                        <option value="Case">PC Case</option>
+                        <option value="Cooling">Cooling</option>
+                        <option value="Monitor">Monitor</option>
+                        <option value="Peripheral">Peripheral</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+                <span class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Quick Filters</span>
+                <button type="button" class="quick-filter-chip" data-quick-category="GPU" onclick="applyQuickCategory('GPU')">GPU</button>
+                <button type="button" class="quick-filter-chip" data-quick-category="CPU" onclick="applyQuickCategory('CPU')">CPU</button>
+                <button type="button" class="quick-filter-chip" data-quick-category="RAM" onclick="applyQuickCategory('RAM')">RAM</button>
+                <button type="button" class="quick-filter-chip" data-quick-category="Storage" onclick="applyQuickCategory('Storage')">Storage</button>
+                <button type="button" class="quick-filter-chip" data-quick-category="Peripheral" onclick="applyQuickCategory('Peripheral')">Peripheral</button>
+                <button type="button" class="quick-filter-chip is-reset" onclick="resetFilters()">Reset</button>
+            </div>
+        </div>
+
+
+
+        <!-- Inventory Table -->
+        <div class="surface-panel rounded-2xl overflow-hidden animate-fade-in mb-2 border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="text-sm sm:text-base font-semibold text-gray-800 flex items-center gap-2">
+                        <i data-lucide="table" class="w-4 h-4 text-blue-600"></i>
+                        Inventory List
+                    </h2>
+                    <span class="text-xs sm:text-sm text-gray-500">Scroll horizontally on smaller screens</span>
+                </div>
+            </div>
+            <div class="table-shell overflow-x-auto">
+                <table class="w-full min-w-max" id="inventoryTableElement">
+                    <thead class="table-head">
+                        <tr>
+                            <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 border-b border-gray-200 sticky top-0 bg-gray-50">
+                                <span class="flex items-center gap-2">
+                                    <i data-lucide="box" class="w-4 h-4"></i>Item Name
+                                </span>
+                            </th>
+                            <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 border-b border-gray-200 sticky top-0 bg-gray-50">
+                                <span class="flex items-center gap-2">
+                                    <i data-lucide="barcode" class="w-4 h-4"></i>Model
+                                </span>
+                            </th>
+                            <th class="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wide text-gray-600 border-b border-gray-200 sticky top-0 bg-gray-50">
+                                <span class="flex items-center justify-center gap-2">
+                                    <i data-lucide="layers" class="w-4 h-4"></i>Total Quantity
+                                </span>
+                            </th>
+                            <th class="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wide text-gray-600 border-b border-gray-200 sticky top-0 bg-gray-50">
+                                <span class="flex items-center justify-end gap-2">
+                                    <i data-lucide="dollar-sign" class="w-4 h-4"></i>Cost
+                                </span>
+                            </th>
+                            <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 border-b border-gray-200 sticky top-0 bg-gray-50">
+                                <span class="flex items-center gap-2">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>Status
+                                </span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-body" class="divide-y divide-gray-100">
+                        <!-- Items will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden py-16 text-center">
+                <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="package-open" class="w-12 h-12 text-gray-400"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">No items found</h3>
+                <p class="text-gray-500 mb-6">Get started by adding your first PC component</p>
+                <button onclick="openModal()" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>Add First Item</span>
+                </button>
+            </div>
+
+            <!-- Table Footer -->
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <span class="text-sm text-gray-500">
+                    Showing <span id="showingCount" class="font-semibold text-gray-700">0</span>
+                </span>
+                <div class="flex items-center justify-end gap-2">
+                    <button id="prevPage" class="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <span class="text-sm text-gray-600">Page <span id="currentPage" class="font-semibold">1</span> of <span id="totalPages">1</span></span>
+                    <button id="nextPage" class="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+
+    <!-- Add/Edit Modal -->
+    <div id="itemModal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-backdrop absolute inset-0" onclick="closeModal()"></div>
+        <div class="relative min-h-screen flex items-center justify-center p-4">
+            <div class="modal-card relative bg-white rounded-2xl w-full max-w-lg animate-slide-up">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-blue-600 rounded-t-2xl">
+                    <h3 id="modalTitle" class="text-xl font-bold text-white flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-6 h-6"></i>Add New Item
+                    </h3>
+                    <button onclick="closeModal()" class="p-2 rounded-lg hover:bg-white/20 transition">
+                        <i data-lucide="x" class="w-5 h-5 text-white"></i>
+                    </button>
+                </div>
+                
+                <!-- Modal Body -->
+                <form id="itemForm" class="p-6 space-y-4">
+                    <input type="hidden" id="itemId">
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Item Name -->
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="type" class="w-4 h-4"></i>Item Name *
+                            </label>
+                            <input 
+                                type="text" 
+                                id="itemName" 
+                                required 
+                                maxlength="100"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="e.g., NVIDIA RTX 4080"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">Max 100 characters</p>
+                        </div>
+
+                        <!-- Category -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="tag" class="w-4 h-4"></i>Category *
+                            </label>
+                            <select 
+                                id="itemCategory" 
+                                required 
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                            >
+                                <option value="">Select Category</option>
+                                <option value="GPU">GPU / Graphics Card</option>
+                                <option value="CPU">CPU / Processor</option>
+                                <option value="RAM">RAM / Memory</option>
+                                <option value="Motherboard">Motherboard</option>
+                                <option value="Storage">Storage / SSD</option>
+                                <option value="PSU">Power Supply</option>
+                                <option value="Case">PC Case</option>
+                                <option value="Cooling">Cooling</option>
+                                <option value="Monitor">Monitor</option>
+                                <option value="Peripheral">Peripheral</option>
+                            </select>
+                        </div>
+
+                        <!-- Model/Brand -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="hash" class="w-4 h-4"></i>Model/Brand
+                            </label>
+                            <input 
+                                type="text" 
+                                id="itemModel" 
+                                maxlength="100"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="e.g., ASUS ROG Strix"
+                            >
+                        </div>
+
+                        <!-- Quantity -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="layers" class="w-4 h-4"></i>Quantity *
+                            </label>
+                            <input 
+                                type="number" 
+                                id="itemQuantity" 
+                                required 
+                                min="0"
+                                max="999999"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="0"
+                            >
+                        </div>
+
+                        <!-- Unit Price -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="tag" class="w-4 h-4"></i>Unit Price *
+                            </label>
+                            <input 
+                                type="number" 
+                                id="itemPrice" 
+                                required 
+                                min="0"
+                                max="999999.99"
+                                step="0.01"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="0.00"
+                            >
+                        </div>
+
+                        <!-- Min Stock Level -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="alert-circle" class="w-4 h-4"></i>Min Stock Level
+                            </label>
+                            <input 
+                                type="number" 
+                                id="itemMinStock" 
+                                min="0"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="5"
+                            >
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Modal Footer -->
+                <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+                    <button 
+                        type="button" 
+                        onclick="closeModal()" 
+                        class="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition flex items-center gap-2"
+                    >
+                        <i data-lucide="x" class="w-4 h-4"></i>Cancel
+                    </button>
+                    <button 
+                        type="submit" 
+                        form="itemForm" 
+                        class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-lg flex items-center gap-2"
+                    >
+                        <i data-lucide="save" class="w-4 h-4"></i>Save Item
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-backdrop absolute inset-0" onclick="closeDeleteModal()"></div>
+        <div class="relative min-h-screen flex items-center justify-center p-4">
+            <div class="modal-card relative bg-white rounded-2xl w-full max-w-md animate-slide-up">
+                <div class="p-8 text-center">
+                    <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i data-lucide="trash-2" class="w-10 h-10 text-red-500"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Delete Item?</h3>
+                    <p id="deleteMessage" class="text-gray-500 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
+                    <div class="flex items-center justify-center gap-3">
+                        <button 
+                            onclick="closeDeleteModal()" 
+                            class="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition flex items-center gap-2"
+                        >
+                            <i data-lucide="x" class="w-4 h-4"></i>Cancel
+                        </button>
+                        <button 
+                            id="confirmDeleteBtn" 
+                            class="px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition shadow-lg flex items-center gap-2"
+                        >
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-4 flex items-center gap-3">
+            <div id="toastIcon" class="w-10 h-10 rounded-full flex items-center justify-center">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p id="toastTitle" class="font-semibold text-gray-800"></p>
+                <p id="toastMessage" class="text-sm text-gray-500"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 flex items-center gap-3">
+            <div class="loading-spinner"></div>
+            <span class="text-gray-700">Processing...</span>
+        </div>
+    </div>
+
+    <!-- Undo Notification -->
+    <div id="undoNotification" class="fixed bottom-4 left-4 bg-gray-800 text-white px-6 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+        <span id="undoMessage">Item deleted</span>
+        <button onclick="undoDelete()" class="text-blue-400 hover:text-blue-300 font-semibold ml-2">Undo</button>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        let stockData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let lowStockItems = [];
+        let lowStockCurrentPage = 1;
+        const lowStockItemsPerPage = 4;
+
+        // INIT
+        document.addEventListener('DOMContentLoaded', async () => {
+            const stockRoomPath = "{{ url_for('stock_room_bp.stock_room_page') }}";
+            document.querySelectorAll(`a[href="${stockRoomPath}"]`).forEach((link) => {
+                link.setAttribute('aria-current', 'page');
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                });
+            });
+
+            await loadStockRoom();
+            setupEventListeners();
+            updateStats();
+            updateLastUpdatedAt();
+            syncQuickFilterState();
+            lucide.createIcons();
+        });
+
+        // FETCH FROM BACKEND
+        async function loadStockRoom() {
+            try {
+                const res = await fetch('/stock_room/get-stock-room');
+                stockData = await res.json();
+                renderStockTable(stockData);
+                updateLastUpdatedAt();
+                lucide.createIcons();
+            } catch (err) {
+                console.error("Error loading stock:", err);
+            }
+        }
+
+        function renderStockTable(data) {
+            const tbody = document.getElementById('stock-body');
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('showingCount').textContent = '0';
+                updatePaginationControls(0);
+                return;
+            }
+
+            document.getElementById('emptyState').classList.add('hidden');
+            
+            // Calculate pagination
+            const totalItems = data.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+            const paginatedData = data.slice(startIndex, endIndex);
+            
+            paginatedData.forEach((item, index) => {
+                const status = getStockStatus(item);
+                const statusColor = status === 'In Stock' ? 'text-green-600 bg-green-50' : 
+                                   status === 'Low Stock' ? 'text-yellow-600 bg-yellow-50' : 
+                                   'text-red-600 bg-red-50';
+                const statusIcon = status === 'In Stock' ? 'check-circle' : 
+                                  status === 'Low Stock' ? 'alert-circle' : 'x-circle';
+                const categoryLabel = formatCategoryLabel(item.category);
+                
+                const unitPrice = Number(item.unit_price) || 0;
+                const costFormatted = unitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                
+                const tr = document.createElement('tr');
+                tr.className = `${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`;
+                tr.innerHTML = `
+                    <td class="px-5 py-4 border-b border-gray-100">
+                        <div class="flex flex-col gap-2">
+                            <span class="font-semibold text-gray-800 leading-tight">${item.item_name}</span>
+                            <span class="inline-flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                                <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+                                ${categoryLabel}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4 border-b border-gray-100 text-gray-600">
+                        <div class="max-w-xs">
+                            <span class="block font-medium text-gray-700">${item.brand_model || '-'}</span>
+                            <span class="text-xs text-gray-400">Model / Brand</span>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4 border-b border-gray-100 text-center">
+                        <span class="inline-flex items-center justify-center min-w-12 px-3 py-1 rounded-lg bg-gray-100 text-gray-800 font-semibold tabular-nums">${Number(item.total_quantity || 0).toLocaleString()}</span>
+                    </td>
+                    <td class="px-5 py-4 border-b border-gray-100 text-right">
+                        <div class="inline-flex flex-col items-end">
+                            <span class="text-lg font-bold text-green-600 tabular-nums">₱${costFormatted}</span>
+                            <span class="text-xs text-gray-400">Unit Cost</span>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4 border-b border-gray-100">
+                        <span class="px-3 py-1.5 rounded-full text-xs font-semibold ${statusColor} inline-flex items-center gap-1.5 w-fit">
+                            <i data-lucide="${statusIcon}" class="w-4 h-4"></i>
+                            ${status}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            document.getElementById('showingCount').textContent = `${startIndex + 1}-${endIndex} of ${totalItems}`;
+            updatePaginationControls(totalPages);
+            lucide.createIcons({ nodes: [tbody] });
+        }
+
+        function updatePaginationControls(totalPages) {
+            document.getElementById('currentPage').textContent = currentPage;
+            document.getElementById('totalPages').textContent = totalPages || 1;
+            
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+            
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= totalPages || totalPages === 0;
+        }
+
+        function changePage(direction) {
+            const data = filteredData.length > 0 ? filteredData : stockData;
+            const totalPages = Math.ceil(data.length / itemsPerPage);
+            
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderStockTable(data);
+            }
+        }
+
+        function filterStock() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+
+            filteredData = stockData.filter(item => {
+                const categoryValue = (item.category || '').toString().toLowerCase();
+                const itemNameValue = (item.item_name || '').toString().toLowerCase();
+                const brandModelValue = (item.brand_model || '').toString().toLowerCase();
+                const matchSearch =
+                    categoryValue.includes(search) ||
+                    itemNameValue.includes(search) ||
+                    brandModelValue.includes(search);
+                
+                // Format category with capital letters for comparison
+                const categoryFormatted = (item.category || '').toString().split(' ').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                ).join(' ');
+                const matchCategory = !category || categoryFormatted === category;
+
+                return matchSearch && matchCategory;
+            });
+
+            currentPage = 1;
+            renderStockTable(filteredData);
+            syncQuickFilterState();
+        }
+
+        function formatCategoryLabel(category) {
+            const value = (category || '').toString().trim();
+            if (!value) return 'Uncategorized';
+
+            const shortCodes = new Set(['CPU', 'GPU', 'RAM', 'PSU', 'SSD', 'HDD']);
+            return value.split(/\s+/).map((word) => {
+                const upperWord = word.toUpperCase();
+                if (shortCodes.has(upperWord)) return upperWord;
+                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            }).join(' ');
+        }
+
+        // FILTERS
+        function setupEventListeners() {
+            document.getElementById('searchInput').addEventListener('input', filterStock);
+            document.getElementById('categoryFilter').addEventListener('change', filterStock);
+            document.getElementById('prevPage').addEventListener('click', () => changePage(-1));
+            document.getElementById('nextPage').addEventListener('click', () => changePage(1));
+
+            const lowStockPrev = document.getElementById('lowStockPrevPage');
+            const lowStockNext = document.getElementById('lowStockNextPage');
+            if (lowStockPrev && lowStockNext) {
+                lowStockPrev.addEventListener('click', () => changeLowStockPage(-1));
+                lowStockNext.addEventListener('click', () => changeLowStockPage(1));
+            }
+
+            const exportBtn = document.getElementById('exportImportBtn');
+            const exportMenu = document.getElementById('exportMenu');
+
+            if (exportBtn && exportMenu) {
+                exportBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const isOpen = exportMenu.classList.contains('is-open');
+                    setExportMenuOpen(!isOpen);
+                });
+
+                exportMenu.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                });
+
+                document.addEventListener('click', () => {
+                    setExportMenuOpen(false);
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        setExportMenuOpen(false);
+                    }
+                });
+            }
+        }
+
+        function setExportMenuOpen(isOpen) {
+            const exportBtn = document.getElementById('exportImportBtn');
+            const exportMenu = document.getElementById('exportMenu');
+            if (!exportBtn || !exportMenu) return;
+
+            exportBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            exportMenu.classList.toggle('is-open', isOpen);
+        }
+
+        function applyQuickCategory(category) {
+            const categoryFilter = document.getElementById('categoryFilter');
+            if (!categoryFilter) return;
+            categoryFilter.value = category;
+            filterStock();
+        }
+
+        function resetFilters() {
+            const searchInput = document.getElementById('searchInput');
+            const categoryFilter = document.getElementById('categoryFilter');
+            if (searchInput) searchInput.value = '';
+            if (categoryFilter) categoryFilter.value = '';
+            filterStock();
+        }
+
+        function syncQuickFilterState() {
+            const category = document.getElementById('categoryFilter')?.value || '';
+            document.querySelectorAll('[data-quick-category]').forEach((chip) => {
+                chip.classList.toggle('is-active', chip.dataset.quickCategory === category);
+            });
+        }
+
+        function updateLastUpdatedAt() {
+            const label = document.getElementById('lastUpdatedAt');
+            if (!label) return;
+            label.textContent = new Date().toLocaleString('en-PH', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
+
+        // STATUS LOGIC
+        function getStockStatus(item) {
+            const minStock = item.min_stock || 5;
+            if (item.total_quantity === 0) return 'Out of Stock';
+            if (item.total_quantity <= minStock) return 'Low Stock';
+            return 'In Stock';
+        }
+
+        // STATS
+        function updateStats() {
+            const totalItems = stockData.reduce((sum, i) => sum + Number(i.total_quantity || 0), 0);
+            const categories = [...new Set(stockData.map(i => i.category))].length;
+            const lowStock = stockData.filter(i => {
+                const minStock = i.min_stock || 5;
+                return i.total_quantity <= minStock;
+            }).length;
+            const totalValue = stockData.reduce((sum, i) => sum + (i.total_quantity * (i.unit_price || 0)), 0);
+
+            document.getElementById('totalItems').textContent = totalItems.toLocaleString();
+            document.getElementById('totalCategories').textContent = categories;
+            document.getElementById('lowStockCount').textContent = lowStock;
+            document.getElementById('totalValue').textContent = '₱' + totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            checkLowStock();
+        }
+
+        // LOW STOCK ALERT
+        function checkLowStock() {
+            const lowItems = stockData.filter(i => {
+                const minStock = i.min_stock || 5;
+                return i.total_quantity <= minStock && i.total_quantity > 0;
+            });
+
+            const list = document.getElementById('lowStockList');
+            const section = document.getElementById('lowStockSection');
+            const lowStockShowing = document.getElementById('lowStockShowing');
+            const lowStockPageInfo = document.getElementById('lowStockPageInfo');
+            const lowStockPrev = document.getElementById('lowStockPrevPage');
+            const lowStockNext = document.getElementById('lowStockNextPage');
+
+            if (!list || !section) {
+                return;
+            }
+
+            if (lowItems.length === 0) {
+                section.classList.add('hidden');
+                lowStockItems = [];
+                lowStockCurrentPage = 1;
+                if (lowStockShowing) lowStockShowing.textContent = 'Showing 0 of 0';
+                if (lowStockPageInfo) lowStockPageInfo.textContent = 'Page 1 of 1';
+                if (lowStockPrev) lowStockPrev.disabled = true;
+                if (lowStockNext) lowStockNext.disabled = true;
+                return;
+            }
+
+            section.classList.remove('hidden');
+            lowStockItems = lowItems;
+            const totalPages = Math.ceil(lowStockItems.length / lowStockItemsPerPage);
+            if (lowStockCurrentPage > totalPages) {
+                lowStockCurrentPage = totalPages;
+            }
+            if (lowStockCurrentPage < 1) {
+                lowStockCurrentPage = 1;
+            }
+
+            renderLowStockPage();
+        }
+
+        function renderLowStockPage() {
+            const list = document.getElementById('lowStockList');
+            const lowStockShowing = document.getElementById('lowStockShowing');
+            const lowStockPageInfo = document.getElementById('lowStockPageInfo');
+            const lowStockPrev = document.getElementById('lowStockPrevPage');
+            const lowStockNext = document.getElementById('lowStockNextPage');
+
+            if (!list) return;
+
+            const totalItems = lowStockItems.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / lowStockItemsPerPage));
+            const startIndex = (lowStockCurrentPage - 1) * lowStockItemsPerPage;
+            const endIndex = Math.min(startIndex + lowStockItemsPerPage, totalItems);
+            const pageItems = lowStockItems.slice(startIndex, endIndex);
+
+            list.innerHTML = pageItems.map(item => `
+                <div class="flex justify-between items-center gap-3 p-3 bg-white rounded-lg border border-red-100">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <i data-lucide="package" class="w-4 h-4 text-red-500 shrink-0"></i>
+                        <div class="min-w-0">
+                            <p class="font-semibold text-red-900 truncate">${item.item_name}</p>
+                            <p class="text-xs text-red-500">Min stock: ${item.min_stock || 5}</p>
+                        </div>
+                    </div>
+                    <span class="shrink-0 text-red-700 font-bold">${item.total_quantity} left</span>
+                </div>
+            `).join('');
+
+            if (lowStockShowing) {
+                lowStockShowing.textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalItems}`;
+            }
+            if (lowStockPageInfo) {
+                lowStockPageInfo.textContent = `Page ${lowStockCurrentPage} of ${totalPages}`;
+            }
+            if (lowStockPrev) {
+                lowStockPrev.disabled = lowStockCurrentPage <= 1;
+            }
+            if (lowStockNext) {
+                lowStockNext.disabled = lowStockCurrentPage >= totalPages;
+            }
+
+            lucide.createIcons({ nodes: [list] });
+        }
+
+        function changeLowStockPage(direction) {
+            const totalPages = Math.max(1, Math.ceil(lowStockItems.length / lowStockItemsPerPage));
+            const nextPage = lowStockCurrentPage + direction;
+
+            if (nextPage < 1 || nextPage > totalPages) return;
+
+            lowStockCurrentPage = nextPage;
+            renderLowStockPage();
+        }
+
+        function dismissLowStockAlerts() {
+            const section = document.getElementById('lowStockSection');
+            if (section) {
+                section.classList.add('hidden');
+            }
+        }
+
+        // MODAL FUNCTIONS
+        function openModal() {
+            document.getElementById('itemModal').classList.remove('hidden');
+            document.getElementById('modalTitle').innerHTML = '<i data-lucide="plus-circle" class="w-6 h-6"></i>Add New Item';
+            document.getElementById('itemForm').reset();
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('itemModal').classList.add('hidden');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+
+        // Export/Import Functions
+        function exportToJSON() {
+            const dataStr = JSON.stringify(stockData, null, 2);
+            const blob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'stock-room-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            setExportMenuOpen(false);
+            showToast('Export Successful', 'Data exported as JSON');
+        }
+
+        function exportToCSV() {
+            const headers = ['Category', 'Item Name', 'Model', 'Quantity', 'Unit Price'];
+            const rows = stockData.map(item => [
+                item.category,
+                item.item_name,
+                item.brand_model || '',
+                item.total_quantity,
+                Number(item.unit_price) || 0
+            ]);
+            
+            const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csvContent], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'stock-room-data.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+            setExportMenuOpen(false);
+            showToast('Export Successful', 'Data exported as CSV');
+        }
+
+        function importFromJSON(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    setExportMenuOpen(false);
+                    showToast('Import Successful', `Imported ${data.length} items`);
+                } catch (err) {
+                    setExportMenuOpen(false);
+                    showToast('Import Failed', 'Invalid JSON file', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Toast Notification
+        function showToast(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            
+            if (type === 'success') {
+                toastIcon.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-green-100';
+                toastIcon.innerHTML = '<i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>';
+            } else {
+                toastIcon.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-red-100';
+                toastIcon.innerHTML = '<i data-lucide="x-circle" class="w-6 h-6 text-red-600"></i>';
+            }
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+

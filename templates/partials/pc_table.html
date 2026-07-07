@@ -1,0 +1,24 @@
+<table class="inv-table">
+  <thead>
+    <tr>
+      <th><input type="checkbox" id="selectAllPCs" onclick="toggleSelectAllPCs()"></th>
+      <th>PC ID</th>
+      <th>PC Name</th>
+      <th>Department</th>
+      <th>Cost</th>
+      <th>Date Acquired</th>
+      <th>Accountable</th>
+      <th>Serial No</th>
+      <th>Municipal SN</th>
+      <th>Notes</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+
+  <tbody id="pcTableBody">
+    {# initial render only #}
+    {% for pc in pcs %}
+      {% include "partials/pc_table_row.html" %}
+    {% endfor %}
+  </tbody>
+</table>

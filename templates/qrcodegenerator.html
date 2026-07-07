@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Code Generator - NCMIS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --panel-border: #dbe5f4;
+      --panel-shadow: 0 16px 40px -26px rgba(15, 23, 42, 0.45);
+      --surface: rgba(255, 255, 255, 0.94);
+    }
+
+    body {
+      font-family: 'Manrope', sans-serif;
+      background:
+        radial-gradient(1100px circle at 20% -10%, rgba(56, 189, 248, 0.22), transparent 45%),
+        radial-gradient(900px circle at 85% 0%, rgba(59, 130, 246, 0.18), transparent 42%),
+        linear-gradient(180deg, #f5f9ff 0%, #eef4ff 100%);
+    }
+
+    main {
+      position: relative;
+      isolation: isolate;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-panel {
+      background: linear-gradient(120deg, #0f4cc9 0%, #1d65d8 48%, #0ea5e9 100%);
+      border: 1px solid rgba(37, 99, 235, 0.55);
+      box-shadow: 0 28px 50px -34px rgba(30, 64, 175, 0.85);
+      overflow: hidden;
+      position: sticky;
+      top: 0.75rem;
+      z-index: 30;
+    }
+
+    .hero-panel::before,
+    .hero-panel::after {
+      content: '';
+      position: absolute;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    .hero-panel::before {
+      width: 240px;
+      height: 240px;
+      right: -80px;
+      top: -120px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .hero-panel::after {
+      width: 200px;
+      height: 200px;
+      left: -70px;
+      bottom: -130px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .filter-field {
+      background: rgba(255, 255, 255, 0.17);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    }
+
+    .filter-field:focus {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    .primary-btn {
+      background: linear-gradient(140deg, #ffffff 0%, #f0f7ff 100%);
+      color: #1d4ed8;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 10px 24px -18px rgba(255, 255, 255, 0.95);
+    }
+
+    .primary-btn:hover {
+      background: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .secondary-btn {
+      background: rgba(30, 64, 175, 0.93);
+      border: 1px solid rgba(255, 255, 255, 0.36);
+      box-shadow: 0 12px 24px -16px rgba(30, 64, 175, 0.8);
+    }
+
+    .secondary-btn:hover {
+      background: rgba(29, 78, 216, 0.95);
+      transform: translateY(-1px);
+    }
+
+    .section-panel {
+      background: var(--surface);
+      border: 1px solid var(--panel-border);
+      box-shadow: var(--panel-shadow);
+      backdrop-filter: blur(6px);
+    }
+
+    .stat-tile {
+      border-radius: 0.9rem;
+      box-shadow: 0 12px 28px -24px rgba(15, 23, 42, 0.55);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stat-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 30px -24px rgba(15, 23, 42, 0.6);
+    }
+
+    .table-shell {
+      border: 1px solid #dbe7fb;
+      border-radius: 0.95rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      overflow: hidden;
+    }
+
+    #deviceGrid tr {
+      transition: background-color 0.2s ease, transform 0.18s ease;
+    }
+
+    #deviceGrid tr:hover td {
+      background: #eff6ff;
+    }
+
+    #deviceGrid td {
+      border-bottom: 1px solid #e7eefc;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border: 1px solid #dbe7fb;
+      box-shadow: 0 30px 60px -28px rgba(15, 23, 42, 0.55);
+    }
+
+    .slide-in { animation: slideIn 0.3s ease-out; }
+    .device-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .device-card:hover { transform: translateY(-2px); }
+    .modal-backdrop { backdrop-filter: blur(4px); }
+    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+    @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .status-badge { transition: all 0.2s ease; }
+    .qr-preview { transition: transform 0.2s ease; }
+    .qr-preview:hover { transform: scale(1.05); }
+    .custom-alert-modal { 
+      transform: scale(0.95) translateY(10px); 
+      opacity: 0; 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    }
+    .custom-alert-modal.show { 
+      transform: scale(1) translateY(0); 
+      opacity: 1; 
+    }
+    .custom-alert-modal:hover { 
+      transform: scale(1.02) translateY(-2px); 
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
+    }
+    .custom-alert-modal.print-theme {
+      border-color: #bfdbfe;
+      background:
+        radial-gradient(160px circle at 86% -18%, rgba(59, 130, 246, 0.2), transparent 72%),
+        linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+      box-shadow: 0 30px 60px -28px rgba(30, 64, 175, 0.5);
+    }
+    .custom-alert-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+    .custom-alert-tag.print-theme {
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
+      color: #0c4a6e;
+    }
+    .custom-alert-ok-btn {
+      background: #2563eb;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    .custom-alert-ok-btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+    .custom-alert-ok-btn.print-theme {
+      background: linear-gradient(135deg, #0f4cc9 0%, #0284c7 100%);
+    }
+    .custom-alert-ok-btn.print-theme:hover {
+      background: linear-gradient(135deg, #1d4ed8 0%, #0369a1 100%);
+    }
+    .print-copy-toast {
+      background:
+        radial-gradient(180px circle at 88% -22%, rgba(59, 130, 246, 0.18), transparent 72%),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border: 1px solid #bfdbfe;
+      box-shadow: 0 24px 48px -24px rgba(30, 64, 175, 0.6);
+      transform: translateY(-12px) scale(0.98);
+      opacity: 0;
+      transition: all 0.22s ease;
+    }
+    .print-copy-toast.show {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    .print-copy-input {
+      background: #eef6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e3a8a;
+    }
+    .print-copy-input:focus {
+      outline: none;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    .print-copy-confirm {
+      background: linear-gradient(135deg, #0f4cc9 0%, #0284c7 100%);
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+    .print-copy-confirm:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+    .print-copy-cancel {
+      background: #e2e8f0;
+      color: #334155;
+      transition: all 0.2s ease;
+    }
+    .print-copy-cancel:hover {
+      background: #cbd5e1;
+    }
+  </style>
+</head>
+
+<body class="flex min-h-screen text-gray-800">
+
+  {% include 'sidebar.html' %}
+
+  <!-- Overlay -->
+  <div id="overlay" class="fixed inset-0 bg-black/40 hidden z-40 md:hidden"></div>
+
+  <!-- Main -->
+  <main class="flex-1 ml-0 md:ml-64 p-4 lg:p-5 space-y-5 transition-all duration-300">
+
+    <!-- Header with Search -->
+    <header class="hero-panel text-white shadow-xl p-5 md:p-6 rounded-2xl backdrop-blur-md">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+            <i data-lucide="qr-code" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold">Device QR Codes</h2>
+            <p class="text-blue-100 text-sm">Manage and generate QR codes for all devices</p>
+          </div>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row gap-3">
+          <!-- Search Bar -->
+          <div class="relative">
+            <input type="text" id="searchInput" placeholder="Search devices..." 
+                   class="filter-field w-full sm:w-64 pl-10 pr-10 py-2 rounded-lg backdrop-blur-sm text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-blue-200"></i>
+            <button id="clearSearch" class="absolute right-2 top-2.5 text-blue-200 hover:text-white transition-colors">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          
+          <!-- Filter Dropdown -->
+          <select id="statusFilter" class="filter-field px-4 py-2 rounded-lg backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none">
+            <option value="" class="text-gray-800">All Status</option>
+            <option value="Available" class="text-gray-800">Available</option>
+            <option value="Maintenance" class="text-gray-800">Maintenance</option>
+          </select>
+          
+          <!-- Scan QR Button -->
+          <button id="scanQRBtn"
+            class="primary-btn flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 hover:shadow-xl focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-700">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+            <span class="font-medium">Scan QR</span>
+          </button>
+
+          <div class="flex items-center gap-2 bg-white/10 border border-white/20 rounded-lg px-2 py-1 backdrop-blur-sm">
+            <label for="batchCopiesInput" class="text-xs text-blue-100 font-medium whitespace-nowrap">Copies</label>
+            <input
+              id="batchCopiesInput"
+              type="number"
+              min="1"
+              max="30"
+              value="1"
+              class="filter-field w-16 px-2 py-1 rounded-md text-center text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-white/40"
+            >
+            <label for="batchSizeSelect" class="text-xs text-blue-100 font-medium whitespace-nowrap ml-2">Size</label>
+            <select id="batchSizeSelect" class="filter-field w-24 px-2 py-1 rounded-md text-white bg-white/10 text-sm">
+              <option value="100">100px</option>
+              <option value="150">150px</option>
+              <option value="200" selected>200px</option>
+              <option value="300">300px</option>
+              <option value="400">400px</option>
+            </select>
+          </div>
+
+          <button id="batchPrintBtn"
+class="secondary-btn text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2">
+<i data-lucide="printer"></i>
+Batch Print QR
+</button>
+                    
+        </div>
+      </div>
+    </header>
+
+    <!-- Devices List -->
+    <section class="section-panel rounded-2xl p-5 md:p-6">
+      <!-- Stats Bar -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div class="stat-tile bg-gradient-to-r from-blue-50 to-blue-100 p-4 border border-blue-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-blue-600 text-sm font-medium">Total Devices</p>
+              <p class="text-2xl font-bold text-blue-900" id="totalDevices">0</p>
+            </div>
+            <i data-lucide="box" class="w-8 h-8 text-blue-500"></i>
+          </div>
+        </div>
+        <div class="stat-tile bg-gradient-to-r from-green-50 to-green-100 p-4 border border-green-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-green-600 text-sm font-medium">Available</p>
+              <p class="text-2xl font-bold text-green-900" id="availableDevices">0</p>
+            </div>
+            <i data-lucide="check-circle" class="w-8 h-8 text-green-500"></i>
+          </div>
+        </div>
+        <div class="stat-tile bg-gradient-to-r from-red-50 to-red-100 p-4 border border-red-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-red-600 text-sm font-medium">Maintenance</p>
+              <p class="text-2xl font-bold text-red-900" id="maintenanceDevices">0</p>
+            </div>
+            <i data-lucide="tool" class="w-8 h-8 text-red-500"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Loading State -->
+      <div id="loadingState" class="hidden space-y-3">
+        <div class="skeleton h-20 rounded-lg"></div>
+        <div class="skeleton h-20 rounded-lg"></div>
+        <div class="skeleton h-20 rounded-lg"></div>
+      </div>
+      
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden text-center py-12">
+        <i data-lucide="inbox" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+        <h3 class="text-lg font-semibold text-gray-600 mb-2">No devices found</h3>
+        <p class="text-gray-500">Try adjusting your search or filter criteria</p>
+      </div>
+      
+      <div id="deviceTableContainer" class="table-shell border border-gray-200 rounded-xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 bg-white">
+            <thead class="bg-gradient-to-r from-slate-50 to-blue-50">
+              <tr>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Select</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">PC</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Location</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Serial No.</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Action</th>
+              </tr>
+            </thead>
+            <tbody id="deviceGrid" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Pagination -->
+      <div id="pagination" class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+        <div class="text-sm text-gray-600">
+          Showing <span id="showingFrom">0</span> to <span id="showingTo">0</span> of <span id="totalItems">0</span> devices
+        </div>
+        <div class="flex items-center space-x-2">
+          <!-- Pagination buttons will be generated here -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- QR Modal -->
+  <div id="qrModal" class="hidden fixed inset-0 modal-backdrop bg-black/60 flex items-center justify-center z-50">
+    <div class="modal-card rounded-2xl p-8 w-96 text-center relative slide-in">
+      <button id="closeQRModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+      
+      <div class="mb-6">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="qr-code" class="w-8 h-8 text-blue-600"></i>
+        </div>
+        <h3 class="font-bold text-xl text-gray-800 mb-2" id="qrDeviceName">Device Name</h3>
+        
+        <p class="text-gray-600 text-sm">Scan this QR code to access device information</p>
+        <div class="flex items-center justify-center gap-3 mt-3">
+          <label for="qrSizeSelect" class="text-sm text-gray-600 font-medium">Size</label>
+          <select id="qrSizeSelect" class="filter-field px-3 py-1 rounded-md text-gray-800">
+            <option value="100">100px</option>
+            <option value="150">150px</option>
+            <option value="200" selected>200px</option>
+            <option value="300">300px</option>
+            <option value="400">400px</option>
+            <option value="600">600px</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="qr-preview bg-white p-4 rounded-xl shadow-lg border border-gray-200 mb-6">
+        <img id="qrImage" class="mx-auto rounded-lg" alt="QR Code">
+      </div>
+      
+      <div class="flex gap-3">
+        <button id="downloadQR" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          Download
+        </button>
+        <button id="printQR" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          Print
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Alert Modal -->
+  <div id="customAlertModal" class="hidden fixed inset-0 modal-backdrop bg-black/70 flex items-center justify-center z-[60]">
+    <div id="customAlertCard" class="modal-card rounded-2xl p-8 w-[450px] text-center relative custom-alert-modal border border-gray-100">
+      <div class="mb-6">
+        <div id="customAlertIconWrap" class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i id="customAlertIcon" data-lucide="alert-circle" class="w-8 h-8 text-red-600"></i>
+        </div>
+        <p id="customAlertTag" class="custom-alert-tag hidden mx-auto">Print Alert</p>
+        <h3 id="customAlertTitle" class="font-bold text-xl text-gray-800 mb-2">Alert</h3>
+        <p id="customAlertMessage" class="text-gray-600 text-sm"></p>
+      </div>
+      
+      <div class="flex gap-3">
+        <button id="customAlertOkBtn" class="custom-alert-ok-btn flex-1 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print Copies Toast -->
+  <div id="printCopyToastWrap" class="hidden fixed top-4 right-4 z-[65] w-[360px] max-w-[calc(100vw-1.5rem)]">
+    <div id="printCopyToast" class="print-copy-toast rounded-2xl p-5">
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+            <i data-lucide="printer" class="w-5 h-5 text-blue-700"></i>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-[0.14em] font-bold text-blue-700">Print Setup</p>
+            <h4 class="text-sm font-semibold text-gray-800">Copies Per Page</h4>
+          </div>
+        </div>
+        <button id="printCopyToastClose" class="text-gray-400 hover:text-gray-700 transition-colors" aria-label="Close print setup">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <p class="text-sm text-gray-600 mb-3">Enter how many copies you want to print (1-30).</p>
+
+      <input id="printCopyInput" type="number" min="1" max="30" value="1" class="print-copy-input w-full rounded-xl px-3 py-2.5 text-sm font-semibold mb-4">
+
+      <div class="mb-3">
+        <label for="printSizeSelect" class="text-xs text-gray-600 font-medium">QR Size (px)</label>
+        <select id="printSizeSelect" class="print-copy-input w-full rounded-xl px-3 py-2.5 text-sm font-semibold mt-1">
+          <option value="100">100</option>
+          <option value="150">150</option>
+          <option value="200">200</option>
+          <option value="300" selected>300</option>
+          <option value="400">400</option>
+          <option value="600">600</option>
+        </select>
+      </div>
+
+      <div class="flex items-center justify-end gap-2">
+        <button id="printCopyCancelBtn" class="print-copy-cancel px-3.5 py-2 rounded-lg text-sm font-semibold">Cancel</button>
+        <button id="printCopyConfirmBtn" class="print-copy-confirm text-white px-3.5 py-2 rounded-lg text-sm font-semibold inline-flex items-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          Print
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scan QR Modal -->
+  <div id="scanModal" class="hidden fixed inset-0 modal-backdrop bg-black/60 flex items-center justify-center z-50">
+    <div class="modal-card rounded-2xl p-8 w-[450px] text-center relative slide-in">
+      <button id="closeScanModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+      
+      <div class="mb-6">
+        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="camera" class="w-8 h-8 text-green-600"></i>
+        </div>
+        <h3 class="font-bold text-xl text-gray-800 mb-2">Scan QR Code</h3>
+        <p class="text-gray-600 text-sm">Upload a QR code image to scan device information</p>
+      </div>
+      
+      <div class="mb-6">
+        <div id="uploadArea" class="border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 cursor-pointer group">
+          <i data-lucide="upload-cloud" class="w-12 h-12 text-gray-400 mx-auto mb-3 group-hover:text-blue-500 transition-colors"></i>
+          <p class="text-sm font-medium text-gray-700 mb-1">Click to upload or drag and drop</p>
+          <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+          <input type="file" id="qrFileInput" accept="image/*" class="hidden">
+        </div>
+        
+        <div id="previewArea" class="hidden mb-4">
+          <div class="relative inline-block">
+            <img id="previewImage" class="max-h-48 rounded-lg shadow-lg mx-auto" alt="QR Preview">
+            <button id="removeImage" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div id="scanResult" class="hidden mb-6">
+        <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+          <p class="text-sm font-medium text-green-800 mb-2 flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            QR Code Scanned Successfully
+          </p>
+          <div class="bg-white rounded-lg p-3 text-sm font-mono text-gray-700 break-all border" id="scanResultText"></div>
+        </div>
+      </div>
+      
+      <div class="flex gap-3">
+        <button id="uploadQRBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors font-medium flex items-center justify-center gap-2">
+          <i data-lucide="scan" class="w-4 h-4"></i>
+          Upload & Scan
+        </button>
+        <button id="clearBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-3 rounded-lg transition-colors font-medium flex items-center justify-center gap-2">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          Clear
+        </button>
+      </div>
+      
+      <div id="processScanArea" class="hidden mt-4">
+        <button id="processScanResult" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors font-medium flex items-center justify-center gap-2">
+          <i data-lucide="external-link" class="w-4 h-4"></i>
+          View Device Details
+        </button>
+      </div>
+    </div>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  lucide.createIcons();
+
+  const deviceGrid = document.getElementById('deviceGrid');
+  const deviceTableContainer = document.getElementById('deviceTableContainer');
+  const qrModal = document.getElementById('qrModal');
+  const qrImage = document.getElementById('qrImage');
+  const qrDeviceName = document.getElementById('qrDeviceName');
+  const qrSizeSelect = document.getElementById('qrSizeSelect');
+  const closeQRModal = document.getElementById('closeQRModal');
+  const pagination = document.getElementById('pagination');
+  const downloadQR = document.getElementById('downloadQR');
+  const printQR = document.getElementById('printQR');
+  const batchPrintBtn = document.getElementById('batchPrintBtn');
+  const batchCopiesInput = document.getElementById('batchCopiesInput');
+  const batchSizeSelect = document.getElementById('batchSizeSelect');
+
+  const scanModal = document.getElementById('scanModal');
+  const scanQRBtn = document.getElementById('scanQRBtn');
+  const closeScanModal = document.getElementById('closeScanModal');
+  const uploadArea = document.getElementById('uploadArea');
+  const qrFileInput = document.getElementById('qrFileInput');
+  const previewArea = document.getElementById('previewArea');
+  const previewImage = document.getElementById('previewImage');
+  const removeImage = document.getElementById('removeImage');
+  const uploadQRBtn = document.getElementById('uploadQRBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const scanResult = document.getElementById('scanResult');
+  const scanResultText = document.getElementById('scanResultText');
+  const processScanResult = document.getElementById('processScanResult');
+  const processScanArea = document.getElementById('processScanArea');
+
+  // Custom alert modal elements
+  const customAlertModal = document.getElementById('customAlertModal');
+  const customAlertCard = document.getElementById('customAlertCard');
+  const customAlertIconWrap = document.getElementById('customAlertIconWrap');
+  const customAlertIcon = document.getElementById('customAlertIcon');
+  const customAlertTag = document.getElementById('customAlertTag');
+  const customAlertTitle = document.getElementById('customAlertTitle');
+  const customAlertMessage = document.getElementById('customAlertMessage');
+  const customAlertOkBtn = document.getElementById('customAlertOkBtn');
+  const printCopyToastWrap = document.getElementById('printCopyToastWrap');
+  const printCopyToast = document.getElementById('printCopyToast');
+  const printCopyToastClose = document.getElementById('printCopyToastClose');
+  const printCopyInput = document.getElementById('printCopyInput');
+  const printSizeSelect = document.getElementById('printSizeSelect');
+  const printCopyCancelBtn = document.getElementById('printCopyCancelBtn');
+  const printCopyConfirmBtn = document.getElementById('printCopyConfirmBtn');
+
+  // Search and filter elements
+  const searchInput = document.getElementById('searchInput');
+  const clearSearchBtn = document.getElementById('clearSearch');
+  const statusFilter = document.getElementById('statusFilter');
+  const testApiBtn = document.getElementById('testApiBtn');
+  const loadingState = document.getElementById('loadingState');
+  const emptyState = document.getElementById('emptyState');
+  
+  // Stats elements
+  const totalDevices = document.getElementById('totalDevices');
+  const availableDevices = document.getElementById('availableDevices');
+  const maintenanceDevices = document.getElementById('maintenanceDevices');
+  
+  // Pagination info elements
+  const showingFrom = document.getElementById('showingFrom');
+  const showingTo = document.getElementById('showingTo');
+  const totalItems = document.getElementById('totalItems');
+
+  let selectedFile = null;
+  let filteredDevices = [];
+  let selectedPrintPcid = null;
+
+  let currentPage = 1;
+  const itemsPerPage = 12;
+  let allDevices = [];
+
+  function normalizeText(value) {
+    return value == null ? '' : String(value).toLowerCase();
+  }
+
+  // Custom alert function
+  function showCustomAlert(title, message, options = {}) {
+    const variant = options.variant || 'default';
+
+    customAlertCard.classList.remove('print-theme');
+    customAlertIconWrap.className = 'w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4';
+    customAlertIcon.className = 'w-8 h-8 text-red-600';
+    customAlertIcon.setAttribute('data-lucide', options.icon || 'alert-circle');
+    customAlertTag.classList.add('hidden');
+    customAlertTag.classList.remove('print-theme');
+    customAlertTag.textContent = '';
+    customAlertOkBtn.classList.remove('print-theme');
+
+    if (variant === 'print') {
+      customAlertCard.classList.add('print-theme');
+      customAlertIconWrap.className = 'w-16 h-16 bg-blue-100 ring-4 ring-blue-50 rounded-full flex items-center justify-center mx-auto mb-4';
+      customAlertIcon.className = 'w-8 h-8 text-blue-700';
+      customAlertIcon.setAttribute('data-lucide', options.icon || 'printer');
+      customAlertTag.textContent = options.tag || 'Print Alert';
+      customAlertTag.classList.remove('hidden');
+      customAlertTag.classList.add('print-theme');
+      customAlertOkBtn.classList.add('print-theme');
+    }
+
+    customAlertTitle.textContent = title;
+    customAlertMessage.textContent = message;
+    customAlertModal.classList.remove('hidden');
+    
+    // Trigger animation
+    const modalContent = customAlertModal.querySelector('.custom-alert-modal');
+    modalContent.classList.add('show');
+    
+    lucide.createIcons();
+  }
+
+  function showPrintAlert(title, message) {
+    showCustomAlert(title, message, { variant: 'print', icon: 'printer', tag: 'Print Alert' });
+  }
+
+  function openPrintCopyToast(pcid) {
+    selectedPrintPcid = pcid;
+    printCopyInput.value = '1';
+    if (printSizeSelect) printSizeSelect.value = '300';
+    printCopyToastWrap.classList.remove('hidden');
+    requestAnimationFrame(() => {
+      printCopyToast.classList.add('show');
+      printCopyInput.focus();
+      printCopyInput.select();
+      lucide.createIcons();
+    });
+  }
+
+  function closePrintCopyToast() {
+    printCopyToast.classList.remove('show');
+    setTimeout(() => {
+      printCopyToastWrap.classList.add('hidden');
+    }, 160);
+    selectedPrintPcid = null;
+  }
+
+  // Custom alert OK button event listener
+  customAlertOkBtn.addEventListener('click', () => {
+    const modalContent = customAlertModal.querySelector('.custom-alert-modal');
+    modalContent.classList.remove('show');
+    customAlertModal.classList.add('hidden');
+  });
+
+  printCopyToastClose.addEventListener('click', closePrintCopyToast);
+  printCopyCancelBtn.addEventListener('click', closePrintCopyToast);
+  printCopyConfirmBtn.addEventListener('click', async () => {
+    const copies = parseInt(printCopyInput.value, 10);
+
+    if (Number.isNaN(copies) || copies < 1 || copies > 30) {
+      showPrintAlert('Invalid Quantity', 'Please enter a number from 1 to 30.');
+      printCopyInput.focus();
+      return;
+    }
+
+    if (!selectedPrintPcid) {
+      showPrintAlert('No Device Selected', 'Select a PC first before printing.');
+      closePrintCopyToast();
+      return;
+    }
+
+    const pcidToPrint = selectedPrintPcid;
+    // Get selected print size (px)
+    let size = parseInt((printSizeSelect && printSizeSelect.value) ? printSizeSelect.value : '300', 10);
+    if (Number.isNaN(size)) size = 300;
+    size = Math.max(32, Math.min(size, 2000));
+
+    closePrintCopyToast();
+    await printPcLabels([pcidToPrint], copies, size);
+  });
+
+  printCopyInput.addEventListener('keydown', async (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      printCopyConfirmBtn.click();
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closePrintCopyToast();
+    }
+  });
+
+  // Fetch devices
+  loadingState.classList.remove('hidden');
+  console.log('Starting to fetch devices...');
+  
+  try {
+    console.log('Making request to /get_all_pc_qrs');
+    const response = await fetch('/get_all_pc_qrs');
+    console.log('Response received:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Raw data received:', data);
+    
+    allDevices = data;
+    console.log('Devices loaded:', allDevices.length);
+    console.log('Sample device:', allDevices[0]);
+    
+  } catch(err) {
+    console.error('Error loading devices:', err);
+    deviceGrid.innerHTML = `
+      <div class="text-center py-8">
+        <p class="text-red-500 font-semibold">Failed to load devices</p>
+        <p class="text-gray-600 text-sm mt-2">Error: ${err.message}</p>
+        <p class="text-gray-500 text-xs mt-1">Check browser console (F12) for more details</p>
+      </div>
+    `;
+    loadingState.classList.add('hidden');
+    showCustomAlert('Error', 'Failed to load devices. Check console for details.');
+    return; // Stop execution if API fails
+  }
+  
+  filteredDevices = [...allDevices];
+  updateStats();
+  renderDevices();
+  renderPagination();
+  loadingState.classList.add('hidden');
+
+  function updateStats() {
+    const stats = {
+      total: filteredDevices.length,
+      available: filteredDevices.filter(d => d.status === 'Available').length,
+      maintenance: filteredDevices.filter(d => d.status === 'Maintenance').length
+    };
+    
+    totalDevices.textContent = stats.total;
+    availableDevices.textContent = stats.available;
+    maintenanceDevices.textContent = stats.maintenance;
+  }
+  
+  function filterDevices() {
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    const statusValue = statusFilter.value;
+
+    filteredDevices = allDevices.filter((device) => {
+      const searchableText = [
+        device.pcname,
+        device.location,
+        device.pcid,
+        device.serial_no,
+        device.serial_number,
+        device.municipal_serial,
+        device.municipal_serial_no
+      ]
+        .map(normalizeText)
+        .join(' ');
+
+      const matchesSearch = !searchTerm || searchableText.includes(searchTerm);
+      const matchesStatus = !statusValue || device.status === statusValue;
+
+      return matchesSearch && matchesStatus;
+    });
+    
+    currentPage = 1;
+    updateStats();
+    renderDevices();
+    renderPagination();
+  }
+  
+  function renderDevices() {
+    console.log('=== RENDER DEBUG ===');
+    console.log('Rendering devices. Total filtered:', filteredDevices.length);
+    
+    deviceGrid.innerHTML = '';
+    
+    if (filteredDevices.length === 0) {
+      console.log('No devices to display - showing empty state');
+      emptyState.classList.remove('hidden');
+      deviceTableContainer.classList.add('hidden');
+      pagination.querySelector('.flex.items-center.space-x-2').innerHTML = '';
+      showingFrom.textContent = '0';
+      showingTo.textContent = '0';
+      totalItems.textContent = '0';
+      return;
+    } else {
+      console.log('Hiding empty state, rendering devices');
+      emptyState.classList.add('hidden');
+      deviceTableContainer.classList.remove('hidden');
+    }
+    
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const devicesToShow = filteredDevices.slice(startIndex, endIndex);
+    
+    console.log('Devices to show on this page:', devicesToShow.length);
+    console.log('Start index:', startIndex, 'End index:', endIndex);
+
+    devicesToShow.forEach((device, index) => {
+      console.log(`Creating row for device ${index}:`, device.pcname);
+
+      const serialNo = device.serial_no || device.serial_number || 'N/A';
+
+      const statusColor = {
+        'Available': 'bg-green-100 text-green-800 border-green-200',
+        'Maintenance': 'bg-red-100 text-red-800 border-red-200'
+      }[device.status] || 'bg-gray-100 text-gray-800 border-gray-200';
+
+      const row = document.createElement('tr');
+      row.className = 'device-row cursor-pointer';
+      row.style.animationDelay = `${index * 40}ms`;
+      row.innerHTML = `
+        <td class="px-4 py-4 text-center align-top">
+          <input type="checkbox" class="pc-checkbox h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" value="${device.pcid}" onclick="event.stopPropagation()">
+        </td>
+        <td class="px-4 py-4 align-top min-w-[220px]">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 flex items-center justify-center bg-blue-100 rounded-lg">
+              <i data-lucide="monitor" class="w-5 h-5 text-blue-700"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-900 leading-tight">${device.pcname || 'N/A'}</p>
+              <p class="text-xs text-gray-500 mt-1">PC ID: ${device.pcid || 'N/A'}</p>
+            </div>
+          </div>
+        </td>
+        <td class="px-4 py-4 align-top text-sm text-gray-700 min-w-[170px]">${device.location || 'N/A'}</td>
+        <td class="px-4 py-4 align-top text-sm font-mono text-gray-700 min-w-[180px]">${serialNo}</td>
+        <td class="px-4 py-4 align-top min-w-[140px]">
+          <span class="status-badge inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${statusColor}">
+            ${device.status || 'Unknown'}
+          </span>
+        </td>
+        <td class="px-4 py-4 align-top text-right min-w-[130px]">
+          <span class="inline-flex items-center gap-1 text-xs font-semibold text-blue-700">
+            View QR
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </span>
+        </td>
+      `;
+
+      row.addEventListener('click', () => {
+        qrDeviceName.textContent = device.pcname;
+        // Include currently selected size when showing QR
+        const selectedSize = (qrSizeSelect && qrSizeSelect.value) ? qrSizeSelect.value : '200';
+        qrImage.src = `/pc_qr/${device.pcid}?size=${selectedSize}`;
+        qrModal.dataset.device = JSON.stringify(device);
+        qrModal.classList.remove('hidden');
+      });
+
+      deviceGrid.appendChild(row);
+    });
+    
+    console.log('Cards added to DOM:', devicesToShow.length);
+    
+    // Update pagination info
+    showingFrom.textContent = filteredDevices.length > 0 ? startIndex + 1 : '0';
+    showingTo.textContent = Math.min(endIndex, filteredDevices.length);
+    totalItems.textContent = filteredDevices.length;
+    
+    // Create Lucide icons for the new cards
+    lucide.createIcons();
+    
+    console.log('=== END RENDER DEBUG ===');
+  }
+
+  function renderPagination() {
+    const totalPages = Math.ceil(filteredDevices.length / itemsPerPage);
+    const paginationContainer = pagination.querySelector('.flex.items-center.space-x-2');
+    paginationContainer.innerHTML = '';
+
+    if (totalPages <= 1) return;
+
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = `px-3 py-2 rounded-lg ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'} transition-colors flex items-center gap-1`;
+    prevBtn.innerHTML = '<i data-lucide="chevron-left" class="w-4 h-4"></i><span>Previous</span>';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderDevices();
+        renderPagination();
+      }
+    });
+    paginationContainer.appendChild(prevBtn);
+
+    // Page numbers with ellipsis for large page counts
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+    
+    if (startPage > 1) {
+      const firstBtn = createPageButton(1);
+      paginationContainer.appendChild(firstBtn);
+      
+      if (startPage > 2) {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'px-2 text-gray-500';
+        ellipsis.textContent = '...';
+        paginationContainer.appendChild(ellipsis);
+      }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      const pageBtn = createPageButton(i);
+      paginationContainer.appendChild(pageBtn);
+    }
+    
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'px-2 text-gray-500';
+        ellipsis.textContent = '...';
+        paginationContainer.appendChild(ellipsis);
+      }
+      
+      const lastBtn = createPageButton(totalPages);
+      paginationContainer.appendChild(lastBtn);
+    }
+
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = `px-3 py-2 rounded-lg ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'} transition-colors flex items-center gap-1`;
+    nextBtn.innerHTML = '<span>Next</span><i data-lucide="chevron-right" class="w-4 h-4"></i>';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderDevices();
+        renderPagination();
+      }
+    });
+    paginationContainer.appendChild(nextBtn);
+
+    // Create Lucide icons for pagination
+    lucide.createIcons();
+  }
+  
+  function createPageButton(pageNum) {
+    const pageBtn = document.createElement('button');
+    pageBtn.className = `px-3 py-2 rounded-lg ${pageNum === currentPage ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'} transition-colors`;
+    pageBtn.textContent = pageNum;
+    pageBtn.addEventListener('click', () => {
+      currentPage = pageNum;
+      renderDevices();
+      renderPagination();
+    });
+    return pageBtn;
+  }
+
+  // Close QR modal
+  closeQRModal.addEventListener('click', () => qrModal.classList.add('hidden'));
+  
+  // Download QR functionality
+  downloadQR.addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.href = qrImage.src;
+    link.download = `${qrDeviceName.textContent}_QR.png`;
+    link.click();
+  });
+
+  // Update preview when user changes selected size
+  if (qrSizeSelect) {
+    qrSizeSelect.addEventListener('change', () => {
+      if (!qrModal.classList.contains('hidden') && qrModal.dataset.device) {
+        try {
+          const dev = JSON.parse(qrModal.dataset.device);
+          const size = qrSizeSelect.value || '200';
+          if (dev.pcid) {
+            qrImage.src = `/pc_qr/${dev.pcid}?size=${size}`;
+          } else if (dev.accession_id) {
+            qrImage.src = `/device_qr/${dev.accession_id}?size=${size}`;
+          }
+        } catch (e) {
+          console.error('Invalid device data for size change', e);
+        }
+      }
+    });
+  }
+
+  function printableValue(value) {
+    return value ? value : 'N/A';
+  }
+
+  async function fetchPcForPrint(pcid) {
+    const response = await fetch(`/get_item_for_print/pc/${pcid}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch PC details for printing');
+    }
+
+    return data;
+  }
+
+  function buildLabelHtml(data, size = 300) {
+    const imgSize = (Number(size) && Number(size) > 0) ? Number(size) : 300;
+    // Convert px to millimeters for predictable print sizing (1px = 0.264583333 mm)
+    const imgMm = (imgSize * 0.2645833333).toFixed(2);
+    return `
+      <div class="label">
+        <div class="header">
+          MUNICIPALITY OF NORZAGARAY<br>
+          PROVINCE OF BULACAN<br>
+          GENERAL SERVICES OFFICE
+        </div>
+
+        <div class="section">
+          <b>PC ID:</b> ${printableValue(data.pcid)}<br>
+          <b>PC Name:</b> ${printableValue(data.pcname)}<br>
+          <b>Location:</b> ${printableValue(data.location)}<br>
+          <b>Status:</b> ${printableValue(data.status)}<br>
+          <b>Accountable:</b> ${printableValue(data.accountable)}<br>
+          <b>Serial No:</b> ${printableValue(data.serial_no)}<br>
+          <b>Date Acquired:</b> ${printableValue(data.date_acquired)}<br>
+        </div>
+
+        <div class="section">
+          <b>Monitor:</b> ${printableValue(data.monitor)}<br>
+          <b>Motherboard:</b> ${printableValue(data.motherboard)}<br>
+          <b>RAM:</b> ${printableValue(data.ram)}<br>
+          <b>Storage:</b> ${printableValue(data.storage)}<br>
+          <b>GPU:</b> ${printableValue(data.gpu)}<br>
+        </div>
+
+        <div class="qr">
+          <img src="/pc_qr/${data.pcid}?size=${imgSize}" alt="QR Code for PC ${printableValue(data.pcid)}" style="width:${imgMm}mm;height:${imgMm}mm;object-fit:contain;display:block;margin:0 auto;">
+        </div>
+      </div>
+    `;
+  }
+
+  function openPrintWindow(title, labelsHtml) {
+    const printWindow = window.open('', '_blank');
+
+    if (!printWindow) {
+      showPrintAlert('Popup Blocked', 'Please allow popups to print QR labels.');
+      return;
+    }
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 8mm;
+            }
+
+            html, body {
+              margin: 0;
+              padding: 0;
+              width: 100%;
+              height: 100%;
+              font-family: Arial, sans-serif;
+              -webkit-print-color-adjust: exact;
+            }
+
+            .container {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 6mm;
+              box-sizing: border-box;
+              width: 100%;
+            }
+
+            .label {
+              border: 1.2px solid black;
+              padding: 4mm;
+              font-size: 9pt;
+              line-height: 1.25;
+              box-sizing: border-box;
+              break-inside: avoid;
+              page-break-inside: avoid;
+              min-height: 30mm;
+            }
+
+            .header {
+              text-align: center;
+              font-size: 10px;
+              font-weight: bold;
+              margin-bottom: 4px;
+            }
+
+            .section { margin-top: 4px; }
+
+            .qr { margin-top: 6px; text-align: center; }
+
+            .qr img { display:block; margin:0 auto; max-width:100%; height:auto; }
+          </style>
+        </head>
+        <body onload="window.print()">
+          <div class="container">
+            ${labelsHtml}
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
+  async function printPcLabels(pcIds, copiesPerPc = 1, qrSize = 300) {
+    const validPcIds = (pcIds || []).filter(Boolean);
+
+    if (!validPcIds.length) {
+      showPrintAlert('No Selection', 'Select at least one PC to print.');
+      return;
+    }
+
+    const copyCount = Number.isInteger(copiesPerPc) && copiesPerPc > 0 ? copiesPerPc : 1;
+    const labels = [];
+    const failedIds = [];
+
+    for (const pcid of validPcIds) {
+      try {
+        const data = await fetchPcForPrint(pcid);
+        for (let i = 0; i < copyCount; i++) {
+          labels.push(buildLabelHtml(data, qrSize));
+        }
+      } catch (error) {
+        console.error(`Error loading PC ${pcid}:`, error);
+        failedIds.push(pcid);
+      }
+    }
+
+    if (!labels.length) {
+      showPrintAlert('Print Failed', 'Unable to load selected PC data for printing.');
+      return;
+    }
+
+    openPrintWindow('Device QR Print', labels.join(''));
+
+    if (failedIds.length) {
+      showPrintAlert('Partial Print', `Some PCs were skipped: ${failedIds.join(', ')}`);
+    }
+  }
+
+  printQR.addEventListener('click', async () => {
+    if (!qrModal.dataset.device) {
+      showPrintAlert('No Device Selected', 'Select a PC first before printing.');
+      return;
+    }
+
+    const deviceData = JSON.parse(qrModal.dataset.device);
+    openPrintCopyToast(deviceData.pcid);
+  });
+
+  if (batchPrintBtn) {
+    batchPrintBtn.addEventListener('click', async () => {
+      const checked = document.querySelectorAll('.pc-checkbox:checked');
+      const ids = [...checked].map((checkbox) => checkbox.value);
+
+      if (!ids.length) {
+        showPrintAlert('No Selection', 'Select at least one PC to print.');
+        return;
+      }
+
+      const copies = parseInt(batchCopiesInput ? batchCopiesInput.value : '1', 10);
+      if (Number.isNaN(copies) || copies < 1 || copies > 30) {
+        showPrintAlert('Invalid Quantity', 'Copies must be a number from 1 to 30.');
+        if (batchCopiesInput) {
+          batchCopiesInput.focus();
+        }
+        return;
+      }
+
+      // Determine requested size for batch print
+      let batchSize = parseInt((batchSizeSelect && batchSizeSelect.value) ? batchSizeSelect.value : '300', 10);
+      if (Number.isNaN(batchSize)) batchSize = 300;
+      batchSize = Math.max(32, Math.min(batchSize, 2000));
+
+      await printPcLabels(ids, copies, batchSize);
+    });
+  }
+
+  // Scan QR modal
+  scanQRBtn.addEventListener('click', () => {
+    scanModal.classList.remove('hidden');
+    lucide.createIcons();
+  });
+  
+  closeScanModal.addEventListener('click', () => {
+    clearUpload();
+    scanModal.classList.add('hidden');
+  });
+  
+  // Search and filter event listeners
+  if (searchInput) {
+    searchInput.addEventListener('input', filterDevices);
+    console.log('Search input listener attached'); // Debug log
+  } else {
+    console.error('Search input not found');
+  }
+  
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      filterDevices();
+    });
+    console.log('Clear search button listener attached'); // Debug log
+  } else {
+    console.error('Clear search button not found');
+  }
+  
+  if (statusFilter) {
+    statusFilter.addEventListener('change', filterDevices);
+    console.log('Status filter listener attached'); // Debug log
+  } else {
+    console.error('Status filter not found');
+  }
+  
+  // Test API button
+  if (testApiBtn) {
+    testApiBtn.addEventListener('click', async () => {
+      console.log('Testing API endpoint...');
+      try {
+        const response = await fetch('/get_all_pc_qrs');
+        console.log('Test response status:', response.status);
+        const data = await response.json();
+        console.log('Test data:', data);
+        console.log('First device details:', data[0]);
+        
+        // Test search manually
+        const testSearch = data.filter(device => 
+          normalizeText(device.pcname).includes('laptop')
+        );
+        console.log('Manual laptop search results:', testSearch.length);
+        
+        alert(`API Test Success! Found ${data.length} devices. Manual laptop search found ${testSearch.length} devices. Check console for details.`);
+      } catch (error) {
+        console.error('API Test Failed:', error);
+        alert(`API Test Failed: ${error.message}. Check console for details.`);
+      }
+    });
+  }
+  
+  // File upload functions
+  uploadArea.addEventListener('click', () => {
+    qrFileInput.click();
+  });
+
+  // Drag and drop
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('border-blue-500', 'bg-blue-50');
+  });
+
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('border-blue-500', 'bg-blue-50');
+  });
+
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('border-blue-500', 'bg-blue-50');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  });
+
+  qrFileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      handleFileSelect(e.target.files[0]);
+    }
+  });
+
+  function handleFileSelect(file) {
+    if (!file.type.startsWith('image/')) {
+      showCustomAlert('Invalid File', 'Please select an image file.');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showCustomAlert('File Too Large', 'File size must be less than 10MB.');
+      return;
+    }
+
+    selectedFile = file;
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      previewImage.src = e.target.result;
+      uploadArea.classList.add('hidden');
+      previewArea.classList.remove('hidden');
+      lucide.createIcons();
+    };
+    
+    reader.readAsDataURL(file);
+  }
+
+  removeImage.addEventListener('click', () => {
+    clearUpload();
+  });
+
+  function clearUpload() {
+    selectedFile = null;
+    qrFileInput.value = '';
+    previewImage.src = '';
+    uploadArea.classList.remove('hidden');
+    previewArea.classList.add('hidden');
+    scanResult.classList.add('hidden');
+    processScanArea.classList.add('hidden');
+    scanResultText.textContent = '';
+  }
+
+  uploadQRBtn.addEventListener('click', async () => {
+    if (!selectedFile) {
+      showCustomAlert('No File Selected', 'Please select an image file first.');
+      return;
+    }
+
+    try {
+      const html5QrCode = new Html5Qrcode("temp-scan-area");
+      const imageData = previewImage.src;
+      
+      await html5QrCode.scanFile(selectedFile, true)
+        .then((decodedText) => {
+          scanResultText.textContent = decodedText;
+          scanResult.classList.remove('hidden');
+          processScanArea.classList.remove('hidden');
+          lucide.createIcons();
+        })
+        .catch((err) => {
+          console.error('Scan failed:', err);
+          showCustomAlert('Scan Failed', 'Failed to scan QR code. Please ensure the image contains a clear QR code.');
+        });
+      
+    } catch (error) {
+      console.error('Error scanning QR:', error);
+      showCustomAlert('Scan Error', 'Error scanning QR code. Please try again.');
+    }
+  });
+
+  clearBtn.addEventListener('click', clearUpload);
+
+  processScanResult.addEventListener('click', () => {
+    const scannedData = scanResultText.textContent;
+    
+    // Try to extract device ID from QR data
+    let deviceId = null;
+    
+    // Check if the scanned data looks like a device ID or URL
+    if (scannedData.includes('/device/')) {
+      // Extract ID from URL like /device/12345
+      const parts = scannedData.split('/device/');
+      if (parts.length > 1) {
+        deviceId = parts[1].split('/')[0] || parts[1];
+      }
+    } else if (scannedData.match(/^\d+$/)) {
+      // Pure numeric ID
+      deviceId = scannedData;
+    } else {
+      // Try to find a numeric pattern in the text
+      const match = scannedData.match(/(\d+)/);
+      if (match) {
+        deviceId = match[1];
+      }
+    }
+    
+    if (deviceId) {
+      // Search for the device in the current device list
+      const device = allDevices.find(d => d.pcid == deviceId);
+      if (device) {
+        // Close scan modal and show device QR modal
+        scanModal.classList.add('hidden');
+        clearUpload();
+        
+        // Show the device QR modal
+        qrDeviceName.textContent = device.pcname;
+        const selectedSize2 = (qrSizeSelect && qrSizeSelect.value) ? qrSizeSelect.value : '200';
+        qrImage.src = `/pc_qr/${device.pcid}?size=${selectedSize2}`;
+        qrModal.dataset.device = JSON.stringify(device);
+        qrModal.classList.remove('hidden');
+      } else {
+        showCustomAlert('Device Not Found', `Device with ID ${deviceId} not found in the current device list.`);
+      }
+    } else {
+      // If we can't extract a device ID, show the raw data
+      showCustomAlert('QR Data', `Scanned QR data: ${scannedData}\n\nUnable to extract device ID. The QR code may not be a device QR code.`);
+    }
+  });
+  
+  // Close modals when clicking outside
+  qrModal.addEventListener('click', (e) => {
+    if (e.target === qrModal) {
+      qrModal.classList.add('hidden');
+    }
+  });
+  
+  scanModal.addEventListener('click', (e) => {
+    if (e.target === scanModal) {
+      clearUpload();
+      scanModal.classList.add('hidden');
+    }
+  });
+
+  // Close custom alert modal when clicking outside
+  customAlertModal.addEventListener('click', (e) => {
+    if (e.target === customAlertModal) {
+      const modalContent = customAlertModal.querySelector('.custom-alert-modal');
+      modalContent.classList.remove('show');
+      customAlertModal.classList.add('hidden');
+    }
+  });
+  
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      qrModal.classList.add('hidden');
+      if (!scanModal.classList.contains('hidden')) {
+        clearUpload();
+        scanModal.classList.add('hidden');
+      }
+      if (!customAlertModal.classList.contains('hidden')) {
+        const modalContent = customAlertModal.querySelector('.custom-alert-modal');
+        modalContent.classList.remove('show');
+        customAlertModal.classList.add('hidden');
+      }
+      if (!printCopyToastWrap.classList.contains('hidden')) {
+        closePrintCopyToast();
+      }
+    }
+    
+    if (e.ctrlKey && e.key === 'k') {
+      e.preventDefault();
+      searchInput.focus();
+    }
+  });
+});
+</script>
+</body>
+</html>

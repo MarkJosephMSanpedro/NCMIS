@@ -1,0 +1,21 @@
+<!-- templates/delete_modal.html -->
+<div id="deleteModal" class="hidden fixed inset-0 inventory-modal-backdrop flex items-center justify-center z-[9999] p-4">
+  <div class="inventory-alert-card inventory-alert-danger">
+    <div class="inventory-alert-icon danger">
+      <i data-lucide="trash-2" class="w-7 h-7"></i>
+    </div>
+    <h2 class="inventory-alert-title">Confirm Archiving</h2>
+    <p class="inventory-alert-message">Are you sure you want to archive this item? This action cannot be undone.</p>
+    <div class="inventory-alert-actions">
+      <button id="cancelDelete" type="button" class="inventory-alert-btn inventory-alert-btn-neutral">
+        Cancel
+      </button>
+      <form id="deleteForm" method="post" action="">
+        <button type="submit" class="inventory-alert-btn inventory-alert-btn-danger">
+          Archive
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+  

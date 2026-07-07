@@ -1,0 +1,655 @@
+<!-- templates/usermodal.html -->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+  #userModal {
+    background:
+      radial-gradient(circle at 12% 14%, rgba(96, 165, 250, 0.24) 0%, rgba(96, 165, 250, 0) 38%),
+      radial-gradient(circle at 88% 82%, rgba(56, 189, 248, 0.2) 0%, rgba(56, 189, 248, 0) 42%),
+      rgba(15, 23, 42, 0.58);
+  }
+
+  #userModal .modal-shell {
+    font-family: "Outfit", "Segoe UI", Tahoma, sans-serif;
+    border: 1px solid #bfdbfe;
+    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 24%, #ffffff 100%);
+    box-shadow: 0 28px 75px rgba(2, 6, 23, 0.34);
+  }
+
+  #userModal .modal-header {
+    background: linear-gradient(120deg, #0f3d79 0%, #1d4ed8 56%, #0369a1 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  #userModal .modal-header h2 {
+    color: #ffffff;
+    letter-spacing: 0.01em;
+  }
+
+  #userModal .modal-icon {
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+
+  #userModal .modal-close-btn {
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 9999px;
+    padding: 0.38rem;
+  }
+
+  #userModal .modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.24);
+    color: #ffffff;
+  }
+
+  #userModal .modal-body {
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 38%, #ffffff 100%);
+  }
+
+  #userModal #userForm label {
+    letter-spacing: 0.01em;
+  }
+
+  #userModal #userForm input[type="text"],
+  #userModal #userForm input[type="email"],
+  #userModal #userForm input[type="password"],
+  #userModal #userForm select {
+    border-color: #cbd5e1;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  }
+
+  #userModal #userForm input[type="text"]:focus,
+  #userModal #userForm input[type="email"]:focus,
+  #userModal #userForm input[type="password"]:focus,
+  #userModal #userForm select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
+    background: #ffffff;
+  }
+
+  #userModal .permissions-panel {
+    border: 1px solid #dbeafe;
+    border-radius: 1rem;
+    background: linear-gradient(180deg, #eef5ff 0%, #f8fbff 100%);
+    padding: 1rem;
+  }
+
+  #userModal .select-all-wrap {
+    border: 1px dashed #93c5fd;
+    border-radius: 0.9rem;
+    background: rgba(219, 234, 254, 0.6);
+    padding: 0.72rem 0.86rem;
+  }
+
+  #userModal .permission-list > div {
+    border-color: #dbe4f0;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  #userModal .permission-list > div:hover {
+    border-color: #93c5fd;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.1);
+  }
+
+  #userModal .permission-list > div > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  #userModal .permission-list input[type="checkbox"] {
+    accent-color: #2563eb;
+  }
+
+  #userModal .modal-footer {
+    background: linear-gradient(180deg, #ffffff 0%, #f1f6ff 100%);
+    border-top: 1px solid #dbeafe;
+  }
+
+  #userModal .modal-cancel-btn {
+    border: 1px solid #cbd5e1;
+    background: #e2e8f0;
+    color: #334155;
+  }
+
+  #userModal .modal-cancel-btn:hover {
+    background: #cbd5e1;
+  }
+
+  #userModal .modal-save-btn {
+    border: 1px solid #1d4ed8;
+    background: linear-gradient(120deg, #1d4ed8 0%, #2563eb 60%, #0ea5e9 100%);
+    color: #ffffff;
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
+  }
+
+  #userModal .modal-save-btn:hover {
+    filter: brightness(1.04);
+    box-shadow: 0 14px 28px rgba(37, 99, 235, 0.42);
+  }
+
+  @media (max-width: 768px) {
+    #userModal .permission-list > div {
+      align-items: flex-start;
+      gap: 0.8rem;
+      flex-direction: column;
+    }
+
+    #userModal .permission-list > div > div:last-child {
+      width: 100%;
+      gap: 0.9rem;
+    }
+
+    #userModal .modal-header {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+  }
+</style>
+
+<div id="userModal" class="hidden fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm p-3 sm:p-5">
+  <div class="modal-shell rounded-3xl shadow-2xl w-full max-w-4xl relative flex flex-col max-h-[92vh] overflow-hidden">
+
+    <!-- Header -->
+    <div class="modal-header sticky top-0 z-10 p-5 sm:p-6 flex items-center justify-between rounded-t-3xl">
+      <div class="flex items-center gap-3">
+        <div class="modal-icon p-3 rounded-full">
+          <i data-lucide="user-plus" class="w-8 h-8 text-white"></i>
+        </div>
+        <h2 id="modalTitle" class="text-2xl font-bold">Add User</h2>
+      </div>
+      <button id="closeModalBtn" class="modal-close-btn transition">
+        <i data-lucide="x" class="w-7 h-7"></i>
+      </button>
+    </div>
+
+    <!-- Scrollable Body -->
+    <div class="modal-body overflow-y-auto p-5 sm:p-8 space-y-8">
+      <form id="userForm" method="POST"
+            action="{{ url_for('manage_user_bp.add_or_update_user') }}"
+            class="space-y-8 modal-form">
+        <input type="hidden" name="user_id" id="user_id">
+
+        <!-- Name Fields -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div>
+            <label for="lastName" class="text-sm font-medium text-gray-700">Last Name</label>
+            <input type="text" id="lastName" name="last_name"
+              class="border border-gray-300 rounded-xl px-4 py-3 w-full text-gray-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              placeholder="Enter last name" required>
+          </div>
+          <div>
+            <label for="firstName" class="text-sm font-medium text-gray-700">First Name</label>
+            <input type="text" id="firstName" name="first_name"
+              class="border border-gray-300 rounded-xl px-4 py-3 w-full text-gray-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              placeholder="Enter first name" required>
+          </div>
+          <div>
+            <label for="middleName" class="text-sm font-medium text-gray-700">Middle Initial</label>
+            <input type="text" id="middleName" name="middle_name"
+              class="border border-gray-300 rounded-xl px-4 py-3 w-full text-gray-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              placeholder="Enter middle initial">
+          </div>
+        </div>
+
+        <!-- Username & Email -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-gray-700 text-sm font-medium mb-1">Username</label>
+            <input type="text" name="username" id="username"
+                   class="border border-gray-300 rounded-xl px-4 py-3 w-full text-gray-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                   placeholder="Enter username" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 text-sm font-medium mb-1">Email</label>
+            <input type="email" name="email" id="email"
+                   class="border border-gray-300 rounded-xl px-4 py-3 w-full text-gray-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                   placeholder="Enter email address" required>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div id="passwordSection">
+          <label class="block text-gray-700 text-sm font-medium mb-1">Password</label>
+          <input type="password" name="password" id="password"
+                class="border border-gray-300 rounded-xl px-4 py-3 w-full text-gray-800 text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                placeholder="Enter password">
+        </div>
+
+        <!-- Change Password (for Edit mode only) -->
+        <div id="changePasswordContainer" class="hidden mt-2">
+          <button type="button" id="toggleChangePassword"
+                  class="text-blue-600 text-sm font-medium hover:underline focus:outline-none">
+            Change Password?
+          </button>
+
+          <div id="changePasswordSection" class="hidden mt-3 space-y-3">
+            <label class="block text-gray-700 text-sm font-medium mb-1">New Password</label>
+            <input type="password" name="new_password" id="new_password"
+                  class="border border-gray-300 rounded-xl px-4 py-3 w-full text-gray-800 text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  placeholder="Enter new password">
+
+            <input type="password" name="confirm_password" id="confirm_password"
+                  class="border border-gray-300 rounded-xl px-4 py-3 w-full text-gray-800 text-base focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  placeholder="Confirm new password">
+          </div>
+        </div>
+
+        <!-- Role -->
+        <div>
+          <label class="block text-gray-700 text-sm font-medium mb-1">Role</label>
+          <select name="role" id="role"
+                  class="border border-gray-300 rounded-xl px-4 py-3 w-full bg-white text-gray-800 focus:ring-2 focus:ring-blue-400 focus:outline-none">
+            <option value="staff">Staff</option>
+            <option value="technician">Technician</option>
+            <option value="dept_head">Department Head</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <!-- Access Permissions -->
+        <div class="permissions-panel">
+          <label class="block text-gray-700 text-sm font-medium mb-2">Access Permissions</label>
+
+          <!-- Select All -->
+          <div class="mb-4 select-all-wrap">
+            <label class="flex items-center gap-2 font-medium text-blue-700 cursor-pointer">
+              <input type="checkbox" id="selectAllPermissions"
+                     class="w-5 h-5 text-blue-600 border-gray-300 rounded">
+              Select All Permissions
+            </label>
+          </div>
+
+          <!-- Permission Groups -->
+          <div class="space-y-4 permission-list">
+
+            <!-- Dashboard -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="layout-dashboard" class="w-6 h-6 text-blue-600"></i>
+                <span class="font-semibold text-gray-700">Dashboard</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="dashboard_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="dashboard_edit" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Edit
+                </label>
+              </div>
+            </div>
+
+            <!-- Inventory -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="boxes" class="w-6 h-6 text-green-600"></i>
+                <span class="font-semibold text-gray-700">Inventory</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="inventory_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="inventory_edit" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Edit
+                </label>
+              </div>
+            </div>
+
+            <!-- Stock Room -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="archive" class="w-6 h-6 text-stone-600"></i>
+                <span class="font-semibold text-gray-700">Stock Room</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="stock_room_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="stock_room_edit" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Edit
+                </label>
+              </div>
+            </div>
+
+            <!-- QR List -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="qr-code" class="w-6 h-6 text-purple-600"></i>
+                <span class="font-semibold text-gray-700">QR List</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="qrlist_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="qrlist_edit" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Edit
+                </label>
+              </div>
+            </div>
+
+            <!-- Transactions -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="repeat" class="w-6 h-6 text-pink-600"></i>
+                <span class="font-semibold text-gray-700">Transactions</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="transaction_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="transaction_add" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Add
+                </label>
+              </div>
+            </div>
+
+            <!-- Submit Ticket -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="edit-3" class="w-6 h-6 text-rose-600"></i>
+                <span class="font-semibold text-gray-700">Submit Ticket</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="submit_ticket_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="submit_ticket_add" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Add
+                </label>
+              </div>
+            </div>
+
+            <!-- Reports -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="file-chart-column" class="w-6 h-6 text-orange-600"></i>
+                <span class="font-semibold text-gray-700">Reports</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="report_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="report_edit" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Edit
+                </label>
+              </div>
+            </div>
+
+
+            <!-- DEPARTMENTS -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+                <div class="flex items-center gap-3">
+                <i data-lucide="file-chart-column" class="w-6 h-6 text-orange-600"></i>
+                <span class="font-semibold text-gray-700">Office / Facility</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="dept_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="dept_edit" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Edit
+                </label>
+              </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="history" class="w-6 h-6 text-sky-600"></i>
+                <span class="font-semibold text-gray-700">Activity Log</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="activity_log_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="activity_log_edit" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Edit
+                </label>
+              </div>
+            </div>
+
+            <!-- Manage User -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="users" class="w-6 h-6 text-indigo-600"></i>
+                <span class="font-semibold text-gray-700">Manage User</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="manage_user_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="manage_user_edit" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Edit
+                </label>
+              </div>
+            </div>
+
+            <!-- Maintenance History -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="wrench" class="w-6 h-6 text-amber-600"></i>
+                <span class="font-semibold text-gray-700">Maintenance History</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="maintenance_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="maintenance_edit" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Edit
+                </label>
+              </div>
+            </div>
+
+            <!-- Damage Report -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+                <span class="font-semibold text-gray-700">Damage Report</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="damage_report_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="damage_report_edit" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Edit
+                </label>
+              </div>
+            </div>
+
+            <!-- Receive Item -->
+            <div class="flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow-md transition">
+              <div class="flex items-center gap-3">
+                <i data-lucide="package-check" class="w-6 h-6 text-teal-600"></i>
+                <span class="font-semibold text-gray-700">Receive Item</span>
+              </div>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="receive_item_view" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  View
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="permissions" value="receive_item_edit" class="permCheckbox w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  Edit
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        
+
+
+      </form>
+    </div>
+
+    <!-- Sticky Footer -->
+<div class="modal-footer sticky bottom-0 z-10 p-5 sm:p-6 rounded-b-3xl flex justify-end gap-4">
+      <button type="button" id="cancelBtn"
+      class="modal-cancel-btn px-6 py-2.5 rounded-xl font-medium transition">
+        Cancel
+      </button>
+      <button type="submit" form="userForm"
+      class="modal-save-btn px-8 py-2.5 rounded-xl font-semibold transition">
+        <div class="flex items-center gap-2">
+          <i data-lucide="save" class="w-5 h-5"></i>
+          Save User
+        </div>
+      </button>
+    </div>
+  </div>
+  
+</div>
+
+<script>
+  lucide.createIcons();
+
+  const userModal = document.getElementById('userModal');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const selectAllCheckbox = document.getElementById('selectAllPermissions');
+  const permissionCheckboxes = document.querySelectorAll('.permCheckbox');
+
+function openUserModal(mode = 'add', user = null) {
+  document.getElementById('modalTitle').innerText = mode === 'add' ? 'Add User' : 'Edit User';
+  document.querySelector('[data-lucide="user-plus"]').setAttribute(
+    'data-lucide',
+    mode === 'add' ? 'user-plus' : 'user-cog'
+  );
+  lucide.createIcons();
+    const passwordSection = document.getElementById('passwordSection');
+  const changePasswordContainer = document.getElementById('changePasswordContainer');
+  const changePasswordSection = document.getElementById('changePasswordSection');
+
+  document.getElementById('userForm').reset();
+  changePasswordSection.classList.add('hidden');
+
+    if (mode === 'add') {
+    passwordSection.style.display = 'block';
+    changePasswordContainer.classList.add('hidden');
+  } else {
+    passwordSection.style.display = 'none';
+    changePasswordContainer.classList.remove('hidden');
+  }
+
+  // Hide/Show password sections
+  document.getElementById('passwordSection').style.display = mode === 'add' ? 'block' : 'none';
+  document.getElementById('changePasswordSection').classList.toggle('hidden', mode !== 'edit');
+
+  // Reset permissions
+  permissionCheckboxes.forEach(cb => cb.checked = false);
+  selectAllCheckbox.checked = false;
+
+  if (mode === 'edit' && user) {
+    document.getElementById('user_id').value = user.user_id;
+    document.getElementById('lastName').value = user.last_name || '';
+    document.getElementById('firstName').value = user.first_name || '';
+    document.getElementById('middleName').value = user.middle_name || '';
+    document.getElementById('username').value = user.username || '';
+    document.getElementById('email').value = user.email || '';
+  // Set role (falls back to is_admin for older rows)
+  const roleEl = document.getElementById('role');
+  if (roleEl) roleEl.value = user.role || (user.is_admin ? 'admin' : 'staff');
+
+    // Clear password fields
+    document.getElementById('new_password').value = '';
+    document.getElementById('confirm_password').value = '';
+
+    // Populate permissions
+    if (user.permissions) {
+      try {
+        const perms = typeof user.permissions === "string" ? JSON.parse(user.permissions) : user.permissions;
+        Object.keys(perms || {}).forEach((section) => {
+          const actionMap = perms[section] || {};
+          Object.keys(actionMap).forEach((action) => {
+            if (actionMap[action]) {
+              const cb = document.querySelector(`.permCheckbox[value="${section}_${action}"]`);
+              if (cb) cb.checked = true;
+            }
+          });
+        });
+        selectAllCheckbox.checked = Array.from(permissionCheckboxes).every(cb => cb.checked);
+      } catch (e) {
+        console.error("Invalid permission format:", e);
+      }
+    }
+  
+
+  userModal.classList.remove('hidden');
+}
+
+
+  // Show modal
+  document.getElementById('userModal').classList.remove('hidden');
+}
+
+
+  function closeUserModal() {
+    userModal.classList.add('hidden');
+  }
+
+  closeModalBtn.addEventListener('click', closeUserModal);
+  cancelBtn.addEventListener('click', closeUserModal);
+
+  selectAllCheckbox.addEventListener('change', (e) => {
+    const checked = e.target.checked;
+    permissionCheckboxes.forEach(cb => cb.checked = checked);
+  });
+
+  permissionCheckboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const allChecked = Array.from(permissionCheckboxes).every(box => box.checked);
+      selectAllCheckbox.checked = allChecked;
+    });
+  });
+// Toggle Change Password visibility
+document.getElementById('toggleChangePassword').addEventListener('click', (e) => {
+  const section = document.getElementById('changePasswordSection');
+  const expanded = !section.classList.contains('hidden');
+  section.classList.toggle('hidden');
+  e.target.innerText = expanded ? 'Change Password?' : 'Cancel Change Password';
+});
+ document.getElementById('userForm').addEventListener('submit', (e) => {
+  const mode = document.getElementById('user_id').value ? 'edit' : 'add';
+  const newPass = document.getElementById('new_password')?.value.trim();
+  const confirmPass = document.getElementById('confirm_password')?.value.trim();
+
+  if (mode === 'edit' && !document.getElementById('changePasswordSection').classList.contains('hidden')) {
+    if (newPass && newPass !== confirmPass) {
+      e.preventDefault();
+      alert('Passwords do not match!');
+    }
+  }
+});
+</script>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Computer Inventory Filter Modal (2-Column Layout)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+</head>
+<body class="bg-gray-100 min-h-screen p-10">
+
+  <div class="flex gap-2">
+    <!-- Filter Button -->
+    <button 
+      onclick="toggleFilterModal(true)" 
+      class="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+      <i data-lucide="filter" class="w-4 h-4"></i> Filter
+    </button>
+
+    <!-- Add PC Button -->
+    <button 
+      onclick="openPcModal()" 
+      class="flex items-center gap-2 px-2 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+      <i data-lucide="plus" class="w-4 h-4"></i> Add PC
+    </button>
+  </div>
+
+  <!-- Filter Modal -->
+  <div id="openFilterModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-4xl rounded-2xl shadow-lg p-6 relative overflow-y-auto max-h-[90vh]">
+
+      <!-- Close Button -->
+      <button 
+        onclick="toggleFilterModal(false)" 
+        class="absolute top-3 left-3 text-gray-500 hover:text-gray-800">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Title -->
+      <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-2 justify-center">
+        <i data-lucide="sliders-horizontal" class="w-6 h-6 text-blue-600"></i>
+        Filter
+      </h2>
+
+      <!-- Filter Form -->
+      <form id="filterForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Department -->
+        <div>
+          <label class="block text-gray-700 mb-1 flex items-center gap-2">
+            <i data-lucide="building" class="w-4 h-4 text-gray-500"></i> Office / Facility
+          </label>
+          <input 
+            type="text" 
+            placeholder="Enter Office / Facility" 
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+          >
+        </div>
+
+        <!-- Location -->
+        <div>
+          <label class="block text-gray-700 mb-1 flex items-center gap-2">
+            <i data-lucide="map-pin" class="w-4 h-4 text-gray-500"></i> Location
+          </label>
+          <input 
+            type="text" 
+            placeholder="Enter location (e.g. IT Office, Lab 1)" 
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+          >
+        </div>
+
+        <!-- Device Type -->
+        <div>
+          <label class="block text-gray-700 mb-1 flex items-center gap-2">
+            <i data-lucide="cpu" class="w-4 h-4 text-gray-500"></i> Device Type
+          </label>
+          <input 
+            type="text" 
+            placeholder="Enter device type (e.g. Laptop, Desktop)" 
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+          >
+        </div>
+
+        <!-- Brand -->
+        <div>
+          <label class="block text-gray-700 mb-1 flex items-center gap-2">
+            <i data-lucide="tag" class="w-4 h-4 text-gray-500"></i> Brand
+          </label>
+          <input 
+            type="text" 
+            placeholder="Enter brand (e.g. Dell, HP)" 
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+          >
+        </div>
+
+        <!-- Quantity -->
+        <div>
+          <label class="block text-gray-700 mb-1 flex items-center gap-2">
+            <i data-lucide="hash" class="w-4 h-4 text-gray-500"></i> Quantity
+          </label>
+          <input 
+            type="number" 
+            placeholder="Enter quantity" 
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+          >
+        </div>
+
+        <!-- Acquisition Cost -->
+        <div>
+          <label class="block text-gray-700 mb-1 flex items-center gap-2">
+            <i data-lucide="wallet" class="w-4 h-4 text-gray-500"></i> Acquisition Cost
+          </label>
+          <input 
+            type="number" 
+            placeholder="Enter cost (Php)" 
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+          >
+        </div>
+
+        <!-- Date Acquired -->
+        <div>
+          <label class="block text-gray-700 mb-1 flex items-center gap-2">
+            <i data-lucide="calendar" class="w-4 h-4 text-gray-500"></i> Date Acquired
+          </label>
+          <input 
+            type="date" 
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+          >
+        </div>
+
+        <!-- Accountable -->
+        <div>
+          <label class="block text-gray-700 mb-1 flex items-center gap-2">
+            <i data-lucide="user" class="w-4 h-4 text-gray-500"></i> Accountable
+          </label>
+          <input 
+            type="text" 
+            placeholder="Enter accountable person" 
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+          >
+        </div>
+
+        <!-- Serial No -->
+        <div>
+          <label class="block text-gray-700 mb-1 flex items-center gap-2">
+            <i data-lucide="barcode" class="w-4 h-4 text-gray-500"></i> Serial No
+          </label>
+          <input 
+            type="text" 
+            placeholder="Enter serial number" 
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+          >
+        </div>
+
+        <!-- Municipal Serial No -->
+        <div>
+          <label class="block text-gray-700 mb-1 flex items-center gap-2">
+            <i data-lucide="file-bar-chart" class="w-4 h-4 text-gray-500"></i> Municipal Serial No
+          </label>
+          <input 
+            type="text" 
+            placeholder="Enter municipal serial number" 
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+          >
+        </div>
+
+        <!-- Description (Full width) -->
+        <div class="md:col-span-2">
+          <label class="block text-gray-700 mb-1 flex items-center gap-2">
+            <i data-lucide="align-left" class="w-4 h-4 text-gray-500"></i> Description
+          </label>
+          <textarea 
+            placeholder="Enter description" 
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <!-- Buttons (Full width) -->
+        <div class="md:col-span-2 flex justify-end space-x-2 pt-4">
+          <button type="button" onclick="resetFilters()" 
+            class="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset
+          </button>
+          <button type="button" onclick="toggleFilterModal(false)" 
+            class="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
+            <i data-lucide="x-circle" class="w-4 h-4"></i> Cancel
+          </button>
+          <button type="submit" 
+            class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Apply
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function toggleFilterModal(show) {
+      const modal = document.getElementById('filterModal');
+      modal.classList.toggle('hidden', !show);
+      if (show) lucide.createIcons();
+    }
+
+    function resetFilters() {
+      document.getElementById('filterForm').reset();
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+      const modal = document.getElementById('filterModal');
+      if (!modal.classList.contains('hidden') && e.target === modal) {
+        toggleFilterModal(false);
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,431 @@
+<div id="consumableModal" class="hidden fixed inset-0 inventory-modal-backdrop flex items-center justify-center z-[9999] transition-all duration-300 p-4">
+  <div class="consumable-modal-card w-full max-w-4xl overflow-hidden max-h-[90vh] flex flex-col">
+
+    <!-- Header -->
+    <div class="consumable-modal-header px-6 md:px-8 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+          <i data-lucide="package-plus" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <h3 id="consumableModalTitle" class="text-xl font-bold text-white leading-tight">
+            Add Consumable
+          </h3>
+          <p class="consumable-modal-subtitle">Record and monitor consumable stock details</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeConsumableModal()" class="consumable-modal-close" aria-label="Close consumable modal">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    <div id="consumableError" class="hidden consumable-error-banner">
+      <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
+      <span id="consumableErrorText"></span>
+    </div>
+
+    <!-- Form -->
+    <div class="consumable-modal-body">
+      <form id="consumableForm" class="space-y-6">
+        <input type="hidden" id="accession_id" name="accession_id">
+
+        <!-- Item Information Section -->
+        <div class="consumable-section">
+          <div class="flex items-center gap-2 mb-4 text-gray-700">
+            <i data-lucide="package" class="w-5 h-5 text-green-600"></i>
+            <h4 class="font-semibold">Item Information</h4>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label for="item_name" class="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                <i data-lucide="package" class="w-4 h-4 text-gray-500"></i>
+                Item Name <span class="text-red-500">*</span>
+              </label>
+              <input type="text" name="item_name" id="item_name" list="consumableItemOptions" placeholder="Enter item name" required 
+                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all">
+              <datalist id="consumableItemOptions">
+                <option value="Ethernet Cable (Cat5e)"></option>
+                <option value="Ethernet Cable (Cat6)"></option>
+                <option value="WiFi Adapter (USB)"></option>
+                <option value="RJ45 Connector"></option>
+                <option value="Patch Cord"></option>
+                <option value="USB Cable"></option>
+                <option value="HDMI Cable"></option>
+                <option value="VGA Cable"></option>
+                <option value="DisplayPort Cable"></option>
+                <option value="Power Cable"></option>
+                <option value="Power Adapter"></option>
+                <option value="Extension Cord"></option>
+                <option value="AVR"></option>
+                <option value="UPS Battery"></option>
+                <option value="CMOS Battery"></option>
+                <option value="Thermal Paste"></option>
+                <option value="Cable Tie"></option>
+                <option value="Cleaning Kit"></option>
+              </datalist>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="category" class="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                <i data-lucide="tags" class="w-4 h-4 text-gray-500"></i>
+                Category
+              </label>
+              <input type="text" name="category" id="category" placeholder="e.g., Office Supplies, Electronics" 
+                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all">
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="brand" class="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                <i data-lucide="tag" class="w-4 h-4 text-gray-500"></i>
+                Brand
+              </label>
+              <input type="text" name="brand" id="brand" placeholder="Enter brand name" 
+                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="space-y-1.5">
+                <label for="quantity" class="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                  <i data-lucide="hash" class="w-4 h-4 text-gray-500"></i>
+                  Quantity
+                </label>
+                <input type="number" name="quantity" id="quantity" placeholder="0" min="0"
+                  class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all">
+              </div>
+              <div class="space-y-1.5">
+                <label for="unit" class="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                  <i data-lucide="ruler" class="w-4 h-4 text-gray-500"></i>
+                  Unit
+                </label>
+                <input type="text" name="unit" id="unit" placeholder="e.g., pcs, reams, box" 
+                  class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Location & Assignment Section -->
+        <div class="consumable-section">
+          <div class="flex items-center gap-2 mb-4 text-gray-700">
+            <i data-lucide="map-pin" class="w-5 h-5 text-blue-600"></i>
+            <h4 class="font-semibold">Location & Assignment</h4>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="space-y-1.5 md:col-span-1">
+              <label for="department_id" class="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                <i data-lucide="building-2" class="w-4 h-4 text-gray-500"></i>
+                Department <span class="text-red-500">*</span>
+              </label>
+              <select name="department_id" id="department_id" required
+                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all cursor-pointer">
+                <option value="">Select Department</option>
+                {% for dept in departments %}
+                  <option value="{{ dept.department_id }}">{{ dept.department_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="space-y-1.5 md:col-span-1">
+              <label for="location" class="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                <i data-lucide="map-pin" class="w-4 h-4 text-gray-500"></i>
+                Location
+              </label>
+              <input type="text" name="location" id="location" placeholder="Storage location" 
+                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all">
+            </div>
+
+            <div class="space-y-1.5 md:col-span-1">
+              <label for="status" class="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                <i data-lucide="activity" class="w-4 h-4 text-gray-500"></i>
+                Status <span class="text-red-500">*</span>
+              </label>
+              <select name="status" id="status" required
+                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all cursor-pointer">
+                <option value="Available">Available</option>
+                <option value="Low Stock">Low Stock</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description Section -->
+        <div class="consumable-section">
+          <div class="flex items-center gap-2 mb-4 text-gray-700">
+            <i data-lucide="file-text" class="w-5 h-5 text-purple-600"></i>
+            <h4 class="font-semibold">Additional Information</h4>
+          </div>
+          <div class="space-y-1.5 mb-4">
+            <label for="description" class="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+              <i data-lucide="file-text" class="w-4 h-4 text-gray-500"></i>
+              Description
+            </label>
+            <textarea name="description" id="description" rows="3" placeholder="Enter item description, specifications, or notes..." 
+              class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all resize-none"></textarea>
+          </div>
+          
+          <!-- Date Information -->
+          <div class="flex items-center gap-2 mb-3 text-gray-700 pt-2 border-t border-gray-200">
+            <i data-lucide="calendar" class="w-5 h-5 text-orange-600"></i>
+            <h4 class="font-semibold">Date Information</h4>
+          </div>
+          <div class="space-y-1.5">
+            <label for="date_added" class="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+              <i data-lucide="calendar" class="w-4 h-4 text-gray-500"></i>
+              Date Added
+            </label>
+            <input type="date" name="date_added" id="date_added" 
+              class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-gray-100 text-gray-600 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all cursor-not-allowed md:w-1/2" readonly>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Footer Buttons -->
+    <div class="consumable-modal-footer">
+      <button type="button" onclick="closeConsumableModal()" 
+        class="consumable-btn consumable-btn-cancel">
+        <i data-lucide="x" class="w-4 h-4"></i>
+        Cancel
+      </button>
+      <button type="submit" form="consumableForm"
+        class="consumable-btn consumable-btn-primary">
+        <i data-lucide="save" class="w-4 h-4"></i>
+        Save Consumable
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+#consumableModal {
+  background: rgba(2, 6, 23, 0.78) !important;
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+#consumableModal.modal-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#consumableModal .consumable-modal-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fffc 100%);
+  box-shadow: 0 34px 62px rgba(15, 23, 42, 0.3), 0 8px 24px rgba(16, 185, 129, 0.16);
+  opacity: 0;
+  transform: translateY(10px) scale(0.985);
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+}
+
+#consumableModal.modal-open .consumable-modal-card {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+#consumableModal .consumable-modal-header {
+  border-radius: 0.85rem 0.85rem 0 0;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(118deg, #059669 0%, #10b981 54%, #14b8a6 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+#consumableModal .consumable-modal-header::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(114deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 36%, rgba(255, 255, 255, 0) 72%);
+}
+
+#consumableModal .consumable-modal-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+#consumableModal .consumable-modal-subtitle {
+  color: rgba(236, 253, 245, 0.9);
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  margin-top: 0.1rem;
+}
+
+#consumableModal .consumable-error-banner {
+  margin: 1rem 1.25rem 0;
+  padding: 0.8rem 1rem;
+  border-radius: 0.7rem;
+  border: 1px solid #fecaca;
+  background: linear-gradient(135deg, #fef2f2 0%, #fff7f7 100%);
+  color: #b91c1c;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+#consumableModal .consumable-modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.1), transparent 42%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+#consumableModal .consumable-section {
+  border-radius: 0.95rem;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(255, 255, 255, 0.94);
+  padding: 1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+#consumableModal .consumable-modal-card label {
+  color: #334155;
+  font-weight: 600;
+}
+
+#consumableModal .consumable-modal-card input:not([type="hidden"]),
+#consumableModal .consumable-modal-card select,
+#consumableModal .consumable-modal-card textarea {
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff;
+  border-radius: 0.72rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#consumableModal .consumable-modal-card input:not([type="hidden"]),
+#consumableModal .consumable-modal-card select {
+  min-height: 2.75rem;
+}
+
+#consumableModal .consumable-modal-card textarea {
+  min-height: 6rem;
+}
+
+#consumableModal input:not([type="hidden"]):focus,
+#consumableModal select:focus,
+#consumableModal textarea:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16) !important;
+  outline: none;
+}
+
+#consumableModal .consumable-modal-card input[readonly] {
+  background: #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+#consumableModal .consumable-modal-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(248, 250, 252, 0.96);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+#consumableModal .consumable-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 0.72rem;
+  padding: 0.65rem 1.15rem;
+  font-weight: 600;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+#consumableModal .consumable-btn:hover {
+  transform: translateY(-1px);
+}
+
+#consumableModal button.consumable-btn-cancel {
+  color: #334155;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+}
+
+#consumableModal button.consumable-btn-cancel:hover {
+  background: #cbd5e1;
+}
+
+#consumableModal button.consumable-btn-primary {
+  color: #ffffff;
+  background: linear-gradient(114deg, #059669 0%, #10b981 58%, #14b8a6 100%);
+  box-shadow: 0 12px 24px rgba(16, 185, 129, 0.28);
+  border: 1px solid rgba(5, 150, 105, 0.9);
+}
+
+#consumableModal button.consumable-btn-primary:hover {
+  box-shadow: 0 14px 26px rgba(16, 185, 129, 0.34);
+}
+
+#consumableModal .consumable-modal-close {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(241, 245, 249, 0.95) 100%);
+  backdrop-filter: blur(5px);
+  color: #065f46 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 8px 18px rgba(4, 120, 87, 0.22);
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#consumableModal .consumable-modal-close:hover {
+  transform: rotate(90deg) scale(1.04);
+  border-color: rgba(220, 252, 231, 0.95);
+  background: linear-gradient(145deg, rgba(220, 252, 231, 0.98) 0%, rgba(187, 247, 208, 0.95) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 10px 20px rgba(4, 120, 87, 0.3);
+  color: #064e3b !important;
+}
+
+#consumableModal .consumable-modal-close i {
+  color: inherit;
+  stroke-width: 2.35;
+}
+
+#consumableModal .consumable-modal-close:focus-visible {
+  outline: 2px solid rgba(236, 253, 245, 0.9);
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  #consumableModal .consumable-modal-body {
+    padding: 1.35rem 1.6rem;
+  }
+
+  #consumableModal .consumable-section {
+    padding: 1.15rem;
+  }
+
+  #consumableModal .consumable-error-banner,
+  #consumableModal .consumable-modal-footer {
+    margin-left: 1.45rem;
+    margin-right: 1.45rem;
+  }
+}
+
+@media (max-width: 640px) {
+  #consumableModal .consumable-modal-card {
+    max-height: 94vh;
+  }
+
+  #consumableModal .consumable-modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  #consumableModal .consumable-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+</style>

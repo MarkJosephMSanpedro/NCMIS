@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Concerns</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900">
+  {% include 'sidebar_submit_ticket.html' %}
+  <main class="flex-1 ml-0 md:ml-64 p-6">
+    <div class="w-full mx-auto px-4 max-w-none">
+      <div class="bg-white shadow-lg mb-6 rounded-2xl overflow-hidden">
+        <div class="bg-blue-600 p-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="list-check" class="text-white h-5 w-5"></i>
+                My Concerns
+              </h1>
+              <p class="text-blue-100 text-sm mt-1">View and track the status of your submitted tickets</p>
+            </div>
+
+            <div class="hidden sm:flex items-center gap-3">
+              <a href="{{ url_for('submit_ticket_bp.submit_ticket_page') }}" class="inline-flex items-center gap-2 bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition">
+                <i data-lucide="plus" class="h-4 w-4"></i> Submit New Concern
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 border-t border-slate-100">
+          <div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="w-full sm:w-auto flex gap-4 items-center">
+              <input id="concern-search" type="search" placeholder="Search by ticket # or description" class="w-full sm:w-96 border border-slate-200 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-300" />
+              <select id="concern-filter" class="border border-slate-200 rounded-lg px-4 py-3 text-base">
+                <option value="all" {% if active_filter == 'all' %}selected{% endif %}>All statuses</option>
+                <option value="pending" {% if active_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="ongoing" {% if active_filter == 'ongoing' %}selected{% endif %}>Ongoing</option>
+                <option value="resolved" {% if active_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+                <option value="invalid" {% if active_filter == 'invalid' %}selected{% endif %}>Invalid</option>
+                <option value="unresolved" {% if active_filter == 'unresolved' %}selected{% endif %}>Unresolved</option>
+              </select>
+              <div class="sm:hidden">
+                <a href="{{ url_for('submit_ticket_bp.submit_ticket_page') }}" class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+                  <i data-lucide="plus" class="h-4 w-4"></i> Submit
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Combined note + status summary -->
+      {% set all_count = concerns|length %}
+      {% set open_count = 0 %}{% set pending_count = 0 %}{% set ongoing_count = 0 %}{% set resolved_count = 0 %}{% set invalid_count = 0 %}{% set unresolved_count = 0 %}
+      {% for c in concerns %}
+        {% set s = (c.status or '')|lower %}
+        {% if s == 'open' %}{% set open_count = open_count + 1 %}{% elif s == 'pending' %}{% set pending_count = pending_count + 1 %}
+        {% elif s in ['ongoing','accepted','in progress','processing','assigned'] %}{% set ongoing_count = ongoing_count + 1 %}
+        {% elif s in ['closed','resolved'] %}{% set resolved_count = resolved_count + 1 %}{% elif s in ['declined','rejected','invalid'] %}{% set invalid_count = invalid_count + 1 %}{% elif s == 'unresolved' %}{% set unresolved_count = unresolved_count + 1 %}{% endif %}
+      {% endfor %}
+      {# For consistency with the admin ticket queue, treat both 'Open' and 'Pending' as the "Pending" summary category #}
+      {% set pending_combined = open_count + pending_count %}
+
+      <div class="mb-4">
+        <div class="bg-white border border-slate-100 rounded-lg p-4 overflow-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div class="text-xs text-slate-500 sm:mr-4">Note: <strong>Pending</strong> includes items with status <strong>Open</strong> and <strong>Pending</strong> to match the admin ticket queue.</div>
+
+          <div class="flex gap-4 items-center whitespace-nowrap px-2 flex-wrap -mx-1">
+            <button type="button" data-status="all" class="status-pill group inline-flex items-center gap-3 px-5 py-2 rounded-lg bg-blue-600 text-white transition transform duration-150 ease-in-out hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300">All <span class="ml-2 inline-flex items-center justify-center rounded-full h-6 w-6 text-sm font-semibold transition-transform duration-150 ease-in-out group-hover:scale-110 group-hover:shadow-sm bg-white text-blue-600">{{ all_count }}</span></button>
+            <button type="button" data-status="pending" class="status-pill group inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white text-slate-700 border border-transparent hover:border-slate-200 transition transform duration-150 ease-in-out hover:shadow-sm hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300">Pending <span class="ml-2 inline-flex items-center justify-center rounded-full h-6 w-6 text-sm font-semibold transition-transform duration-150 ease-in-out group-hover:scale-110 group-hover:shadow-sm bg-slate-100 text-slate-700">{{ pending_combined }}</span></button>
+            <button type="button" data-status="ongoing" class="status-pill group inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white text-slate-700 border border-transparent hover:border-slate-200 transition transform duration-150 ease-in-out hover:shadow-sm hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300">Ongoing <span class="ml-2 inline-flex items-center justify-center rounded-full h-6 w-6 text-sm font-semibold transition-transform duration-150 ease-in-out group-hover:scale-110 group-hover:shadow-sm bg-slate-100 text-slate-700">{{ ongoing_count }}</span></button>
+            <button type="button" data-status="resolved" class="status-pill group inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white text-slate-700 border border-transparent hover:border-slate-200 transition transform duration-150 ease-in-out hover:shadow-sm hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300">Resolved <span class="ml-2 inline-flex items-center justify-center rounded-full h-6 w-6 text-sm font-semibold transition-transform duration-150 ease-in-out group-hover:scale-110 group-hover:shadow-sm bg-slate-100 text-slate-700">{{ resolved_count }}</span></button>
+            <button type="button" data-status="invalid" class="status-pill group inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white text-slate-700 border border-transparent hover:border-slate-200 transition transform duration-150 ease-in-out hover:shadow-sm hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300">Invalid <span class="ml-2 inline-flex items-center justify-center rounded-full h-6 w-6 text-sm font-semibold transition-transform duration-150 ease-in-out group-hover:scale-110 group-hover:shadow-sm bg-slate-100 text-slate-700">{{ invalid_count }}</span></button>
+            <button type="button" data-status="unresolved" class="status-pill group inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white text-slate-700 border border-transparent hover:border-slate-200 transition transform duration-150 ease-in-out hover:shadow-sm hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300">Unresolved <span class="ml-2 inline-flex items-center justify-center rounded-full h-6 w-6 text-sm font-semibold transition-transform duration-150 ease-in-out group-hover:scale-110 group-hover:shadow-sm bg-slate-100 text-slate-700">{{ unresolved_count }}</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-6">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="space-y-2 mb-4">
+            {% for category, message in messages %}
+              <div class="rounded-xl border px-4 py-3 text-sm font-medium
+                {% if category == 'error' %} border-red-200 bg-red-50 text-red-700
+                {% elif category == 'success' %} border-emerald-200 bg-emerald-50 text-emerald-700
+                {% else %} border-blue-200 bg-blue-50 text-blue-700 {% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% if concerns|length == 0 %}
+        <div class="text-center text-gray-500 py-8">No concerns found.</div>
+      {% else %}
+        <div class="mb-6 text-base text-slate-500">Showing <span id="results-count">{{ concerns|length }}</span> result(s)</div>
+
+        {# server-side debug removed #}
+
+        <!-- Responsive card list (mobile + desktop) -->
+        <div id="concern-cards" class="space-y-3 md:grid md:grid-cols-2 md:gap-4">
+          {% for c in concerns %}
+            <div data-concern-item data-concern-id="{{ c.concern_id }}" data-concern-status="{{ (c.status or '')|lower }}" class="bg-emerald-50 border-l-4 border-emerald-400 rounded-xl p-6 shadow-sm hover:shadow-md transition transform duration-150 ease-in-out">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1">
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                      <div class="text-sm font-semibold text-slate-800">Ticket #{{ c.concern_id }}</div>
+                      <div>
+                        {% if c.status == 'Open' %}
+                          <span class="inline-flex items-center rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs font-semibold">Open</span>
+                        {% elif c.status == 'Pending' %}
+                          <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-3 py-1 text-xs font-semibold">Pending</span>
+                        {% elif c.status == 'Closed' or c.status == 'Resolved' %}
+                          <span class="inline-flex items-center rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs font-semibold">{{ c.status }}</span>
+                        {% else %}
+                          <span class="inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-semibold">{{ c.status }}</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div class="text-xs text-slate-500">{{ c.created_at }}</div>
+                  </div>
+
+                  <h3 class="mt-3 text-base font-semibold text-slate-800">{{ c.description[:180] }}{% if c.description|length > 180 %}...{% endif %}</h3>
+
+                  {% if c.user_role %}
+                    <div class="mt-3 flex items-center gap-2 text-sm text-slate-600">
+                      <i data-lucide="user" class="h-4 w-4 text-slate-400"></i>
+                      <span class="font-medium">{{ c.user_role }}</span>
+                    </div>
+                  {% endif %}
+
+                  <div class="mt-3 text-sm text-slate-700 space-y-1">
+                    <div class="flex items-center gap-2"><i data-lucide="calendar" class="h-4 w-4 text-slate-400"></i> <span class="text-slate-500">Created:</span> <span class="font-semibold">{{ c.created_at }}</span></div>
+                    {% if c.resolved_at %}
+                      <div class="flex items-center gap-2 text-emerald-700"><i data-lucide="check-circle" class="h-4 w-4"></i> <span class="font-semibold">Resolved:</span> <span class="font-semibold">{{ c.resolved_at }}</span></div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="flex flex-col items-end gap-2">
+                  <a href="#" data-id="{{ c.concern_id }}" data-full-desc="{{ c.description|e }}" class="view-concern inline-flex items-center gap-2 px-4 py-2 rounded bg-white hover:bg-gray-100 text-sm shadow-sm">View</a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Removed desktop table in favor of responsive cards above -->
+      {% endif %}
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Simple detail modal -->
+  <div id="concern-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-lg max-w-2xl w-full mx-4 p-6 shadow-lg max-h-[80vh] overflow-auto" role="dialog" aria-modal="true" aria-labelledby="concern-modal-title">
+      <div class="flex items-start justify-between">
+        <h3 id="concern-modal-title" class="text-lg font-semibold">Concern Details</h3>
+        <button id="concern-modal-close" type="button" class="text-slate-500 hover:text-slate-800" aria-label="Close concern details">Close</button>
+      </div>
+      <div id="concern-modal-body" class="mt-4 text-sm text-slate-700 whitespace-pre-wrap"></div>
+    </div>
+  </div>
+
+  <script>
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+
+    function normalizeStatus(s) {
+      s = (s || '').toString().toLowerCase().trim();
+      if (['closed', 'resolved'].includes(s)) return 'resolved';
+      if (['declined', 'rejected', 'invalid'].includes(s)) return 'invalid';
+      if (s === 'open') return 'open';
+      if (s === 'pending') return 'pending';
+      if (['ongoing','accepted','in progress','processing','assigned','in-progress','inprogress'].includes(s)) return 'ongoing';
+      if (s === 'unresolved') return 'unresolved';
+      return s;
+    }
+
+    function updatePillsActive() {
+      const val = (document.getElementById('concern-filter').value || 'all').toLowerCase();
+      document.querySelectorAll('[data-status]').forEach(btn => {
+        const status = (btn.dataset.status || '').toLowerCase();
+        const isActive = status === val;
+        const badge = btn.querySelector('span');
+
+        if (isActive) {
+          // Button: blue background, white label
+          btn.classList.add('bg-blue-600', 'text-white');
+          btn.classList.remove('bg-white', 'text-slate-700');
+
+          // Badge: white background with blue text for contrast
+          if (badge) {
+            badge.classList.remove('bg-slate-100', 'text-slate-700');
+            badge.classList.add('bg-white', 'text-blue-600');
+          }
+        } else {
+          // Button: default white background, dark label
+          btn.classList.remove('bg-blue-600', 'text-white');
+          btn.classList.add('bg-white', 'text-slate-700');
+
+          // Badge: subtle slate background with dark text
+          if (badge) {
+            badge.classList.remove('bg-white', 'text-blue-600');
+            badge.classList.add('bg-slate-100', 'text-slate-700');
+          }
+        }
+      });
+    }
+
+    // Recompute and write the numeric badges for each status pill from the
+    // DOM items. This ensures the top summary always reflects actual
+    // concerns present on the page even if the server-rendered values are
+    // stale or client-side filtering has run.
+    function updatePillCounts() {
+      const items = document.querySelectorAll('[data-concern-item]');
+      // Count unique concerns across the DOM (dedupe mobile + desktop rows).
+      // We count all DOM items (not just visible ones) so the pills show
+      // total counts for each status. Client-side filtering still hides
+      // items, but the summary badges represent totals across the page.
+      const seen = Object.create(null);
+      const counts = { all: 0, open: 0, pending: 0, ongoing: 0, resolved: 0, invalid: 0, unresolved: 0 };
+      items.forEach(el => {
+        const id = (el.dataset.concernId || '').toString();
+        if (!id) return;
+        if (seen[id]) return; // already counted this concern (dedupe mobile + desktop)
+        seen[id] = true;
+        const st = normalizeStatus((el.dataset.concernStatus || '').toLowerCase());
+        counts.all += 1;
+        if (st === 'open') counts.open += 1;
+        if (st === 'pending') counts.pending += 1;
+        if (st === 'ongoing') counts.ongoing += 1;
+        if (st === 'resolved') counts.resolved += 1;
+        if (st === 'invalid') counts.invalid += 1;
+        if (st === 'unresolved') counts.unresolved += 1;
+      });
+
+      function setBadge(statusKey, value) {
+        const btn = document.querySelector('[data-status="' + statusKey + '"]');
+        if (!btn) return;
+        const span = btn.querySelector('span');
+        if (span) span.textContent = String(value);
+      }
+
+      setBadge('all', counts.all);
+      setBadge('open', counts.open);
+      // pending pill shows combined Open + Pending (admin-style)
+      setBadge('pending', counts.open + counts.pending);
+      setBadge('ongoing', counts.ongoing);
+      setBadge('resolved', counts.resolved);
+      setBadge('invalid', counts.invalid);
+      setBadge('unresolved', counts.unresolved);
+    }
+
+    function filterConcerns() {
+      const q = (document.getElementById('concern-search').value || '').trim().toLowerCase();
+      const statusRaw = (document.getElementById('concern-filter').value || 'all').toLowerCase();
+      const status = statusRaw;
+      const items = document.querySelectorAll('[data-concern-item]');
+      let visible = 0;
+      items.forEach(el => {
+        const id = (el.dataset.concernId || '').toLowerCase();
+        const stRaw = (el.dataset.concernStatus || '').toLowerCase();
+        const st = normalizeStatus(stRaw);
+        const text = (el.textContent || '').toLowerCase();
+        const matchesQ = q === '' || id.includes(q) || text.includes(q);
+        let matchesStatus = (status === 'all');
+        if (!matchesStatus) {
+          if (status === 'pending') {
+            // include both 'open' and 'pending' records when filtering for Pending
+            matchesStatus = (st === 'pending' || st === 'open');
+          } else {
+            matchesStatus = (st === status);
+          }
+        }
+        const show = matchesQ && matchesStatus;
+        // Use explicit display for table rows so browsers render them correctly
+        if (show) {
+          if (el.tagName && el.tagName.toLowerCase() === 'tr') {
+            el.style.display = 'table-row';
+          } else {
+            el.style.display = '';
+          }
+          visible++;
+        } else {
+          el.style.display = 'none';
+        }
+      });
+      const rc = document.getElementById('results-count'); if (rc) rc.textContent = visible;
+      // update pill counts to reflect visible rows, then mark active pill
+      updatePillCounts();
+      updatePillsActive();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const search = document.getElementById('concern-search');
+      const filter = document.getElementById('concern-filter');
+      if (search) search.addEventListener('input', filterConcerns);
+      if (filter) filter.addEventListener('change', filterConcerns);
+
+      // pills click -> set filter + update
+      document.querySelectorAll('[data-status]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const s = (btn.dataset.status || 'all').toLowerCase();
+          if (filter) filter.value = s;
+          filterConcerns();
+        });
+      });
+
+      // modal open/close helpers + focus restore
+      let concernLastActiveEl = null;
+      function hideConcernModal() {
+        const modalEl = document.getElementById('concern-modal');
+        if (modalEl) modalEl.classList.add('hidden');
+        if (concernLastActiveEl && typeof concernLastActiveEl.focus === 'function') {
+          try { concernLastActiveEl.focus(); } catch (e) { /* ignore */ }
+        }
+        concernLastActiveEl = null;
+      }
+
+      // wire view buttons to open modal
+      document.querySelectorAll('.view-concern').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          concernLastActiveEl = btn;
+          const desc = btn.getAttribute('data-full-desc') || '';
+          const modal = document.getElementById('concern-modal');
+          const body = document.getElementById('concern-modal-body');
+          if (body) body.textContent = desc;
+          if (modal) {
+            modal.classList.remove('hidden');
+            const closeBtnLocal = document.getElementById('concern-modal-close');
+            if (closeBtnLocal) closeBtnLocal.focus();
+          }
+        });
+      });
+
+      const closeBtn = document.getElementById('concern-modal-close');
+      if (closeBtn) closeBtn.addEventListener('click', () => { hideConcernModal(); });
+
+      // close modal when clicking backdrop
+      const modal = document.getElementById('concern-modal');
+      if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) hideConcernModal(); });
+
+      // close with Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const modalEl = document.getElementById('concern-modal');
+          if (modalEl && !modalEl.classList.contains('hidden')) hideConcernModal();
+        }
+      });
+
+      // initial counts, filter and pill state
+      // Run filtering first so the visible rows are established
+      // (filterConcerns calls updatePillCounts internally).
+      filterConcerns();
+      updatePillsActive();
+    });
+  </script>
+</body>
+</html>

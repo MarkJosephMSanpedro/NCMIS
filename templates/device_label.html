@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .label {
+            width: 300px;
+            border: 1px solid black;
+            padding: 10px;
+        }
+
+        .header {
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .section {
+            margin-top: 8px;
+            font-size: 11px;
+        }
+
+        .qr {
+            text-align: left;
+            margin-top: 10px;
+        }
+
+        .footer {
+            text-align: right;
+            font-size: 10px;
+            margin-top: 10px;
+        }
+
+        @media print {
+            body {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+<div class="label">
+    
+    <div class="header">
+        MUNICIPALITY OF NORZAGARAY<br>
+        PROVINCE OF BULACAN<br>
+        GENERAL SERVICES OFFICE
+    </div>
+
+    <div class="section">
+        <b>Department:</b> NORZAGARAY COLLEGE<br>
+        <b>Location:</b> NC - CIT DEPARTMENT<br>
+        <b>Quantity:</b> 1.00<br>
+        <b>Date Acquired:</b> 2019-09-07<br>
+        <b>Status:</b> {{ device.status }}<br>
+        <b>Accountable:</b> __________<br>
+        <b>Serial No:</b> {{ device.serial_no }}<br>
+        <b>Description:</b> {{ device.item_name }}
+    </div>
+
+    <div class="qr">
+        <img src="data:image/png;base64,{{ qr_code }}" width="100">
+    </div>
+
+    <div class="footer">
+        <i>Authorized Signature</i><br>
+        {{ device.accession_id }}
+    </div>
+
+</div>
+
+</body>
+</html>

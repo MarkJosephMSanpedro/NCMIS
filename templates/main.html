@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Borrow Request - Student</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+</head>
+<body class="flex min-h-screen bg-gray-800 text-gray-100">
+
+  <!-- Sidebar -->
+
+  <aside id="sidebar"
+    class="fixed top-0 left-0 h-full w-64 bg-gray-900 text-white flex flex-col justify-between p-6 shadow-2xl z-50 md:translate-x-0 md:static md:block transition-transform duration-300 -translate-x-full md:backdrop-blur-md">
+    <!-- Top Section -->
+    <div>
+      <div class="mb-6 text-center border-b border-white/20 pb-4">
+        <h4 class="text-3xl font-extrabold tracking-wide text-blue-400">NCMIS</h4>
+        <span class="text-white/60 text-sm">Student Portal</span>
+      </div>
+      <!-- Add more navigation links here if needed -->
+    </div>
+    <!-- Logout Button -->
+    <form id="logoutForm" method="post" action="{{ url_for('login_bp.logout') }}">
+      <button type="submit" id="logoutBtn"
+        class="flex items-center justify-center w-full px-4 py-3 mt-6 rounded-lg bg-red-600 hover:bg-red-700 transition font-semibold shadow-lg">
+        <i data-lucide="log-out" class="w-5 h-5 mr-2"></i> Logout
+      </button>
+    </form>
+  </aside>
+
+  <!-- Overlay for mobile -->
+  <div id="overlay" class="fixed inset-0 bg-black/50 hidden z-40 md:hidden"></div>
+
+  <!-- Main Content -->
+  <main class="flex-1 md:ml-64 p-6 md:p-10">
+    <!-- Mobile toggle button -->
+    <button id="sidebarToggle" class="md:hidden mb-4 flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg shadow-md">
+      <i data-lucide="menu" class="w-5 h-5"></i> Menu
+    </button>
+
+    <h2 class="text-4xl font-bold mb-8 flex items-center gap-3 text-blue-400">
+      <i data-lucide="clipboard-list" class="w-8 h-8"></i>
+      Request Borrow
+    </h2>
+<form id="borrowForm" method="post" action="{{ url_for('userborrow_bp.borrow_page') }}"
+  class="bg-gray-900 rounded-2xl shadow-2xl p-10 max-w-xl mx-auto space-y-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div>
+      <label for="last_name" class="block text-sm font-medium mb-2 text-gray-200">Last Name</label>
+      <input type="text" id="last_name" name="last_name" required
+             class="w-full border border-gray-700 rounded-xl px-4 py-3 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+    <div>
+      <label for="first_name" class="block text-sm font-medium mb-2 text-gray-200">First Name</label>
+      <input type="text" id="first_name" name="first_name" required
+             class="w-full border border-gray-700 rounded-xl px-4 py-3 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+    <div>
+      <label for="middle_initial" class="block text-sm font-medium mb-2 text-gray-200">Middle Initial</label>
+      <input type="text" id="middle_initial" name="middle_initial" maxlength="2"
+             class="w-full border border-gray-700 rounded-xl px-4 py-3 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+    <div>
+      <label for="student_id" class="block text-sm font-medium mb-2 text-gray-200">Student ID</label>
+      <input type="text" id="student_id" name="student_id" placeholder="e.g. 2028-8832"
+             pattern="\d{4}-\d{4}" maxlength="9" required
+             class="w-full border border-gray-700 rounded-xl px-4 py-3 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+      <small class="text-gray-400">Format: YYYY-NNNN (e.g. 2028-8832)</small>
+    </div>
+  </div>
+
+  <div>
+  <label class="block text-sm font-medium mb-1 text-gray-200">Unit</label>
+  <select name="unit_id"
+          class="w-full border border-gray-700 rounded-xl px-4 py-2 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    {% for u in units %}
+      <option value="{{ u.accession_id }}">
+        [ID {{ u.accession_id }}] {{ u.item_name }}
+        {% if u.brand_model %}- {{ u.brand_model }}{% endif %}
+        (Serial: {{ u.unit_serial }})
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+  <div>
+    <label for="reason" class="block text-sm font-medium mb-2 text-gray-200">Reason / Purpose</label>
+    <textarea id="reason" name="reason" placeholder="Why do you need this item?"
+              class="w-full border border-gray-700 rounded-xl px-4 py-3 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none" required></textarea>
+  </div>
+
+  <button id="submitBtn" type="submit"
+          class="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 rounded-xl transition transform hover:scale-[1.03] active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+    <i data-lucide="send" class="inline w-5 h-5 mr-2"></i> Submit Request
+  </button>
+</form>
+<h3 class="text-xl font-bold text-blue-400 mt-10 mb-4">Registered Students</h3>
+<div class="overflow-x-auto rounded-xl">
+  <table class="min-w-full border border-gray-700 text-sm text-gray-100">
+    <thead class="bg-gray-800 text-gray-300">
+      <tr>
+        <th class="px-4 py-2 border-b border-gray-700">Last Name</th>
+        <th class="px-4 py-2 border-b border-gray-700">First Name</th>
+        <th class="px-4 py-2 border-b border-gray-700">Middle Initial</th>
+        <th class="px-4 py-2 border-b border-gray-700">Student ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in students %}
+      <tr>
+        <td class="px-4 py-2 border-b border-gray-700">{{ s.last_name }}</td>
+        <td class="px-4 py-2 border-b border-gray-700">{{ s.first_name }}</td>
+        <td class="px-4 py-2 border-b border-gray-700">{{ s.middle_initial }}</td>
+        <td class="px-4 py-2 border-b border-gray-700">{{ s.student_id }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+// Autoformat Student ID: YYYY-NNNN
+document.getElementById('student_id').addEventListener('input', function(e) {
+  let v = this.value.replace(/\D/g, '').slice(0,8);
+  if (v.length > 4) v = v.slice(0,4) + '-' + v.slice(4);
+  this.value = v;
+});
+</script>
+
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed bottom-6 right-6 bg-red-600 text-white px-5 py-3 rounded-lg shadow-lg opacity-0 transition-opacity">
+    Please fill out all fields correctly.
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // Sidebar toggle for mobile
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const toggleBtn = document.getElementById('sidebarToggle');
+
+    toggleBtn?.addEventListener('click', () => {
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    });
+
+    overlay.addEventListener('click', () => {
+      sidebar.classList.add('-translate-x-full');
+      overlay.classList.add('hidden');
+    });
+// Simple input mask for Student ID: YYYY-NNNN
+  document.getElementById('student_id').addEventListener('input', function(e) {
+    let v = this.value.replace(/\D/g, '').slice(0,8);
+    if (v.length > 4) v = v.slice(0,4) + '-' + v.slice(4);
+    this.value = v;
+  });
+    // Logout confirmation
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutForm = document.getElementById('logoutForm');
+    logoutBtn.addEventListener('click', () => {
+      if (confirm("Are you sure you want to log out?")) {
+        logoutForm.submit();
+      }
+    });
+
+    // Form validation
+    const fields = [
+      "student_id", "room", "item", "borrow_date", "borrow_time",
+      "return_date", "return_time", "reason"
+    ].map(id => document.getElementById(id));
+
+    const borrowDate = document.getElementById('borrow_date');
+    const borrowTime = document.getElementById('borrow_time');
+    const returnTime = document.getElementById('return_time');
+    const statusBadge = document.getElementById('date-status');
+    const submitBtn = document.getElementById('submitBtn');
+    const toast = document.getElementById('toast');
+
+    const today = new Date().toISOString().split("T")[0];
+    borrowDate.min = today;
+    returnDate.min = today;
+
+    const select = document.getElementById('item');
+select.addEventListener('change', function() {
+  const serial = select.options[select.selectedIndex].getAttribute('data-serial');
+  console.log('Selected serial number:', serial);
+});
+
+    function validateForm() {
+      let valid = true;
+      fields.forEach(f => {
+        if (!f.value.trim()) valid = false;
+      });
+
+      statusBadge.textContent = "";
+      statusBadge.className = "block mt-1 text-sm font-semibold";
+
+      if (borrowDate.value && borrowTime.value && returnDate.value && returnTime.value) {
+        const borrowDT = new Date(`${borrowDate.value}T${borrowTime.value}`);
+        const returnDT = new Date(`${returnDate.value}T${returnTime.value}`);
+
+        if (returnDT > borrowDT) {
+          statusBadge.textContent = "✔ Borrow/Return schedule is valid";
+          statusBadge.classList.add("text-green-400");
+        } else {
+          statusBadge.textContent = "⚠ Return date/time must be after borrow date/time";
+          statusBadge.classList.add("text-red-500");
+          valid = false;
+        }
+      }
+
+      submitBtn.disabled = !valid;
+    }
+
+    function showToast() {
+      toast.classList.remove("hidden");
+      toast.classList.add("opacity-100");
+      setTimeout(() => {
+        toast.classList.remove("opacity-100");
+        setTimeout(() => toast.classList.add("hidden"), 300);
+      }, 2000);
+    }
+
+    fields.forEach(el => {
+      el.addEventListener('input', () => {
+        returnDate.min = borrowDate.value || today;
+        validateForm();
+      });
+    });
+
+    document.getElementById('borrowForm').addEventListener('submit', (e) => {
+      if (submitBtn.disabled) {
+        e.preventDefault();
+        showToast();
+      }
+    });
+
+
+    validateForm();
+
+document.addEventListener('DOMContentLoaded', () => {
+  // helper
+  const pad = n => n < 10 ? '0'+n : n;
+
+function updateBorrowFields() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = pad(now.getMonth() + 1);
+  const dd = pad(now.getDate());
+  const hh = pad(now.getHours());
+  const min = pad(now.getMinutes());
+
+  const borrowDateInput = document.getElementById('borrow_date');
+  const borrowTimeInput = document.getElementById('borrow_time');
+
+  console.log('Updating fields:', borrowDateInput, borrowTimeInput); // Debug
+
+  if (borrowDateInput) borrowDateInput.value = `${yyyy}-${mm}-${dd}`;
+  if (borrowTimeInput) borrowTimeInput.value = `${hh}:${min}`;
+}
+  // Fill immediately
+  updateBorrowFields();
+  // Update every 30 seconds
+  setInterval(updateBorrowFields, 30000);
+});
+  </script>
+</body>
+</html>

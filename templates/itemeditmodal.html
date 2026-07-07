@@ -1,0 +1,499 @@
+<!-- Item Add/Edit Modal -->
+<!-- Ensure modal and backdrop are always above page content and pagination -->
+<div id="itemModal" class="hidden fixed inset-0 inventory-modal-backdrop flex items-center justify-center z-[9999] p-4">
+  <div class="inventory-item-card bg-white p-8 rounded-2xl w-full max-w-4xl shadow-2xl overflow-y-auto max-h-[90vh] border border-gray-200 z-[10000]">
+    <div class="item-modal-header">
+      <h3 id="modalTitle" class="text-xl font-semibold text-blue-600 mb-0 flex items-center gap-2">
+        <i data-lucide="plus-circle"></i>
+        <span>Add Item</span>
+      </h3>
+      <button type="button" onclick="closeItemModal()" class="item-modal-close" aria-label="Close item modal">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    <div id="itemModalError" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4"></div>
+
+    <form id="itemForm" method="post" class="space-y-6">
+      <input type="hidden" name="accession_id" id="accession_id">
+
+      <!-- Device Name -->
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Item Name</label>
+        <input type="text" name="item_name" id="item_name" list="pcPartNameOptions" required
+          class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+        <datalist id="pcPartNameOptions">
+          <option value="Motherboard"></option>
+          <option value="Processor (CPU)"></option>
+          <option value="RAM"></option>
+          <option value="Storage (SSD)"></option>
+          <option value="Storage (HDD)"></option>
+          <option value="Graphics Card (GPU)"></option>
+          <option value="Power Supply (PSU)"></option>
+          <option value="Casing"></option>
+          <option value="CPU Cooler"></option>
+          <option value="Monitor"></option>
+          <option value="Keyboard"></option>
+          <option value="Mouse"></option>
+          <option value="Network Card"></option>
+          <option value="LAN Cable"></option>
+          <option value="Power Cable"></option>
+          <option value="UPS"></option>
+          <option value="AVR"></option>
+        </datalist>
+      </div>
+
+      <!-- Brand / Model -->
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Brand / Model</label>
+        <input type="text" name="brand_model" id="brand_model"
+          class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+      </div>
+
+      <!-- Serial No -->
+      <div id="serialNoGroup">
+        <label class="block text-gray-700 font-medium mb-1">Serial No</label>
+        <input type="text" name="serial_no" id="serial_no" readonly
+          class="w-full p-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-600 focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <!-- Municipal Serial No -->
+      <div id="municipalSerialNoGroup">
+        <label class="block text-gray-700 font-medium mb-1">Municipal Serial No</label>
+        <input type="text" name="municipal_serial_no" id="municipal_serial_no" readonly
+          class="w-full p-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-600 focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <!-- Quantity -->
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Quantity</label>
+        <input type="number" name="quantity" id="quantity" min="1" required autocomplete="off"
+          class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+      </div>
+
+      <!-- Device Type -->
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Item Type</label>
+        <input type="text" name="device_type" id="device_type" list="itemTypeOptions"
+          class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+        <datalist id="itemTypeOptions">
+          <option value="Device"></option>
+          <option value="PC"></option>
+          <option value="Consumable"></option>
+        </datalist>
+      </div>
+
+      <!-- Acquisition Cost -->
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Acquisition Cost (₱)</label>
+        <input type="number" step="0.01" name="acquisition_cost" id="acquisition_cost"
+          class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+      </div>
+
+      <!-- Date Acquired -->
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Date Acquired</label>
+        <input type="date" name="date_acquired" id="date_acquired"
+          class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+      </div>
+
+      <!-- Accountable Person -->
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Accountable Person</label>
+        <input type="text" name="accountable" id="accountable"
+          class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+      </div>
+
+      <!-- Department -->
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Office / Facility</label>
+        <select name="department_id" id="department_id" required
+          class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+          {% if departments %}
+            <option value="">Select Office / Facility</option>
+            {% for dep in departments %}
+              <option value="{{ dep.department_id }}">{{ dep.department_name }}</option>
+            {% endfor %}
+          {% else %}
+            <option value="">Loading Office / Facility...</option>
+          {% endif %}
+        </select>
+      </div>
+
+      <!-- Status -->
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Status</label>
+        <select name="status" id="status" required
+          class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+          <option value="Available">Available</option>
+          <option value="IN USE">IN USE</option>
+          <option value="Inactive">Inactive</option>
+          <option value="Damaged">Damaged</option>
+        </select>
+      </div>
+
+      <!-- Maintenance Duration -->
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Duration (Years)</label>
+        <input type="number" name="maintenance_interval_days" id="maintenance_interval_days" value="5" min="1" max="50"
+          class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+        <p class="text-xs text-gray-500 mt-1">Set how many years before maintenance is required</p>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex justify-end gap-3 mt-6">
+        <button type="button" onclick="closeItemModal()"
+          class="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded-lg text-sm">
+          Cancel
+        </button>
+        <button id="itemSubmitBtn" type="submit"
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
+          Add Item
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.inventory-item-card {
+  border-radius: 1rem;
+  z-index: 10000 !important; /* Ensure modal content is above everything */
+}
+
+#itemModal {
+  z-index: 9999 !important; /* Ensure modal backdrop is above everything */
+}
+
+.item-modal-header {
+  margin: -2rem -2rem 1.25rem;
+  padding: 0.95rem 1.35rem;
+  border-radius: 0.85rem 0.85rem 0 0;
+  background: linear-gradient(112deg, #2563eb 0%, #4f46e5 58%, #4338ca 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.item-modal-header h3,
+.item-modal-header i {
+  color: #ffffff !important;
+}
+
+.item-modal-close {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.16s ease, background-color 0.16s ease;
+}
+
+.item-modal-close:hover {
+  transform: rotate(90deg);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-open-item #itemPaginationNav,
+.modal-open-item #itemPaginationSummary,
+.modal-open-item #itemPerPageForm {
+  display: none !important;
+}
+
+body.modal-open-item {
+  overflow: hidden;
+}
+</style>
+
+<script>
+function convertStoredDaysToDisplayYears(rawValue) {
+  const numericValue = Number(rawValue);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) return '';
+  if (numericValue >= 365) {
+    return String(Math.max(1, Math.round(numericValue / 365)));
+  }
+  return String(Math.round(numericValue));
+}
+
+function convertDisplayYearsToStoredDays(rawValue) {
+  const numericValue = Number(rawValue);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) return '';
+  return String(Math.round(numericValue * 365));
+}
+
+// Load departments with caching, timeout, fallbacks and debug logging
+async function loadDepartments(timeoutMs = 12000) {
+  if (window._departmentsCache && Array.isArray(window._departmentsCache)) {
+    console.debug('[itemeditmodal] using cached departments', window._departmentsCache.length);
+    return window._departmentsCache;
+  }
+
+  const endpoints = ['/manage_inventory/get-departments', '/get-departments'];
+
+  for (const url of endpoints) {
+    console.debug('[itemeditmodal] attempting to fetch departments from', url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: controller.signal, credentials: 'same-origin' });
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        console.debug('[itemeditmodal] fetch to', url, 'returned', res.status);
+        continue; // try next endpoint
+      }
+      const data = await res.json();
+      if (!Array.isArray(data)) {
+        console.debug('[itemeditmodal] fetch to', url, 'returned non-array data');
+        continue;
+      }
+      window._departmentsCache = data;
+      console.debug('[itemeditmodal] fetched departments count=', data.length);
+      return data;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.debug('[itemeditmodal] fetch to', url, 'failed:', err && err.message ? err.message : err);
+      // try next endpoint
+    }
+  }
+
+  console.error('[itemeditmodal] all department fetch attempts failed');
+  return null;
+}
+
+// Prefetch departments on page load to avoid visible "Loading" state
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const deps = await loadDepartments();
+    if (deps && deps.length) {
+      const deptSelect = document.getElementById('department_id');
+      if (deptSelect) {
+        deptSelect.innerHTML = '<option value="">Select Office / Facility</option>';
+        deps.forEach(dep => {
+          const opt = document.createElement('option');
+          opt.value = dep.department_id;
+          opt.textContent = dep.department_name;
+          deptSelect.appendChild(opt);
+        });
+      }
+    }
+  } catch (e) {
+    /* ignore prefetch errors */
+  }
+});
+
+async function openItemModal(itemData = null) {
+  console.debug('[itemeditmodal] openItemModal called', { hasItem: !!itemData });
+  const modal = document.getElementById('itemModal');
+  const title = document.getElementById('modalTitle');
+  const form = document.getElementById('itemForm');
+  const quantity = document.getElementById('quantity');
+  const serialInput = document.getElementById('serial_no');
+  const municipalInput = document.getElementById('municipal_serial_no');
+  const submitBtn = document.getElementById('itemSubmitBtn');
+  const deviceTypeInput = document.getElementById('device_type');
+  const serialNoGroup = document.getElementById('serialNoGroup');
+  const municipalGroup = document.getElementById('municipalSerialNoGroup');
+  const deptSelect = document.getElementById('department_id');
+  const statusSelect = document.getElementById('status');
+  const errorDiv = document.getElementById('itemModalError');
+
+  errorDiv.classList.add('hidden');
+  errorDiv.textContent = '';
+
+  // Reset form
+  form.reset();
+  
+  document.getElementById('accession_id').value = '';
+
+  serialInput.readOnly = false;
+
+  
+  // Load departments (use cached loader with timeout and prefetch)
+  // Only show a loading placeholder if the select is empty or only contains a single empty placeholder
+  try {
+    const hasOptions = deptSelect && deptSelect.options && deptSelect.options.length > 0;
+    const onlyPlaceholder = hasOptions && deptSelect.options.length === 1 && deptSelect.options[0].value === '';
+    if (!hasOptions || onlyPlaceholder) {
+      deptSelect.innerHTML = '<option value="">Loading Office / Facility...</option>';
+    }
+  } catch (e) {
+    deptSelect.innerHTML = '<option value="">Loading Office / Facility...</option>';
+  }
+  try {
+    const deps = await loadDepartments();
+    if (deps && deps.length) {
+      deptSelect.innerHTML = '<option value="">Select Office / Facility</option>';
+      deps.forEach(dep => {
+        const opt = document.createElement('option');
+        opt.value = dep.department_id;
+        opt.textContent = dep.department_name;
+        deptSelect.appendChild(opt);
+      });
+      // If in edit mode, preserve selected department
+      if (itemData && itemData.department_id) {
+        deptSelect.value = itemData.department_id;
+        setTimeout(() => {
+          try {
+            const opt = deptSelect.querySelector(`option[value="${String(itemData.department_id)}"]`);
+            if (opt) {
+              opt.selected = true;
+              try { deptSelect.focus({preventScroll: true}); } catch(e){}
+              try { opt.scrollIntoView({ block: 'center' }); } catch(e){}
+            }
+          } catch (e) { /* ignore */ }
+        }, 0);
+      }
+      } else {
+      console.debug('[itemeditmodal] no departments returned from loader');
+      deptSelect.innerHTML = '<option value="">Error loading Office / Facility</option>';
+    }
+  } catch (err) {
+    console.error('[itemeditmodal] load departments failed', err);
+    deptSelect.innerHTML = '<option value="">Error loading Office / Facility</option>';
+  }
+
+  function applyItemTypeRules(typeValue) {
+    const isConsumable = (typeValue || '').toLowerCase() === 'consumable';
+
+    if (isConsumable) {
+      serialNoGroup.classList.add('hidden');
+      municipalGroup.classList.add('hidden');
+      serialInput.value = serialInput.value || 'AUTO';
+      municipalInput.value = municipalInput.value || 'AUTO';
+      serialInput.readOnly = true;
+      municipalInput.readOnly = true;
+      serialInput.classList.add('bg-gray-100');
+      municipalInput.classList.add('bg-gray-100');
+      quantity.readOnly = false;
+      quantity.classList.remove('bg-gray-100', 'cursor-not-allowed');
+    } else {
+      serialNoGroup.classList.remove('hidden');
+      municipalGroup.classList.remove('hidden');
+      quantity.readOnly = false;
+      quantity.classList.remove('bg-gray-100', 'cursor-not-allowed');
+    }
+  }
+
+  if (!deviceTypeInput._itemTypeListenerAdded) {
+    deviceTypeInput.addEventListener('input', (event) => {
+      applyItemTypeRules(event.target.value);
+    });
+    deviceTypeInput._itemTypeListenerAdded = true;
+  }
+
+  if (itemData) {
+    // EDIT MODE
+    title.innerHTML = '<i data-lucide="edit"></i><span>Edit Item</span>';
+    form.action = "{{ url_for('manage_item_bp.update_device') }}";
+    submitBtn.textContent = "Update Item";
+
+    Object.entries(itemData).forEach(([key, value]) => {
+      const input = document.getElementById(key);
+      if (!input) return;
+      if (key === 'date_acquired' && value && value !== "0000-00-00") {
+        const dateObj = new Date(value);
+        input.value = dateObj.toISOString().split('T')[0];
+      } else if (key === 'maintenance_interval_days' && value) {
+        input.value = convertStoredDaysToDisplayYears(value);
+      } else {
+        input.value = value ?? '';
+      }
+    });
+
+    serialInput.readOnly = false;
+    serialInput.classList.remove('bg-gray-100');
+    municipalInput.readOnly = false;
+    municipalInput.classList.remove('bg-gray-100');
+    quantity.readOnly = false;
+    quantity.classList.remove('bg-gray-100', 'cursor-not-allowed');
+    applyItemTypeRules(deviceTypeInput.value);
+  } else {
+    // ADD MODE
+    title.innerHTML = '<i data-lucide="plus-circle"></i><span>Add Item</span>';
+    form.action = "{{ url_for('manage_item_bp.add_device') }}";
+    submitBtn.textContent = "Add Item";
+
+    quantity.readOnly = false;
+    quantity.value = '';
+    quantity.classList.remove('bg-gray-100', 'cursor-not-allowed');
+
+    // Generate Serials
+    function generateSerial(prefix="SN") {
+      return prefix + Date.now().toString().slice(-6) + Math.floor(Math.random()*100);
+    }
+
+    serialInput.value = generateSerial("SN");
+    municipalInput.value = generateSerial("MSN");
+    serialInput.readOnly = true;
+    municipalInput.readOnly = true;
+    serialInput.classList.add('bg-gray-100');
+    municipalInput.classList.add('bg-gray-100');
+    applyItemTypeRules(deviceTypeInput.value);
+  }
+
+  lucide.createIcons();
+  document.body.classList.add('modal-open-item');
+  try { document.body.style.overflow = 'hidden'; } catch (e) {}
+  modal.classList.remove('hidden');
+}
+
+// CLOSE MODAL
+function closeItemModal() {
+  const modal = document.getElementById('itemModal');
+  modal.classList.add('hidden');
+  document.body.classList.remove('modal-open-item');
+  try { document.body.style.overflow = ''; } catch (e) {}
+}
+
+// SUBMIT FORM WITH DUPLICATE CHECK
+document.getElementById("itemForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+  const form = e.target;
+  const errorDiv = document.getElementById('itemModalError');
+  errorDiv.classList.add('hidden');
+  errorDiv.textContent = '';
+
+  const data = new FormData(form);
+  const durationYears = data.get('maintenance_interval_days');
+  const durationDays = convertDisplayYearsToStoredDays(durationYears);
+  if (durationDays) {
+    data.set('maintenance_interval_days', durationDays);
+  }
+  const serial_no = data.get('serial_no');
+  const municipal_serial_no = data.get('municipal_serial_no');
+  const accession_id = data.get('accession_id');
+
+  try {
+    // Check duplicate serial no or municipal serial no
+    const res = await fetch(`/manage_inventory/check-serial-duplicate?serial_no=${encodeURIComponent(serial_no)}&municipal_serial_no=${encodeURIComponent(municipal_serial_no)}&accession_id=${accession_id || ''}`);
+    const result = await res.json();
+
+    if (result.duplicate) {
+      errorDiv.textContent = "Serial No or Municipal Serial No already exists!";
+      errorDiv.classList.remove('hidden');
+      return; // stop submission
+    }
+
+    // Submit form via fetch
+    const actionUrl = form.action;
+    const formData = new URLSearchParams(data);
+    const submitRes = await fetch(actionUrl, { method: 'POST', body: formData });
+    if (!submitRes.ok) throw new Error(`HTTP ${submitRes.status}`);
+
+    closeItemModal();
+    if (typeof window.refreshItemTableWithoutReload === 'function') {
+      window.refreshItemTableWithoutReload();
+    }
+  } catch (err) {
+    console.error(err);
+    errorDiv.textContent = "Error submitting form. See console.";
+    errorDiv.classList.remove('hidden');
+  }
+});
+</script>

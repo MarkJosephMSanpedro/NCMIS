@@ -1,0 +1,304 @@
+
+return.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Return PC Parts - PC Stock Room</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <a href="stockroom.html" class="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-xl">
+                        <i class="fas fa-microchip text-white text-xl"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800 dark:text-white">PC Stock Room</h1>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Return Inventory</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="stockroom.html" class="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Back to Inventory</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-2xl mx-auto">
+            <!-- Return Form Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 animate-fade-in">
+                <div class="flex items-center justify-center mb-6">
+                    <div class="w-20 h-20 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
+                        <i class="fas fa-arrow-up text-4xl text-orange-500"></i>
+                    </div>
+                </div>
+                
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white text-center mb-2">Return Stock</h2>
+                <p class="text-gray-500 dark:text-gray-400 text-center mb-8">Remove inventory from your stock</p>
+
+                <form id="returnForm" class="space-y-6">
+                    <!-- Item Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Item</label>
+                        <select id="returnItem" required class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none">
+                            <option value="">Choose an item...</option>
+                        </select>
+                    </div>
+
+                    <!-- Current Stock Display -->
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Current Stock: <span id="currentStock" class="font-bold text-gray-800 dark:text-white text-lg">0</span> units</p>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quantity to Return</label>
+                        <input type="number" id="returnQuantity" required min="1" max="999999" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Enter quantity">
+                    </div>
+
+                    <!-- Return Reference -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Return Reference</label>
+                        <input type="text" id="returnRef" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="e.g., RTN-001, Customer Name">
+                    </div>
+
+                    <!-- Reason -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Return Reason</label>
+                        <select id="returnReason" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none">
+                            <option value="">Select reason...</option>
+                            <option value="Customer Return">Customer Return</option>
+                            <option value="Defective">Defective</option>
+                            <option value="Expired">Expired</option>
+                            <option value="Overstock">Overstock</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Return Date</label>
+                        <input type="date" id="returnDate" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+                        <textarea id="returnNotes" rows="3" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Add any notes about this return..."></textarea>
+                    </div>
+
+                    <!-- New Stock Preview -->
+                    <div class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+                        <p class="text-orange-700 dark:text-orange-300 text-center">New Stock Level: <span id="newStock" class="font-bold text-xl">0</span> units</p>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full py-4 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition shadow-lg font-semibold text-lg">
+                        <i class="fas fa-check-circle mr-2"></i>Confirm Return
+                    </button>
+                </form>
+            </div>
+
+            <!-- Recent Returns -->
+            <div class="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                    <i class="fas fa-history mr-2"></i>Recent Returns
+                </h3>
+                <div id="returnHistory" class="space-y-3 max-h-80 overflow-y-auto">
+                    <p class="text-gray-500 dark:text-gray-400 text-center py-4">No recent returns</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 flex items-center space-x-3">
+            <div id="toastIcon" class="w-10 h-10 rounded-full flex items-center justify-center bg-orange-100 text-orange-500">
+                <i class="fas fa-check"></i>
+            </div>
+            <div>
+                <p id="toastTitle" class="font-semibold text-gray-800 dark:text-white"></p>
+                <p id="toastMessage" class="text-sm text-gray-500 dark:text-gray-400"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load inventory
+        let inventory = JSON.parse(localStorage.getItem('pcInventory')) || [];
+        
+        // Set today's date as default
+        document.getElementById('returnDate').valueAsDate = new Date();
+
+        // Populate item dropdown - only show items with stock
+        const selectEl = document.getElementById('returnItem');
+        const itemsWithStock = inventory.filter(item => item.quantity > 0).sort((a, b) => a.name.localeCompare(b.name));
+        itemsWithStock.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = `${item.name} (${item.quantity} in stock)`;
+            selectEl.appendChild(option);
+        });
+
+        // Update stock preview when item or quantity changes
+        function updatePreview() {
+            const itemId = parseInt(document.getElementById('returnItem').value);
+            const quantity = parseInt(document.getElementById('returnQuantity').value) || 0;
+            
+            if (itemId) {
+                const item = inventory.find(i => i.id === itemId);
+                const currentQty = item ? item.quantity : 0;
+                const newStock = Math.max(0, currentQty - quantity);
+                document.getElementById('currentStock').textContent = currentQty;
+                document.getElementById('newStock').textContent = newStock;
+            } else {
+                document.getElementById('currentStock').textContent = '0';
+                document.getElementById('newStock').textContent = '0';
+            }
+        }
+
+        document.getElementById('returnItem').addEventListener('change', updatePreview);
+        document.getElementById('returnQuantity').addEventListener('input', updatePreview);
+
+        // Handle form submission
+        document.getElementById('returnForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const itemId = parseInt(document.getElementById('returnItem').value);
+            const quantity = parseInt(document.getElementById('returnQuantity').value);
+            const ref = document.getElementById('returnRef').value;
+            const reason = document.getElementById('returnReason').value;
+            const date = document.getElementById('returnDate').value;
+            const notes = document.getElementById('returnNotes').value;
+
+            if (!itemId || !quantity) {
+                showToast('Error', 'Please select an item and enter quantity');
+                return;
+            }
+
+            const item = inventory.find(i => i.id === itemId);
+            if (quantity > item.quantity) {
+                showToast('Error', 'Cannot return more than available stock');
+                return;
+            }
+
+            const index = inventory.findIndex(i => i.id === itemId);
+            const previousStock = item.quantity;
+            const newStock = previousStock - quantity;
+            
+            // Update inventory
+            inventory[index].quantity = newStock;
+            localStorage.setItem('pcInventory', JSON.stringify(inventory));
+
+            // Save return transaction
+            const returns = JSON.parse(localStorage.getItem('returns') || '[]');
+            returns.unshift({
+                itemId,
+                itemName: item.name,
+                quantity,
+                previousStock,
+                newStock,
+                ref,
+                reason,
+                date,
+                notes,
+                timestamp: new Date().toISOString()
+            });
+            if (returns.length > 50) returns.pop();
+            localStorage.setItem('returns', JSON.stringify(returns));
+
+            // Show success
+            showToast('Success', `${quantity} units of ${item.name} returned`);
+            
+            // Reset form
+            document.getElementById('returnForm').reset();
+            document.getElementById('returnDate').valueAsDate = new Date();
+            document.getElementById('currentStock').textContent = '0';
+            document.getElementById('newStock').textContent = '0';
+            
+            // Refresh dropdown
+            const newItemsWithStock = inventory.filter(item => item.quantity > 0).sort((a, b) => a.name.localeCompare(b.name));
+            selectEl.innerHTML = '<option value="">Choose an item...</option>';
+            newItemsWithStock.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = `${item.name} (${item.quantity} in stock)`;
+                selectEl.appendChild(option);
+            });
+
+            loadReturnHistory();
+        });
+
+        // Show toast notification
+        function showToast(title, message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        // Load return history
+        function loadReturnHistory() {
+            const returns = JSON.parse(localStorage.getItem('returns') || '[]');
+            const container = document.getElementById('returnHistory');
+            
+            if (returns.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">No recent returns</p>';
+                return;
+            }
+            
+            container.innerHTML = returns.map(r => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 dark:text-white">${r.itemName}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            ${r.quantity} units returned${r.reason ? ' - ' + r.reason : ''}
+                        </p>
+                        <p class="text-xs text-gray-400">${r.date}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-orange-500 font-bold">-${r.quantity}</span>
+                        <p class="text-xs text-gray-500">${r.previousStock} → ${r.newStock}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        loadReturnHistory();
+    </script>
+</body>
+</html>
+

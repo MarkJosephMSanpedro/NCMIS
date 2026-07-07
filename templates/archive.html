@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Archive - Surrendered PCs</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+</head>
+<body class="flex min-h-screen bg-gray-100 text-gray-800">
+
+  {% include 'sidebar.html' %}
+
+  <!-- Overlay for mobile -->
+  <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/50 z-40"></div>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 ml-0 md:ml-64 transition-all duration-300 p-6">
+    <div class="w-full mx-0 px-2">
+
+    <!-- NAVBAR -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white rounded-3xl shadow-2xl p-4 sm:p-5 mb-6 border border-blue-500/40">
+      <div class="pointer-events-none absolute -top-24 -right-20 h-56 w-56 rounded-full bg-white/15"></div>
+      <div class="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-blue-200/20"></div>
+
+      <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <button id="sidebarToggle" class="md:hidden p-2 rounded-lg bg-white/15 border border-white/30 text-white hover:bg-white/25 transition">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+          <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+            <i data-lucide="archive" class="w-6 h-6 text-white"></i>
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-xl sm:text-2xl font-bold leading-tight">Archive </h2>
+            <p class="text-xs sm:text-sm text-blue-100">Archived workstation records kept for audit and traceability</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card Container -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 ring-1 ring-black/5 overflow-hidden">
+      
+      <!-- Tabs -->
+      <div class="flex gap-2 mb-6">
+        <button onclick="showTab('pcs')" id="pcTabBtn" class="flex items-center px-5 py-2.5 rounded-lg font-medium bg-blue-600 text-white border border-blue-600 shadow-sm transition-all duration-200">
+          <i data-lucide="monitor" class="w-4 h-4 mr-2"></i> Archived PCs
+        </button>
+        <button onclick="showTab('items')" id="itemTabBtn" class="flex items-center px-5 py-2.5 rounded-lg font-medium bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-700 border border-gray-200 shadow-sm transition-all duration-200">
+          <i data-lucide="package" class="w-4 h-4 mr-2"></i> Archived Items
+        </button>
+        <button onclick="showTab('consumables')" id="consumableTabBtn" class="flex items-center px-5 py-2.5 rounded-lg font-medium bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-700 border border-gray-200 shadow-sm transition-all duration-200">
+          <i data-lucide="box" class="w-4 h-4 mr-2"></i> Archived Consumables
+        </button>
+      </div>
+
+      <!-- PCs Section -->
+      <div id="pcsSection">
+        <!-- Search Bar -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <div class="font-semibold text-gray-700 text-sm">QUICK SEARCH</div>
+            <div class="text-xs text-gray-400">Press <span class="inline-block bg-gray-100 px-2 py-0.5 rounded text-xs">/</span> to focus</div>
+          </div>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+            </span>
+            <input type="text" id="pcSearch" placeholder="Search Archived PCs (pc name, serial, department)" class="w-full pl-12 pr-10 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white shadow-sm transition" />
+            <button id="pcSearchClear" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md bg-gray-100 text-gray-600 hidden" aria-label="Clear search">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="text-xs text-gray-400 mt-2" id="pcSearchInfo">Type to auto-filter Archived PCs.</div>
+        </div>
+
+        <!-- PCs Table -->
+        <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <table class="min-w-full bg-white">
+            <thead class="bg-white/90 text-gray-700 backdrop-blur-sm sticky top-0 z-20">
+              <tr>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">PC ID</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">PC NAME</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">DEPARTMENT</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">LOCATION</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">ACQUISITION COST</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">DATE ACQUIRED</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">ACCOUNTABLE</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">SERIAL NO.</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">MUNICIPAL SERIAL NO.</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">STATUS</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">ARCHIVED DATE</th>
+              </tr>
+            </thead>
+            <tbody id="pcsTableBody">
+              <!-- Data will be loaded via AJAX -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- PCs Pagination -->
+        <div class="mt-6">
+          <div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between shadow-sm">
+            <div class="text-xs text-gray-700 mb-2 md:mb-0" id="pcsPaginationInfo">
+              Loading...
+            </div>
+            <div class="flex items-center space-x-2" id="pcsPaginationControls">
+              <!-- Pagination buttons will be loaded via AJAX -->
+            </div>
+            <div class="flex items-center ml-0 md:ml-auto mt-2 md:mt-0">
+              <button id="pcExportBtn" type="button" class="mr-3 px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 text-sm">Export Excel</button>
+              <span class="text-xs text-gray-500 mr-2">Show:</span>
+              <select id="pcPerPage" class="px-2 py-1.5 rounded-lg border border-gray-300 text-sm">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items Section -->
+      <div id="itemsSection" class="hidden">
+        <!-- Search Bar -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <div class="font-semibold text-gray-700 text-sm">QUICK SEARCH</div>
+            <div class="text-xs text-gray-400">Press <span class="inline-block bg-gray-100 px-2 py-0.5 rounded text-xs">/</span> to focus</div>
+          </div>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+            </span>
+            <input type="text" id="itemSearch" placeholder="Search Archived Items (name, brand, dept)" class="w-full pl-12 pr-10 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white shadow-sm transition" />
+            <button id="itemSearchClear" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md bg-gray-100 text-gray-600 hidden" aria-label="Clear search">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="text-xs text-gray-400 mt-2" id="itemSearchInfo">Type to auto-filter Archived Items.</div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <table class="min-w-full bg-white">
+            <thead class="bg-white/90 text-gray-700 backdrop-blur-sm sticky top-0 z-20">
+              <tr>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">ACCESSION ID</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">ITEM NAME</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">BRAND/MODEL</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">SERIAL NO.</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">MUNICIPAL SERIAL NO.</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">ACQUISITION COST</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">DATE ACQUIRED</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">ACCOUNTABLE</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">DEPARTMENT</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">STATUS</th>
+
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">ARCHIVED DATE</th>
+              </tr>
+            </thead>
+            <tbody id="itemsTableBody">
+              <!-- Data will be loaded via AJAX -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Items Pagination -->
+        <div class="mt-6">
+          <div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between shadow-sm">
+            <div class="text-xs text-gray-700 mb-2 md:mb-0" id="itemsPaginationInfo">
+              Loading...
+            </div>
+            <div class="flex items-center space-x-2" id="itemsPaginationControls">
+              <!-- Pagination buttons will be loaded via AJAX -->
+            </div>
+            <div class="flex items-center ml-0 md:ml-auto mt-2 md:mt-0">
+              <button id="itemExportBtn" type="button" class="mr-3 px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 text-sm">Export Excel</button>
+              <span class="text-xs text-gray-500 mr-2">Show:</span>
+              <select id="itemPerPage" class="px-2 py-1.5 rounded-lg border border-gray-300 text-sm">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Consumables Section -->
+      <div id="consumablesSection" class="hidden">
+        <!-- Search Bar -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <div class="font-semibold text-gray-700 text-sm">QUICK SEARCH</div>
+            <div class="text-xs text-gray-400">Press <span class="inline-block bg-gray-100 px-2 py-0.5 rounded text-xs">/</span> to focus</div>
+          </div>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+            </span>
+            <input type="text" id="consumableSearch" placeholder="Search Archived Consumables (name, brand, dept)" class="w-full pl-12 pr-10 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white shadow-sm transition" />
+            <button id="consumableSearchClear" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md bg-gray-100 text-gray-600 hidden" aria-label="Clear search">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="text-xs text-gray-400 mt-2" id="consumablesSearchInfo">Type to auto-filter Archived Consumables.</div>
+        </div>
+
+        <!-- Consumables Table -->
+        <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <table class="min-w-full bg-white">
+            <thead class="bg-white/90 text-gray-700 backdrop-blur-sm sticky top-0 z-20">
+              <tr>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">ACCESSION ID</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">ITEM NAME</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">BRAND</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">QUANTITY</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">UNIT</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">DEPARTMENT</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">LOCATION</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">STATUS</th>
+                <th class="px-4 py-3 text-xs font-semibold text-left border-b uppercase tracking-wider text-gray-600">ARCHIVED DATE</th>
+              </tr>
+            </thead>
+            <tbody id="consumablesTableBody">
+              <!-- Data will be loaded via AJAX -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Consumables Pagination -->
+        <div class="mt-6">
+          <div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between shadow-sm">
+            <div class="text-xs text-gray-700 mb-2 md:mb-0" id="consumablesPaginationInfo">
+              Loading...
+            </div>
+            <div class="flex items-center space-x-2" id="consumablesPaginationControls">
+              <!-- Pagination buttons will be loaded via AJAX -->
+            </div>
+            <div class="flex items-center ml-0 md:ml-auto mt-2 md:mt-0">
+              <button id="consumableExportBtn" type="button" class="mr-3 px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 text-sm">Export Excel</button>
+              <span class="text-xs text-gray-500 mr-2">Show:</span>
+              <select id="consumablePerPage" class="px-2 py-1.5 rounded-lg border border-gray-300 text-sm">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // Pagination state
+    let pcCurrentPage = 1;
+    let pcPerPage = 10;
+    let pcSearchTerm = '';
+    
+    let itemCurrentPage = 1;
+    let itemPerPage = 10;
+    let itemSearchTerm = '';
+
+    // Consumables pagination/search state
+    let consumableCurrentPage = 1;
+    let consumablePerPage = 10;
+    let consumableSearchTerm = '';
+
+    // Load PCs via AJAX
+    async function loadPCs(page = 1, perPage = 10, search = '') {
+      try {
+        const response = await fetch(`/api/archived-pcs?page=${page}&per_page=${perPage}&search=${encodeURIComponent(search)}`);
+        const data = await response.json();
+        
+        renderPCTable(data.data);
+        renderPCPagination(data);
+        
+        pcCurrentPage = page;
+        pcPerPage = perPage;
+        pcSearchTerm = search;
+
+        const pcInfoEl = document.getElementById('pcSearchInfo');
+        if (pcInfoEl) {
+          const total = data.total || 0;
+          const shown = Array.isArray(data.data) ? data.data.length : 0;
+          pcInfoEl.textContent = search ? `Showing ${shown} result(s) for "${search}"` : `Showing ${total} archived PCs`;
+        }
+      } catch (error) {
+        console.error('Error loading PCs:', error);
+        document.getElementById('pcsTableBody').innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">Error loading data.</td></tr>';
+      }
+    }
+
+    // Render PCs table
+    function renderPCTable(pcs) {
+      const tbody = document.getElementById('pcsTableBody');
+
+      if (pcs.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="11" class="px-6 py-16 text-center text-gray-400">
+              <div class="flex flex-col items-center gap-3">
+                <i data-lucide="archive" class="w-10 h-10 text-gray-300"></i>
+                <div class="text-sm font-semibold">No archived PCs found</div>
+                <div class="text-xs text-gray-400">Try changing filters or search terms.</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = pcs.map(pc => {
+        const rawStatus = (pc.status || '').toString().trim();
+        let statusText = rawStatus;
+        const s = rawStatus.toLowerCase();
+        if (s === 'archive' || s === 'archived') {
+          statusText = 'Archived';
+        } else if (statusText.length > 0) {
+          statusText = statusText.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        return `
+        <tr class="hover:bg-blue-50 hover:shadow-sm border-b border-gray-100 last:border-b-0 transition">
+          <td class="px-4 py-3 text-sm">${pc.pcid}</td>
+          <td class="px-4 py-3 text-sm">${pc.pcname}</td>
+          <td class="px-4 py-3 text-sm">${pc.department_name}</td>
+          <td class="px-4 py-3 text-sm">${pc.location}</td>
+          <td class="px-4 py-3 text-sm">${pc.acquisition_cost}</td>
+          <td class="px-4 py-3 text-sm">${pc.date_acquired}</td>
+          <td class="px-4 py-3 text-sm">${pc.accountable}</td>
+          <td class="px-4 py-3 text-sm">${pc.serial_no}</td>
+          <td class="px-4 py-3 text-sm">${pc.municipal_serial_no}</td>
+          <td class="px-4 py-3 text-sm font-semibold">
+            <span class="text-red-600">${statusText}</span>
+          </td>
+          <td class="px-4 py-3 text-sm">${pc.deleted_at}</td>
+        </tr>
+      `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // Render PCs pagination
+    function renderPCPagination(data) {
+      const { total, page, per_page, total_pages } = data;
+      const start = (page - 1) * per_page + 1;
+      const end = Math.min(page * per_page, total);
+      
+      document.getElementById('pcsPaginationInfo').textContent = 
+        `Showing ${start} - ${end} of ${total} records (Page ${page} of ${total_pages})`;
+      
+      let buttons = '';
+      
+      // Previous button
+      buttons += `<button onclick="loadPCs(${page - 1}, ${per_page}, '${pcSearchTerm}')" 
+        class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-500 hover:bg-gray-100 text-sm" 
+        ${page === 1 ? 'disabled' : ''}>&lt; Prev</button>`;
+      
+      // Page numbers (show max 5 pages)
+      const startPage = Math.max(1, page - 2);
+      const endPage = Math.min(total_pages, startPage + 4);
+      
+      for (let i = startPage; i <= endPage; i++) {
+        buttons += `<button onclick="loadPCs(${i}, ${per_page}, '${pcSearchTerm}')" 
+          class="px-3 py-1.5 rounded-lg ${i === page ? 'bg-blue-600 text-white font-bold shadow' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'} text-sm">${i}</button>`;
+      }
+      
+      // Next button
+      buttons += `<button onclick="loadPCs(${page + 1}, ${per_page}, '${pcSearchTerm}')" 
+        class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-500 hover:bg-gray-100 text-sm" 
+        ${page === total_pages ? 'disabled' : ''}>Next &gt;</button>`;
+      
+      document.getElementById('pcsPaginationControls').innerHTML = buttons;
+    }
+
+    // Load Items via AJAX
+    async function loadItems(page = 1, perPage = 10, search = '') {
+      try {
+        const response = await fetch(`/api/archived-items?page=${page}&per_page=${perPage}&search=${encodeURIComponent(search)}`);
+        const data = await response.json();
+        
+        renderItemsTable(data.data);
+        renderItemsPagination(data);
+        
+        itemCurrentPage = page;
+        itemPerPage = perPage;
+        itemSearchTerm = search;
+
+        const itemInfoEl = document.getElementById('itemSearchInfo');
+        if (itemInfoEl) {
+          const total = data.total || 0;
+          const shown = Array.isArray(data.data) ? data.data.length : 0;
+          itemInfoEl.textContent = search ? `Showing ${shown} result(s) for "${search}"` : `Showing ${total} archived items`;
+        }
+      } catch (error) {
+        console.error('Error loading items:', error);
+        document.getElementById('itemsTableBody').innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">Error loading data.</td></tr>';
+      }
+    }
+
+    // Load Consumables via AJAX
+    async function loadConsumables(page = 1, perPage = 10, search = '') {
+      try {
+        const response = await fetch(`/api/archived-consumables?page=${page}&per_page=${perPage}&search=${encodeURIComponent(search)}`);
+        const data = await response.json();
+
+        // update state first so pagination rendering can read the current search/page
+        consumableCurrentPage = page;
+        consumablePerPage = perPage;
+        consumableSearchTerm = search;
+
+        renderConsumablesTable(data.data);
+        renderConsumablesPagination(data);
+
+        const consInfoEl = document.getElementById('consumablesSearchInfo');
+        if (consInfoEl) {
+          const total = data.total || 0;
+          const shown = Array.isArray(data.data) ? data.data.length : 0;
+          consInfoEl.textContent = search ? `Showing ${shown} result(s) for "${search}"` : `Showing ${total} archived consumables`;
+        }
+      } catch (error) {
+        console.error('Error loading consumables:', error);
+        document.getElementById('consumablesTableBody').innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">Error loading data.</td></tr>';
+      }
+    }
+
+    // Render Consumables table
+    function renderConsumablesTable(items) {
+      const tbody = document.getElementById('consumablesTableBody');
+
+      if (items.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="px-6 py-16 text-center text-gray-400">
+              <div class="flex flex-col items-center gap-3">
+                <i data-lucide="box" class="w-10 h-10 text-gray-300"></i>
+                <div class="text-sm font-semibold">No archived consumables found</div>
+                <div class="text-xs text-gray-400">Try changing filters or search terms.</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => {
+        const rawStatus = (item.status || '').toString().trim();
+        let statusText = rawStatus;
+        const s = rawStatus.toLowerCase();
+        if (s === 'archive' || s === 'archived') {
+          statusText = 'Archived';
+        } else if (statusText.length > 0) {
+          statusText = statusText.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        return `
+        <tr class="hover:bg-blue-50 hover:shadow-sm border-b border-gray-100 last:border-b-0 transition">
+          <td class="px-4 py-3 text-sm">${item.accession_id}</td>
+          <td class="px-4 py-3 text-sm">${item.item_name}</td>
+          <td class="px-4 py-3 text-sm">${item.brand || ''}</td>
+          <td class="px-4 py-3 text-sm">${item.quantity}</td>
+          <td class="px-4 py-3 text-sm">${item.unit || ''}</td>
+          <td class="px-4 py-3 text-sm">${item.department_name || ''}</td>
+          <td class="px-4 py-3 text-sm">${item.location || ''}</td>
+          <td class="px-4 py-3 text-sm font-semibold"><span class="text-red-600">${statusText}</span></td>
+          <td class="px-4 py-3 text-sm">${item.deleted_at}</td>
+        </tr>
+      `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // Render Consumables pagination
+    function renderConsumablesPagination(data) {
+      const { total, page, per_page, total_pages } = data;
+      const start = (page - 1) * per_page + 1;
+      const end = Math.min(page * per_page, total);
+
+      document.getElementById('consumablesPaginationInfo').textContent =
+        `Showing ${start} - ${end} of ${total} records (Page ${page} of ${total_pages})`;
+
+      let buttons = '';
+      buttons += `<button onclick="loadConsumables(${page - 1}, ${per_page}, '${consumableSearchTerm}')" class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-500 hover:bg-gray-100 text-sm" ${page === 1 ? 'disabled' : ''}>&lt; Prev</button>`;
+
+      const startPage = Math.max(1, page - 2);
+      const endPage = Math.min(total_pages, startPage + 4);
+
+      for (let i = startPage; i <= endPage; i++) {
+        buttons += `<button onclick="loadConsumables(${i}, ${per_page}, '${consumableSearchTerm}')" class="px-3 py-1.5 rounded-lg ${i === page ? 'bg-blue-600 text-white font-bold shadow' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'} text-sm">${i}</button>`;
+      }
+
+      buttons += `<button onclick="loadConsumables(${page + 1}, ${per_page}, '${consumableSearchTerm}')" class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-500 hover:bg-gray-100 text-sm" ${page === total_pages ? 'disabled' : ''}>Next &gt;</button>`;
+
+      document.getElementById('consumablesPaginationControls').innerHTML = buttons;
+    }
+
+    // Render Items table
+    function renderItemsTable(items) {
+      const tbody = document.getElementById('itemsTableBody');
+
+      if (items.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="11" class="px-6 py-16 text-center text-gray-400">
+              <div class="flex flex-col items-center gap-3">
+                <i data-lucide="package" class="w-10 h-10 text-gray-300"></i>
+                <div class="text-sm font-semibold">No archived items found</div>
+                <div class="text-xs text-gray-400">Try changing filters or search terms.</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => {
+        const rawStatus = (item.status || '').toString().trim();
+        let statusText = rawStatus;
+        const s = rawStatus.toLowerCase();
+        if (s === 'archive' || s === 'archived') {
+          statusText = 'Archived';
+        } else if (statusText.length > 0) {
+          statusText = statusText.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        return `
+        <tr class="hover:bg-blue-50 hover:shadow-sm border-b border-gray-100 last:border-b-0 transition">
+          <td class="px-4 py-3 text-sm">${item.accession_id}</td>
+          <td class="px-4 py-3 text-sm">${item.item_name}</td>
+          <td class="px-4 py-3 text-sm">${item.brand_model}</td>
+          <td class="px-4 py-3 text-sm">${item.serial_no}</td>
+          <td class="px-4 py-3 text-sm">${item.municipal_serial_no}</td>
+          <td class="px-4 py-3 text-sm">₱${item.acquisition_cost}</td>
+          <td class="px-4 py-3 text-sm">${item.date_acquired}</td>
+          <td class="px-4 py-3 text-sm">${item.accountable}</td>
+          <td class="px-4 py-3 text-sm">${item.department_name}</td>
+          <td class="px-4 py-3 text-sm font-semibold">
+            <span class="text-red-600">${statusText}</span>
+          </td>
+          <td class="px-4 py-3 text-sm">${item.deleted_at}</td>
+        </tr>
+      `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // Render Items pagination
+    function renderItemsPagination(data) {
+      const { total, page, per_page, total_pages } = data;
+      const start = (page - 1) * per_page + 1;
+      const end = Math.min(page * per_page, total);
+      
+      document.getElementById('itemsPaginationInfo').textContent = 
+        `Showing ${start} - ${end} of ${total} records (Page ${page} of ${total_pages})`;
+      
+      let buttons = '';
+      
+      // Previous button
+      buttons += `<button onclick="loadItems(${page - 1}, ${per_page}, '${itemSearchTerm}')" 
+        class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-500 hover:bg-gray-100 text-sm" 
+        ${page === 1 ? 'disabled' : ''}>&lt; Prev</button>`;
+      
+      // Page numbers (show max 5 pages)
+      const startPage = Math.max(1, page - 2);
+      const endPage = Math.min(total_pages, startPage + 4);
+      
+      for (let i = startPage; i <= endPage; i++) {
+        buttons += `<button onclick="loadItems(${i}, ${per_page}, '${itemSearchTerm}')" 
+          class="px-3 py-1.5 rounded-lg ${i === page ? 'bg-blue-600 text-white font-bold shadow' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'} text-sm">${i}</button>`;
+      }
+      
+      // Next button
+      buttons += `<button onclick="loadItems(${page + 1}, ${per_page}, '${itemSearchTerm}')" 
+        class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-gray-500 hover:bg-gray-100 text-sm" 
+        ${page === total_pages ? 'disabled' : ''}>Next &gt;</button>`;
+      
+      document.getElementById('itemsPaginationControls').innerHTML = buttons;
+    }
+
+    // Tab switching
+    function showTab(tab) {
+      const pcsSection = document.getElementById('pcsSection');
+      const itemsSection = document.getElementById('itemsSection');
+      const pcTabBtn = document.getElementById('pcTabBtn');
+      const itemTabBtn = document.getElementById('itemTabBtn');
+      const consumableTabBtn = document.getElementById('consumableTabBtn');
+      const consumablesSection = document.getElementById('consumablesSection');
+
+      if (tab === 'pcs') {
+        pcsSection.classList.remove('hidden');
+        itemsSection.classList.add('hidden');
+        consumablesSection && consumablesSection.classList.add('hidden');
+
+        pcTabBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+        pcTabBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+
+        itemTabBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+        itemTabBtn.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+
+        consumableTabBtn && consumableTabBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+        consumableTabBtn && consumableTabBtn.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+
+        // Load PCs data if not already loaded
+        if (document.getElementById('pcsTableBody').innerHTML.trim() === '<!-- Data will be loaded via AJAX -->') {
+          loadPCs();
+        }
+      } else {
+        pcsSection.classList.add('hidden');
+        // If tab is 'items' show items, otherwise assume consumables
+        if (tab === 'items') {
+          itemsSection.classList.remove('hidden');
+          consumablesSection && consumablesSection.classList.add('hidden');
+
+          itemTabBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+          itemTabBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+
+          pcTabBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+          pcTabBtn.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+
+          consumableTabBtn && consumableTabBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+          consumableTabBtn && consumableTabBtn.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+
+          // Load Items data if not already loaded
+          if (document.getElementById('itemsTableBody').innerHTML.trim() === '<!-- Data will be loaded via AJAX -->') {
+            loadItems();
+          }
+        } else {
+          // consumables tab
+          consumablesSection && consumablesSection.classList.remove('hidden');
+          itemsSection.classList.add('hidden');
+
+          consumableTabBtn && consumableTabBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+          consumableTabBtn && consumableTabBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+
+          pcTabBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+          pcTabBtn.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+
+          itemTabBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+          itemTabBtn.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+
+          // Load Consumables data if not already loaded
+          if (document.getElementById('consumablesTableBody').innerHTML.trim() === '<!-- Data will be loaded via AJAX -->') {
+            loadConsumables();
+          }
+        }
+      }
+    }
+
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = document.getElementById('sidebarToggle');
+
+    if (toggle) {
+      toggle.addEventListener('click', () => {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+      });
+    }
+
+    overlay.addEventListener('click', () => {
+      sidebar.classList.add('-translate-x-full');
+      overlay.classList.add('hidden');
+    });
+
+    // Search input handlers with debounce and clear buttons
+    let pcSearchTimeout;
+    const pcSearchEl = document.getElementById('pcSearch');
+    const pcSearchClear = document.getElementById('pcSearchClear');
+    if (pcSearchEl) {
+      pcSearchEl.addEventListener('input', (e) => {
+        const v = e.target.value;
+        if (pcSearchClear) pcSearchClear.classList.toggle('hidden', v.trim() === '');
+        clearTimeout(pcSearchTimeout);
+        pcSearchTimeout = setTimeout(() => {
+          loadPCs(1, pcPerPage, v);
+        }, 300);
+      });
+    }
+    if (pcSearchClear) {
+      pcSearchClear.addEventListener('click', () => {
+        pcSearchEl.value = '';
+        pcSearchClear.classList.add('hidden');
+        loadPCs(1, pcPerPage, '');
+      });
+    }
+
+    let itemSearchTimeout;
+    const itemSearchEl = document.getElementById('itemSearch');
+    const itemSearchClear = document.getElementById('itemSearchClear');
+    if (itemSearchEl) {
+      itemSearchEl.addEventListener('input', (e) => {
+        const v = e.target.value;
+        if (itemSearchClear) itemSearchClear.classList.toggle('hidden', v.trim() === '');
+        clearTimeout(itemSearchTimeout);
+        itemSearchTimeout = setTimeout(() => {
+          loadItems(1, itemPerPage, v);
+        }, 300);
+      });
+    }
+    if (itemSearchClear) {
+      itemSearchClear.addEventListener('click', () => {
+        itemSearchEl.value = '';
+        itemSearchClear.classList.add('hidden');
+        loadItems(1, itemPerPage, '');
+      });
+    }
+
+    let consumableSearchTimeout;
+    const consumableSearchClear = document.getElementById('consumableSearchClear');
+    const consumableSearchEl2 = document.getElementById('consumableSearch');
+    if (consumableSearchEl2) {
+      consumableSearchEl2.addEventListener('input', (e) => {
+        const v = e.target.value;
+        if (consumableSearchClear) consumableSearchClear.classList.toggle('hidden', v.trim() === '');
+        clearTimeout(consumableSearchTimeout);
+        consumableSearchTimeout = setTimeout(() => {
+          loadConsumables(1, consumablePerPage || 10, v);
+        }, 300);
+      });
+    }
+    if (consumableSearchClear) {
+      consumableSearchClear.addEventListener('click', () => {
+        consumableSearchEl2.value = '';
+        consumableSearchClear.classList.add('hidden');
+        loadConsumables(1, consumablePerPage || 10, '');
+      });
+    }
+
+    // Keyboard shortcut: press '/' to focus current visible search
+    document.addEventListener('keydown', function(e) {
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+        e.preventDefault();
+        if (!document.getElementById('pcsSection').classList.contains('hidden')) {
+          if (pcSearchEl) { pcSearchEl.focus(); pcSearchEl.select(); }
+        } else if (!document.getElementById('itemsSection').classList.contains('hidden')) {
+          if (itemSearchEl) { itemSearchEl.focus(); itemSearchEl.select(); }
+        } else if (document.getElementById('consumablesSection') && !document.getElementById('consumablesSection').classList.contains('hidden')) {
+          if (consumableSearchEl2) { consumableSearchEl2.focus(); consumableSearchEl2.select(); }
+        }
+      }
+    });
+
+    // Per page change handlers
+    document.getElementById('pcPerPage').addEventListener('change', (e) => {
+      loadPCs(1, parseInt(e.target.value), pcSearchTerm);
+    });
+
+    document.getElementById('itemPerPage').addEventListener('change', (e) => {
+      loadItems(1, parseInt(e.target.value), itemSearchTerm);
+    });
+
+    const consumablePerEl = document.getElementById('consumablePerPage');
+    if (consumablePerEl) {
+      consumablePerEl.addEventListener('change', (e) => {
+        loadConsumables(1, parseInt(e.target.value), consumableSearchTerm || '');
+      });
+    }
+
+    // Export helpers
+    async function exportFile(url, defaultName) {
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          const txt = await resp.text();
+          console.error('Export failed:', txt);
+          alert('Export failed. Check console for details.');
+          return;
+        }
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = defaultName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+      } catch (e) {
+        console.error('Export error', e);
+        alert('Export failed. See console for details.');
+      }
+    }
+
+    function exportPCs() {
+      const url = `/export-archived-pcs?search=${encodeURIComponent(pcSearchTerm || '')}`;
+      exportFile(url, 'Archived_PCs.xlsx');
+    }
+
+    function exportItems() {
+      const url = `/export-archived-items?search=${encodeURIComponent(itemSearchTerm || '')}`;
+      exportFile(url, 'Archived_Items.xlsx');
+    }
+
+    function exportConsumables() {
+      const url = `/export-archived-consumables?search=${encodeURIComponent(consumableSearchTerm || '')}`;
+      exportFile(url, 'Archived_Consumables.xlsx');
+    }
+
+    const pcExportBtnEl = document.getElementById('pcExportBtn');
+    if (pcExportBtnEl) pcExportBtnEl.addEventListener('click', exportPCs);
+
+    const itemExportBtnEl = document.getElementById('itemExportBtn');
+    if (itemExportBtnEl) itemExportBtnEl.addEventListener('click', exportItems);
+
+    const consumableExportBtnEl = document.getElementById('consumableExportBtn');
+    if (consumableExportBtnEl) consumableExportBtnEl.addEventListener('click', exportConsumables);
+
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Load initial data
+    loadPCs();
+  </script>
+</body>
+</html>

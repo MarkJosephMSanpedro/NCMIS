@@ -1,0 +1,50 @@
+<!-- activate_modal.html -->
+<div id="activateModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl shadow-2xl p-6 w-96 text-center">
+    <i data-lucide="check-circle" class="w-12 h-12 text-green-500 mx-auto mb-3"></i>
+    <h2 class="text-lg font-semibold text-blue-600 mb-2">Confirm Activation</h2>
+    <p class="text-gray-600 mb-6">Do you want to reactivate this user?</p>
+
+    <form method="post" action="{{ url_for('manage_user_bp.activate_user') }}">
+      <input type="hidden" id="activateItemId" name="user_id" />
+      <div class="flex justify-center space-x-3">
+        <button type="button" id="cancelActivate"
+                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
+          Cancel
+        </button>
+        <button type="submit"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+          Activate
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Initialize lucide icons
+  lucide.createIcons();
+
+  // Elements
+const activateModal = document.getElementById("activateModal");
+  const cancelActivate = document.getElementById("cancelActivate");
+  const activateItemId = document.getElementById("activateItemId");
+
+
+  // Open modal with user ID
+function openActivateModal(userId) {
+    activateItemId.value = userId;
+    activateModal.classList.remove("hidden");
+  }
+  // Close modal on cancel
+cancelActivate.addEventListener("click", () => {
+    activateModal.classList.add("hidden");
+  });
+
+  // Optional: close modal when clicking outside modal content
+activateModal.addEventListener("click", (e) => {
+    if (e.target === activateModal) {
+      activateModal.classList.add("hidden");
+    }
+  });
+</script>

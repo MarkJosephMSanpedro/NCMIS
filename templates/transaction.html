@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction</title>
+    <script src="{{ url_for('static', filename='js/tailwind.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lucide.js') }}"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap');
+
+        :root {
+            --bg-top: #f4f9ff;
+            --bg-bottom: #eef4ec;
+            --ink-900: #172b4d;
+            --card-border: rgba(148, 163, 184, 0.28);
+            --card-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            color: var(--ink-900);
+            background:
+                radial-gradient(circle at 12% 8%, rgba(29, 78, 216, 0.22), transparent 30%),
+                radial-gradient(circle at 86% 18%, rgba(15, 118, 110, 0.18), transparent 34%),
+                linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+            min-height: 100vh;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -0.015em;
+        }
+
+        .transaction-main {
+            width: 100%;
+            max-width: none;
+        }
+
+        .hero-panel {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: linear-gradient(125deg, #0f3e84 0%, #1f67c7 52%, #168d81 100%);
+            box-shadow: 0 18px 40px rgba(30, 64, 175, 0.35);
+        }
+
+        .hero-panel::after {
+            content: "";
+            position: absolute;
+            right: -30px;
+            top: -35px;
+            width: 180px;
+            height: 180px;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3), transparent 70%);
+            pointer-events: none;
+        }
+
+        .stock-room-btn {
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 8px 20px rgba(10, 37, 78, 0.2);
+        }
+
+        .metric-card,
+        .panel-card,
+        .history-shell {
+            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(8px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .metric-card {
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 22px 42px rgba(15, 23, 42, 0.16);
+        }
+
+        .panel-card {
+            position: relative;
+        }
+
+        .panel-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 4px;
+            border-radius: 1rem 1rem 0 0;
+        }
+
+        .panel-receive::before {
+            background: linear-gradient(90deg, rgba(22, 163, 74, 0.95), rgba(16, 185, 129, 0.85));
+        }
+
+        .panel-return::before {
+            background: linear-gradient(90deg, rgba(249, 115, 22, 0.95), rgba(245, 158, 11, 0.85));
+        }
+
+        #receiveSection input,
+        #receiveSection select,
+        #receiveSection textarea,
+        #returnSection input,
+        #returnSection select,
+        #returnSection textarea {
+            border-color: #d9e2ec;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        }
+
+        #receiveSection input:focus,
+        #receiveSection select:focus,
+        #receiveSection textarea:focus,
+        #returnSection input:focus,
+        #returnSection select:focus,
+        #returnSection textarea:focus {
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+        }
+
+        #receiveForm button[type="button"],
+        #returnForm button[type="button"] {
+            border: 1px solid #d7dde8;
+            background: #f8fafc;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+
+        #receiveForm button[type="button"]:hover,
+        #returnForm button[type="button"]:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+        }
+
+        .stock-preview {
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 12px 20px rgba(15, 23, 42, 0.14);
+        }
+
+        .receive-preview {
+            background: linear-gradient(130deg, #16a34a 0%, #10b981 100%);
+        }
+
+        .return-preview {
+            background: linear-gradient(130deg, #f97316 0%, #fb923c 100%);
+        }
+
+        #receiveSubmitBtn,
+        #returnSubmitBtn {
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.01em;
+            transform: translateZ(0);
+        }
+
+        #receiveSubmitBtn::after,
+        #returnSubmitBtn::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.22), transparent 55%);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        #receiveSubmitBtn:hover::after,
+        #returnSubmitBtn:hover::after {
+            opacity: 1;
+        }
+
+        #transactionHistory {
+            scrollbar-width: thin;
+            scrollbar-color: #94a3b8 transparent;
+        }
+
+        #transactionHistory::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #transactionHistory::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 999px;
+        }
+
+        .txn-entry {
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(120deg, #ffffff 0%, #f8fafc 100%);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .txn-entry:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(15, 23, 42, 0.08);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.45s ease both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(14px) scale(0.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.45s ease-out both;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body class="flex min-h-screen text-gray-800">
+    {% include 'sidebar.html' %}
+    {% include 'delete_modal.html' %}
+    {% include 'partials/filter_device_modal.html' %}
+    
+    <!-- Main Content -->
+    <main class="flex-1 ml-0 md:ml-64 p-4 lg:p-6 transition-all duration-300 transaction-main w-full">
+        <!-- Header -->
+        <div class="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white rounded-3xl shadow-2xl p-4 sm:p-5 mb-6 border border-blue-500/40">
+            <div class="pointer-events-none absolute -top-24 -right-20 h-56 w-56 rounded-full bg-white/15"></div>
+            <div class="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-blue-200/20"></div>
+
+            <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex min-w-0 items-center gap-3">
+                    <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+                        <i data-lucide="arrow-left-right" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h1 class="text-xl sm:text-2xl font-bold text-white">Transaction</h1>
+                        <p class="text-xs sm:text-sm text-blue-100">Receive & Return Management</p>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('stock_room_bp.stock_room_page') }}"
+                   {% if request.endpoint == 'stock_room_bp.stock_room_page' %}aria-current="page"{% endif %}
+                   class="inline-flex items-center gap-2 bg-white/15 text-white px-4 py-2 rounded-xl transition border border-white/25 shadow-lg font-semibold
+                          {% if request.endpoint == 'stock_room_bp.stock_room_page' %}
+                              pointer-events-none
+                          {% else %}
+                              hover:bg-white/25
+                          {% endif %}">
+                    <i data-lucide="warehouse" class="w-5 h-5"></i>
+                    <span class="hidden sm:inline">Stock Room</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Total Received -->
+            <div class="metric-card rounded-2xl p-6 border-l-4 border-green-500 animate-fade-in">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Total Received</p>
+                        <p id="totalReceived" class="text-3xl font-bold text-green-600 mt-2">0</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-xl ml-4">
+                        <i data-lucide="arrow-down" class="w-8 h-8 text-green-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-green-500 flex items-center gap-1">
+                        <i data-lucide="trending-up" class="w-4 h-4"></i> Inbound
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Total Returned -->
+            <div class="metric-card rounded-2xl p-6 border-l-4 border-orange-500 animate-fade-in" style="animation-delay: 0.1s">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Total Returned</p>
+                        <p id="totalReturned" class="text-3xl font-bold text-orange-600 mt-2">0</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-xl ml-4">
+                        <i data-lucide="arrow-up" class="w-8 h-8 text-orange-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-orange-500 flex items-center gap-1">
+                        <i data-lucide="trending-down" class="w-4 h-4"></i> Outbound
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Net Change -->
+            <div class="metric-card rounded-2xl p-6 border-l-4 border-blue-500 animate-fade-in" style="animation-delay: 0.2s">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Net Change</p>
+                        <p id="netChange" class="text-3xl font-bold text-blue-600 mt-2">0</p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-xl ml-4">
+                        <i data-lucide="bar-chart-3" class="w-8 h-8 text-blue-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-blue-500 flex items-center gap-1">
+                        <i data-lucide="activity" class="w-4 h-4"></i> Live
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forms Container - Receive on Left, Return on Right -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Receive Form (Left) -->
+            <div id="receiveSection" class="panel-card panel-receive rounded-2xl p-6 animate-fade-in">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="bg-green-100 p-3 rounded-xl">
+                        <i data-lucide="package-check" class="w-6 h-6 text-green-600"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Receive </h2>
+                        <p class="text-sm text-gray-500">Add new item to your inventory</p>
+                    </div>
+                </div>
+
+                <form id="receiveForm" class="space-y-4">
+                    <!-- Item Selection with Search -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Item <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <i data-lucide="package" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <select id="receiveItem" required class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
+                                <option value="">Select an item from inventory...</option>
+                            </select>
+                        </div>
+                        <p id="receiveItemHelp" class="text-xs text-gray-500 mt-1 hidden">No items available. Please add items to inventory first.</p>
+                    </div>
+
+                    <!-- Current Stock -->
+                    <div class="bg-green-50 rounded-xl p-4 border border-green-200">
+                        <div class="flex items-center justify-between">
+                            <span class="text-green-700 font-medium flex items-center gap-2">
+                                <i data-lucide="warehouse" class="w-4 h-4"></i> Current Stock
+                            </span>
+                            <span id="currentStockReceive" class="text-2xl font-bold text-green-600">0</span>
+                        </div>
+                        <div class="mt-2 text-xs text-green-600 flex items-center gap-1">
+                            <i data-lucide="info" class="w-3 h-3"></i>
+                            <span>Stock will update after receipt</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Quantity Buttons -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Quick Select</label>
+                        <div class="flex gap-2 flex-wrap">
+                            <button type="button" onclick="setReceiveQty(1)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition">+1</button>
+                            <button type="button" onclick="setReceiveQty(5)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition">+5</button>
+                            <button type="button" onclick="setReceiveQty(10)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition">+10</button>
+                            <button type="button" onclick="setReceiveQty(50)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition">+50</button>
+                        </div>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Quantity to Receive <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <i data-lucide="plus" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="number" id="receiveQuantity" required min="1" max="999999" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition" placeholder="Enter quantity">
+                        </div>
+                    </div>
+
+                    <!-- Supplier Reference -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Supplier / PO Reference</label>
+                        <div class="relative">
+                            <i data-lucide="file-text" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="text" id="receiveRef" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition" placeholder="e.g., PO-12345">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Brand / Model</label>
+                        <div class="relative">
+                            <i data-lucide="tag" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="text" id="receiveBrandModel" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition" placeholder="e.g., Epson EB-X08">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Unit Cost</label>
+                        <div class="relative">
+                            <i data-lucide="peso-sign" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="number" id="receiveCost" min="0" step="0.01" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition" placeholder="e.g., 1500.00">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date Acquired</label>
+                        <div class="relative">
+                            <i data-lucide="calendar" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="date" id="receiveDateAcquired" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Accountable</label>
+                        <div class="relative">
+                            <i data-lucide="user" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="text" id="receiveAccountable" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition" placeholder="e.g., John Doe">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Department <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <i data-lucide="building-2" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <div class="w-full pl-10 pr-4 py-3 bg-green-50 border border-green-200 rounded-xl text-gray-800 flex items-center font-semibold text-green-700">
+                                MIS Office
+                            </div>
+                            <input type="hidden" id="receiveDepartment" value="">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Performed by</label>
+                        <div class="relative">
+                            <select id="receivePerformedBy" required class="w-full px-4 py-3 bg-gray-50 border rounded-xl">
+                                <option value="">Select User...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Date -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date Received</label>
+                        <div class="relative">
+                            <i data-lucide="calendar" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="date" id="receiveDate" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                        <div class="relative">
+                            <i data-lucide="file-text" class="absolute left-3 top-3 text-gray-400 w-5 h-5"></i>
+                            <textarea id="receiveNotes" rows="2" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-none" placeholder="Additional notes..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- New Stock Preview -->
+                    <div class="stock-preview receive-preview rounded-xl p-4">
+                        <div class="flex items-center justify-between text-white">
+                            <span class="font-semibold flex items-center gap-2">
+                                <i data-lucide="calculator" class="w-5 h-5"></i> New Stock Level
+                            </span>
+                            <span id="newStockReceive" class="text-2xl font-bold">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button with Loading State -->
+                    <button type="submit" id="receiveSubmitBtn" class="w-full py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition shadow-lg font-semibold flex items-center justify-center gap-2">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                        <span>Confirm Receipt</span>
+                    </button>
+                    <div id="receiveLoading" class="hidden w-full py-3 bg-green-400 text-white rounded-xl font-semibold flex items-center justify-center gap-2 cursor-not-allowed">
+                        <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Processing...</span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Return Form (Right) -->
+            <div id="returnSection" class="panel-card panel-return rounded-2xl p-6 animate-fade-in">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="bg-orange-100 p-3 rounded-xl">
+                        <i data-lucide="package-x" class="w-6 h-6 text-orange-600"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Return </h2>
+                        <p class="text-sm text-gray-500">Remove item from your inventory</p>
+                    </div>
+                </div>
+
+                <form id="returnForm" class="space-y-4">
+                    <!-- Item Selection with Search -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Item <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <i data-lucide="package" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <select id="returnItem" required class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+                                <option value="">Select an item from inventory...</option>
+                            </select>
+                        </div>
+                        <p id="returnItemHelp" class="text-xs text-gray-500 mt-1 hidden">No items with stock available.</p>
+                    </div>
+
+                    <!-- Current Stock -->
+                    <div class="bg-orange-50 rounded-xl p-4 border border-orange-200">
+                        <div class="flex items-center justify-between">
+                            <span class="text-orange-700 font-medium flex items-center gap-2">
+                                <i data-lucide="warehouse" class="w-4 h-4"></i> Current Stock
+                            </span>
+                            <span id="currentStockReturn" class="text-2xl font-bold text-orange-600">0</span>
+                        </div>
+                        <div class="mt-2 text-xs text-orange-600 flex items-center gap-1">
+                            <i data-lucide="info" class="w-3 h-3"></i>
+                            <span>Stock will update after return</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Quantity Buttons -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Quick Select</label>
+                        <div class="flex gap-2 flex-wrap">
+                            <button type="button" onclick="setReturnQty(1)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition">-1</button>
+                            <button type="button" onclick="setReturnQty(5)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition">-5</button>
+                            <button type="button" onclick="setReturnQty(10)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition">-10</button>
+                            <button type="button" onclick="setReturnQtyAll()" class="px-4 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg text-sm font-medium transition">All</button>
+                        </div>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Quantity to Return <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <i data-lucide="minus" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="number" id="returnQuantity" required min="1" max="999999" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition" placeholder="Enter quantity">
+                        </div>
+                    </div>
+
+                    <!-- Return Reference -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Return Reference</label>
+                        <div class="relative">
+                            <i data-lucide="file-text" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="text" id="returnRef" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition" placeholder="e.g., RTN-001">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Brand / Model</label>
+                        <div class="relative">
+                            <i data-lucide="tag" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="text" id="returnBrandModel" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition" placeholder="e.g., Epson EB-X08">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Unit Cost</label>
+                        <div class="relative">
+                            <i data-lucide="peso-sign" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="number" id="returnCost" min="0" step="0.01" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition" placeholder="e.g., 1500.00">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date Acquired</label>
+                        <div class="relative">
+                            <i data-lucide="calendar" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="date" id="returnDateAcquired" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Accountable</label>
+                        <div class="relative">
+                            <i data-lucide="user" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="text" id="returnAccountable" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition" placeholder="e.g., John Doe">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Performed by</label>
+                        <div class="relative">
+                            <select id="returnPerformedBy" required class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+                                <option value="">Select User...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Reason -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Return Reason</label>
+                        <div class="relative">
+                            <i data-lucide="help-circle" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <select id="returnReason" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+                                <option value="">Select reason...</option>
+                                <option value="Customer Return">Customer Return</option>
+                                <option value="Defective">Defective</option>
+                                <option value="Expired">Expired</option>
+                                <option value="Overstock">Overstock</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Return Date</label>
+                        <div class="relative">
+                            <i data-lucide="calendar" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                            <input type="date" id="returnDate" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                        <div class="relative">
+                            <i data-lucide="file-text" class="absolute left-3 top-3 text-gray-400 w-5 h-5"></i>
+                            <textarea id="returnNotes" rows="2" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition resize-none" placeholder="Additional notes..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- New Stock Preview -->
+                    <div class="stock-preview return-preview rounded-xl p-4">
+                        <div class="flex items-center justify-between text-white">
+                            <span class="font-semibold flex items-center gap-2">
+                                <i data-lucide="calculator" class="w-5 h-5"></i> New Stock Level
+                            </span>
+                            <span id="newStockReturn" class="text-2xl font-bold">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button with Loading State -->
+                    <button type="submit" id="returnSubmitBtn" class="w-full py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition shadow-lg font-semibold flex items-center justify-center gap-2">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                        <span>Confirm Return</span>
+                    </button>
+                    <div id="returnLoading" class="hidden w-full py-3 bg-orange-400 text-white rounded-xl font-semibold flex items-center justify-center gap-2 cursor-not-allowed">
+                        <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Processing...</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="history-shell rounded-2xl p-6 animate-fade-in">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-100 p-3 rounded-xl">
+                        <i data-lucide="history" class="w-6 h-6 text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">Recent Transactions</h3>
+                        <p class="text-sm text-gray-500">View all receive and return transactions</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <i data-lucide="filter" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                        <select id="filterTransaction" onchange="loadTransactionHistory()" class="pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            <option value="all">All Transactions</option>
+                            <option value="receive">Receive Only</option>
+                            <option value="return">Return Only</option>
+                        </select>
+                    </div>
+                    <button onclick="clearTransactionHistory()" class="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition font-medium border border-red-200 flex items-center gap-2">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span>Clear</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Transaction List -->
+            <div id="transactionHistory" class="space-y-3 max-h-[400px] overflow-y-auto">
+                <!-- Empty State -->
+                <div class="text-center py-12">
+                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="inbox" class="w-10 h-10 text-gray-400"></i>
+                    </div>
+                    <p class="text-gray-500">No transactions yet</p>
+                    <p class="text-gray-400 text-sm mt-1">Your transaction history will appear here</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-4 flex items-center gap-3 border border-gray-200">
+            <div id="toastIcon" class="w-10 h-10 rounded-full flex items-center justify-center">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p id="toastTitle" class="font-semibold text-gray-800"></p>
+                <p id="toastMessage" class="text-sm text-gray-500"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load inventory for receive/return operations
+        let inventory = [];
+        let inventoryByAccession = new Map();
+        const currentUserId = Number('{{ current_user_id or "" }}') || null;
+        const preloadedUsers = JSON.parse('{{ (preloaded_users or [])|tojson|safe }}');
+        const usersListEndpoint = '{{ url_for("transaction_bp.get_users") }}';
+
+        function normalizeKey(value) {
+            return String(value ?? '').trim();
+        }
+
+        function isManualItemSelection(value) {
+            return normalizeKey(value).startsWith('manual:');
+        }
+
+        function extractManualItemName(value) {
+            return normalizeKey(value).replace(/^manual:/i, '').trim();
+        }
+
+        function getInventoryItemByValue(value) {
+            return inventoryByAccession.get(normalizeKey(value)) || null;
+        }
+
+        function getItemLabel(item) {
+            const itemName = String(item.item_name || '').trim();
+            const qty = Number(item.quantity) || 0;
+            return `${itemName} (Stock: ${qty})`;
+        }
+
+        function inferDeviceTypeFromItemName(itemName) {
+            const normalized = String(itemName || '').toLowerCase();
+            const map = [
+                ['motherboard', 'Motherboard'],
+                ['ram', 'RAM'],
+                ['storage', 'Storage'],
+                ['ssd', 'Storage'],
+                ['hdd', 'Storage'],
+                ['gpu', 'GPU'],
+                ['graphics', 'GPU'],
+                ['video card', 'GPU'],
+                ['psu', 'PSU'],
+                ['power supply', 'PSU'],
+                ['casing', 'Casing'],
+                ['case', 'Casing'],
+                ['cpu cooler', 'CPU Cooler'],
+                ['case fan', 'Case Fan'],
+                ['cpu', 'CPU'],
+                ['processor', 'CPU']
+            ];
+
+            for (const [keyword, type] of map) {
+                if (normalized.includes(keyword)) {
+                    return type;
+                }
+            }
+
+            return null;
+        }
+
+        function getStockToastMessage(actionLabel, fallbackItemName, responseData) {
+            const resolvedItemName = String(responseData?.item_name || fallbackItemName || 'Item').trim();
+            const parsedStock = Number(responseData?.new_stock);
+
+            if (Number.isFinite(parsedStock)) {
+                return `${resolvedItemName} ${actionLabel}. New stock: ${parsedStock}.`;
+            }
+
+            return `${resolvedItemName} ${actionLabel} successfully.`;
+        }
+
+        function getUserId(user) {
+            const userId = normalizeKey(user?.user_id);
+            if (userId) return userId;
+            return normalizeKey(user?.id);
+        }
+
+        function getUserLabel(user) {
+            const displayName = String(user?.display_name || '').trim();
+            if (displayName) return displayName;
+
+            const username = String(user?.username || '').trim();
+            const facultyName = String(user?.faculty_name || '').trim();
+            if (facultyName) return facultyName;
+
+            const assembledName = [user?.first_name, user?.middle_name, user?.last_name]
+                .map(part => String(part || '').trim())
+                .filter(Boolean)
+                .join(' ');
+
+            if (assembledName) return assembledName;
+
+            return username;
+        }
+
+        function formatUserDisplayLabel(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+
+            // Keep existing capitalization if the name already contains uppercase letters.
+            if (/[A-Z]/.test(raw)) return raw;
+
+            return raw
+                .split(/\s+/)
+                .map(part => {
+                    if (part.length <= 2) return part.toUpperCase();
+                    return part.charAt(0).toUpperCase() + part.slice(1);
+                })
+                .join(' ');
+        }
+
+        // Populate users in dropdowns
+        async function populateUsers() {
+            const receiveUserSelect = document.getElementById('receivePerformedBy');
+            const returnUserSelect = document.getElementById('returnPerformedBy');
+
+            if (!receiveUserSelect || !returnUserSelect) {
+                return;
+            }
+
+            const previousReceiveUserId = normalizeKey(receiveUserSelect.value);
+            const previousReturnUserId = normalizeKey(returnUserSelect.value);
+
+            try {
+                let usersRaw = Array.isArray(preloadedUsers) ? preloadedUsers : [];
+
+                if (usersRaw.length === 0) {
+                    const separator = usersListEndpoint.includes('?') ? '&' : '?';
+                    const res = await fetch(`${usersListEndpoint}${separator}_=${Date.now()}`, {
+                        cache: 'no-store',
+                        credentials: 'same-origin'
+                    });
+                    if (!res.ok) throw new Error(`Failed to load users (${res.status})`);
+                    const data = await res.json();
+                    usersRaw = Array.isArray(data)
+                        ? data
+                        : (Array.isArray(data.users) ? data.users : []);
+                }
+
+                const seen = new Set();
+                const users = usersRaw.reduce((list, user) => {
+                    const id = getUserId(user);
+                    const label = formatUserDisplayLabel(getUserLabel(user));
+                    if (!id || !label || seen.has(id)) return list;
+                    seen.add(id);
+                    list.push({ user_id: id, label });
+                    return list;
+                }, []);
+
+                // Clear existing options
+                receiveUserSelect.innerHTML = '<option value="">Select User...</option>';
+                returnUserSelect.innerHTML = '<option value="">Select User...</option>';
+
+                if (users.length === 0) {
+                    const emptyReceive = document.createElement('option');
+                    emptyReceive.value = '';
+                    emptyReceive.textContent = 'No users found';
+                    emptyReceive.disabled = true;
+                    receiveUserSelect.appendChild(emptyReceive);
+
+                    const emptyReturn = document.createElement('option');
+                    emptyReturn.value = '';
+                    emptyReturn.textContent = 'No users found';
+                    emptyReturn.disabled = true;
+                    returnUserSelect.appendChild(emptyReturn);
+                    return;
+                }
+
+                // Add users
+                users.forEach(user => {
+                    const label = String(user.label || '').trim();
+                    const id = normalizeKey(user.user_id);
+
+                    const option1 = document.createElement('option');
+                    option1.value = id;
+                    option1.textContent = label;
+                    receiveUserSelect.appendChild(option1);
+
+                    const option2 = document.createElement('option');
+                    option2.value = id;
+                    option2.textContent = label;
+                    returnUserSelect.appendChild(option2);
+                });
+
+                const preferredUserId =
+                    previousReceiveUserId ||
+                    previousReturnUserId ||
+                    normalizeKey(currentUserId);
+
+                if (preferredUserId) {
+                    const exists = users.some(u => normalizeKey(u.user_id) === preferredUserId);
+                    if (exists) {
+                        receiveUserSelect.value = preferredUserId;
+                        returnUserSelect.value = preferredUserId;
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load users:', err);
+                receiveUserSelect.innerHTML = '<option value="">Unable to load users</option>';
+                returnUserSelect.innerHTML = '<option value="">Unable to load users</option>';
+                showToast('Error', 'Failed to load users list', 'error');
+            }
+        }
+
+        // Populate departments in dropdowns
+        async function populateDepartments() {
+            try {
+                const res = await fetch('/get-departments');
+                if (!res.ok) throw new Error('Failed to load departments');
+                const departments = await res.json();
+
+                // Find MIS Office department and set it as the locked value
+                const misOffice = departments.find(dept => dept.department_name && dept.department_name.toLowerCase() === 'mis office');
+                
+                if (misOffice) {
+                    document.getElementById('receiveDepartment').value = misOffice.department_id;
+                    console.log('✓ Department set to:', misOffice.department_name, '(ID:', misOffice.department_id, ')');
+                } else if (departments.length > 0) {
+                    // If MIS Office not found, use the first available department
+                    document.getElementById('receiveDepartment').value = departments[0].department_id;
+                    console.log('⚠ MIS Office not found. Using default department:', departments[0].department_name, '(ID:', departments[0].department_id, ')');
+                } else {
+                    console.error('❌ No departments available');
+                }
+            } catch (err) {
+                console.error('Failed to load departments:', err);
+            }
+        }
+
+        // Set today's date as default
+        document.getElementById('receiveDate').valueAsDate = new Date();
+        document.getElementById('returnDate').valueAsDate = new Date();
+
+        // Quick quantity functions for Receive
+        function setReceiveQty(qty) {
+            document.getElementById('receiveQuantity').value = qty;
+            // Trigger the input event to update preview
+            document.getElementById('receiveQuantity').dispatchEvent(new Event('input'));
+        }
+
+        // Quick quantity functions for Return
+        function setReturnQty(qty) {
+            document.getElementById('returnQuantity').value = qty;
+            document.getElementById('returnQuantity').dispatchEvent(new Event('input'));
+        }
+
+        function setReturnQtyAll() {
+            const currentStock = parseInt(document.getElementById('currentStockReturn').textContent) || 0;
+            if (currentStock > 0) {
+                document.getElementById('returnQuantity').value = currentStock;
+                document.getElementById('returnQuantity').dispatchEvent(new Event('input'));
+            }
+        }
+
+        // Populate item dropdowns
+        async function populateDropdowns() {
+
+            const receiveSelect = document.getElementById('receiveItem');
+            const receiveHelp = document.getElementById('receiveItemHelp');
+
+            const returnSelect = document.getElementById('returnItem');
+            const returnHelp = document.getElementById('returnItemHelp');
+
+            const fallbackParts = [
+                'Monitor',
+                'Case',
+                'CPU',
+                'GPU',
+                'Keyboard',
+                'Mouse',
+                'Motherboard',
+                'RAM',
+                'SSD',
+                'HDD',
+                'Power Supply',
+                'CPU Cooler',
+                'Case Fan',
+                'LAN Cable',
+                'HDMI Cable',
+                'VGA Cable',
+                'DisplayPort Cable',
+                'Ethernet Cable',
+                'UPS',
+                'Webcam',
+                'Headset',
+                'Cable',
+                'Ethernet',
+                'Ink Cartridge',
+                'Paper',
+                'Toner Cartridge',
+                'USB Cable',
+                'Power Cable',
+                'Network Cable'
+            ];
+
+            const nonConsumableFallbackTypes = new Set([
+                'Monitor',
+                'Case',
+                'CPU',
+                'GPU',
+                'Keyboard',
+                'Mouse',
+                'Motherboard',
+                'RAM',
+                'SSD',
+                'HDD',
+                'Power Supply',
+                'CPU Cooler',
+                'Case Fan',
+                'UPS',
+                'Webcam',
+                'Headset'
+            ]);
+
+            function appendFallbackOptions(selectEl, existingNamesLower = new Set()) {
+                fallbackParts.forEach(name => {
+                    if (existingNamesLower.has(name.toLowerCase())) return;
+
+                    const option = document.createElement('option');
+                    option.value = `manual:${name}`;
+                    option.textContent = `${name} (new item)`;
+                    option.dataset.itemName = name;
+                    option.dataset.deviceType = nonConsumableFallbackTypes.has(name) ? name : 'Consumable';
+                    selectEl.appendChild(option);
+                });
+            }
+
+            receiveSelect.innerHTML = '<option value="">Select an item from inventory...</option>';
+            returnSelect.innerHTML = '<option value="">Select an item from inventory...</option>';
+            inventory = [];
+            inventoryByAccession = new Map();
+
+            try {
+
+                const res = await fetch('/consumables/api');
+                if (!res.ok) throw new Error('Failed to load items');
+
+                const data = await res.json();
+                const rawItems = Array.isArray(data.consumables) ? data.consumables : [];
+
+                const seenAccessions = new Set();
+
+                inventory = rawItems
+                    .map(item => ({
+                        accession_id: normalizeKey(item.accession_id),
+                        item_name: String(item.item_name || '').trim(),
+                        quantity: Number(item.quantity) || 0,
+                        device_type: String(item.device_type || 'Consumable').trim()
+                    }))
+                    .filter(item => item.accession_id && item.item_name)
+                    .filter(item => {
+                        if (seenAccessions.has(item.accession_id)) return false;
+                        seenAccessions.add(item.accession_id);
+                        return true;
+                    })
+                    .sort((a, b) => a.item_name.localeCompare(b.item_name));
+
+                inventoryByAccession = new Map(inventory.map(item => [item.accession_id, item]));
+
+                const existingNamesLower = new Set(inventory.map(item => item.item_name.toLowerCase()));
+
+                inventory.forEach(item => {
+                    const receiveOption = document.createElement('option');
+                    receiveOption.value = item.accession_id;
+                    receiveOption.textContent = getItemLabel(item);
+                    receiveOption.dataset.itemName = item.item_name;
+                    receiveSelect.appendChild(receiveOption);
+
+                    if (item.quantity > 0) {
+                        const returnOption = document.createElement('option');
+                        returnOption.value = item.accession_id;
+                        returnOption.textContent = getItemLabel(item);
+                        returnOption.dataset.itemName = item.item_name;
+                        returnSelect.appendChild(returnOption);
+                    }
+                });
+
+                appendFallbackOptions(receiveSelect, existingNamesLower);
+
+                if (inventory.length === 0) {
+                    receiveHelp.classList.remove('hidden');
+                } else {
+                    receiveHelp.classList.add('hidden');
+                }
+
+                if (returnSelect.options.length <= 1) {
+                    returnHelp.textContent = 'No items with available stock to return.';
+                    returnHelp.classList.remove('hidden');
+                } else {
+                    returnHelp.classList.add('hidden');
+                }
+
+                lucide.createIcons();
+
+            } catch(err){
+
+                console.error('Failed loading consumables:', err);
+                receiveHelp.classList.remove('hidden');
+                returnHelp.classList.remove('hidden');
+                showToast('Error', 'Failed to load consumables', 'error');
+
+            }
+        }
+
+        // Tab switching with animation
+        function switchTab(tab) {
+            const receiveSection = document.getElementById('receiveSection');
+            const returnSection = document.getElementById('returnSection');
+            const tabReceive = document.getElementById('tabReceive');
+            const tabReturn = document.getElementById('tabReturn');
+
+            if (tab === 'receive') {
+                receiveSection.classList.remove('hidden');
+                returnSection.classList.add('hidden');
+                
+                // Add animation class
+                receiveSection.classList.add('animate-fade-in');
+                setTimeout(() => receiveSection.classList.remove('animate-fade-in'), 300);
+                
+                // Update tab styles
+                tabReceive.classList.add('bg-green-50', 'text-green-600');
+                tabReceive.classList.remove('text-gray-500');
+                tabReceive.querySelector('div').classList.remove('scale-x-0');
+                tabReceive.querySelector('div').classList.add('scale-x-100');
+                
+                tabReturn.classList.remove('bg-orange-50', 'text-orange-600');
+                tabReturn.classList.add('text-gray-500');
+                tabReturn.querySelector('div').classList.add('scale-x-0');
+                tabReturn.querySelector('div').classList.remove('scale-x-100');
+            } else {
+                receiveSection.classList.add('hidden');
+                returnSection.classList.remove('hidden');
+                
+                // Add animation class
+                returnSection.classList.add('animate-fade-in');
+                setTimeout(() => returnSection.classList.remove('animate-fade-in'), 300);
+                
+                // Update tab styles
+                tabReturn.classList.add('bg-orange-50', 'text-orange-600');
+                tabReturn.classList.remove('text-gray-500');
+                tabReturn.querySelector('div').classList.remove('scale-x-0');
+                tabReturn.querySelector('div').classList.add('scale-x-100');
+                
+                tabReceive.classList.remove('bg-green-50', 'text-green-600');
+                tabReceive.classList.add('text-gray-500');
+                tabReceive.querySelector('div').classList.add('scale-x-0');
+                tabReceive.querySelector('div').classList.remove('scale-x-100');
+            }
+            
+            // Refresh Lucide icons
+            lucide.createIcons();
+        }
+
+        // Hide toast function
+        function hideToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('translate-y-20', 'opacity-0');
+        }
+
+        // Counter animation function
+        function animateCounter(elementId, start, end, duration) {
+            const element = document.getElementById(elementId);
+            const range = end - start;
+            const minTimer = 50;
+            let stepTime = Math.abs(Math.floor(duration / range));
+            stepTime = Math.max(stepTime, minTimer);
+            let startTime = new Date().getTime();
+            let endTime = startTime + duration;
+            let timer;
+
+            function run() {
+                let now = new Date().getTime();
+                let remaining = Math.max((endTime - now) / duration, 0);
+                let value = Math.round(end - (remaining * range));
+                element.textContent = value.toLocaleString();
+                if (value == end) {
+                    clearInterval(timer);
+                }
+            }
+
+            timer = setInterval(run, stepTime);
+            run();
+        }
+
+        function updateReceivePreview() {
+            const selectedValue = document.getElementById('receiveItem').value;
+            const selectedItem = getInventoryItemByValue(selectedValue);
+            const quantity = parseInt(document.getElementById('receiveQuantity').value, 10) || 0;
+
+            const currentStock = selectedItem ? (Number(selectedItem.quantity) || 0) : 0;
+            const newStock = currentStock + quantity;
+
+            document.getElementById('currentStockReceive').textContent = currentStock;
+            document.getElementById('newStockReceive').textContent = newStock;
+        }
+
+        function updateReturnPreview() {
+            const selectedValue = document.getElementById('returnItem').value;
+            const selectedItem = getInventoryItemByValue(selectedValue);
+            const quantityInput = document.getElementById('returnQuantity');
+            const quantity = parseInt(quantityInput.value, 10) || 0;
+
+            const currentStock = selectedItem ? (Number(selectedItem.quantity) || 0) : 0;
+            const newStock = Math.max(0, currentStock - quantity);
+
+            if (currentStock > 0 && quantity > currentStock) {
+                quantityInput.setCustomValidity(`Only ${currentStock} available.`);
+            } else {
+                quantityInput.setCustomValidity('');
+            }
+
+            document.getElementById('currentStockReturn').textContent = currentStock;
+            document.getElementById('newStockReturn').textContent = newStock;
+        }
+
+        // Update stock previews
+        document.getElementById('receiveItem').addEventListener('change', updateReceivePreview);
+        document.getElementById('receiveQuantity').addEventListener('input', updateReceivePreview);
+        document.getElementById('returnItem').addEventListener('change', updateReturnPreview);
+        document.getElementById('returnQuantity').addEventListener('input', updateReturnPreview);
+
+        // Handle Receive form submission
+document.getElementById('receiveForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const receiveSelect = document.getElementById('receiveItem');
+    const selectedValue = normalizeKey(receiveSelect.value);
+    const selectedOption = receiveSelect.options[receiveSelect.selectedIndex] || null;
+    const selectedItem = getInventoryItemByValue(selectedValue);
+
+    let accessionId = null;
+    let itemName = '';
+    let deviceType = null;
+
+    if (selectedItem) {
+        accessionId = parseInt(selectedItem.accession_id, 10);
+        itemName = selectedItem.item_name;
+        deviceType = selectedItem.device_type || null;
+    } else if (isManualItemSelection(selectedValue)) {
+        itemName = extractManualItemName(selectedValue);
+        deviceType = selectedOption?.dataset?.deviceType || null;
+    } else if (/^\d+$/.test(selectedValue)) {
+        accessionId = parseInt(selectedValue, 10);
+    }
+
+    if (!itemName) {
+        itemName = (selectedOption?.dataset?.itemName || selectedOption?.textContent || '')
+            .replace(/\(Stock:\s*\d+\)/i, '')
+            .replace(/\(new item\)/i, '')
+            .trim();
+    }
+
+    if (!deviceType || String(deviceType).toLowerCase() === 'consumable') {
+        deviceType = inferDeviceTypeFromItemName(itemName) || deviceType;
+    }
+
+    if (!Number.isInteger(accessionId)) {
+        accessionId = null;
+    }
+
+    const quantity = parseInt(document.getElementById('receiveQuantity').value) || 0;
+    const reference = document.getElementById('receiveRef').value.trim() || null;
+    const brandModel = document.getElementById('receiveBrandModel').value.trim() || null;
+    const receiveCostRaw = document.getElementById('receiveCost').value.trim();
+    const cost = receiveCostRaw === '' ? null : Number(receiveCostRaw);
+    const dateAcquired = document.getElementById('receiveDateAcquired').value || null;
+    const accountable = document.getElementById('receiveAccountable').value.trim() || null;
+    const departmentIdStr = document.getElementById('receiveDepartment').value || '';
+    const departmentId = departmentIdStr ? parseInt(departmentIdStr) : null;
+    const performedBy = parseInt(document.getElementById('receivePerformedBy').value) || null;
+    const notes = document.getElementById('receiveNotes').value.trim() || null;
+    
+    // Validate inputs
+    if (!accessionId && !itemName) {
+        showToast('Error', 'Please select or enter an item', 'error');
+        return;
+    }
+    
+    if (!quantity || quantity <= 0) {
+        showToast('Error', 'Please enter a valid quantity', 'error');
+        return;
+    }
+
+    if (!performedBy) {
+        showToast('Error', 'Please select a user who performed this action', 'error');
+        return;
+    }
+
+    if (cost !== null && (Number.isNaN(cost) || cost < 0)) {
+        showToast('Error', 'Please enter a valid unit cost', 'error');
+        return;
+    }
+
+    if (!departmentId || isNaN(departmentId)) {
+        console.error('Department value:', document.getElementById('receiveDepartment').value);
+        showToast('Error', 'Department not properly loaded. Please refresh the page.', 'error');
+        return;
+    }
+    
+    // Show loading state
+    document.getElementById('receiveSubmitBtn').classList.add('hidden');
+    document.getElementById('receiveLoading').classList.remove('hidden');
+    
+    try {
+        const payload = {
+            accession_id: accessionId,
+            item_name: itemName,
+            device_type: deviceType,
+            quantity: quantity,
+            reference: reference,
+            brand_model: brandModel,
+            cost: cost,
+            date_acquired: dateAcquired,
+            accountable: accountable,
+            department_id: departmentId,
+            performed_by: performedBy,
+            notes: notes
+        };
+        
+        const res = await fetch('/consumables/receive', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            const successMessage = getStockToastMessage('received', itemName, data);
+            showToast('Success', successMessage, 'success');
+            // Reset form
+            document.getElementById('receiveForm').reset();
+            document.getElementById('receiveDate').valueAsDate = new Date();
+            document.getElementById('currentStockReceive').textContent = '0';
+            document.getElementById('newStockReceive').textContent = '0';
+            // Reload inventory and stats
+            await populateDropdowns();
+            await populateUsers();
+            await populateDepartments();
+            await updateStats();
+            await loadTransactionHistory();
+        } else {
+            showToast('Error', data.message || 'Failed to receive item', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error', 'An error occurred while processing the receipt', 'error');
+    } finally {
+        document.getElementById('receiveSubmitBtn').classList.remove('hidden');
+        document.getElementById('receiveLoading').classList.add('hidden');
+    }
+});
+
+document.getElementById('returnForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const returnSelect = document.getElementById('returnItem');
+    const selectedValue = normalizeKey(returnSelect.value);
+    const selectedItem = getInventoryItemByValue(selectedValue);
+    const accessionId = selectedItem ? parseInt(selectedItem.accession_id, 10) : null;
+
+    const quantity = parseInt(document.getElementById('returnQuantity').value) || 0;
+    const reference = document.getElementById('returnRef').value.trim() || null;
+    const reason = document.getElementById('returnReason').value.trim() || null;
+    const performedBy = parseInt(document.getElementById('returnPerformedBy').value) || null;
+    const notes = document.getElementById('returnNotes').value.trim() || null;
+    const currentStock = selectedItem ? (Number(selectedItem.quantity) || 0) : 0;
+    
+    // Validate inputs
+    if (!Number.isInteger(accessionId)) {
+        showToast('Error', 'Please select a valid item to return', 'error');
+        return;
+    }
+    
+    if (!quantity || quantity <= 0) {
+        showToast('Error', 'Please enter a valid quantity', 'error');
+        return;
+    }
+
+    if (!performedBy) {
+        showToast('Error', 'Please select a user who performed this action', 'error');
+        return;
+    }
+
+    if (quantity > currentStock) {
+        showToast('Error', `Not enough stock. Available: ${currentStock}`, 'error');
+        return;
+    }
+    
+    // Show loading state
+    document.getElementById('returnSubmitBtn').classList.add('hidden');
+    document.getElementById('returnLoading').classList.remove('hidden');
+    
+    try {
+        const payload = {
+            accession_id: accessionId,
+            quantity: quantity,
+            reference: reference,
+            reason: reason,
+            performed_by: performedBy,
+            notes: notes
+        };
+        
+        const res = await fetch('/consumables/return', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            const fallbackReturnName = selectedItem?.item_name || 'Item';
+            const successMessage = getStockToastMessage('returned', fallbackReturnName, data);
+            showToast('Success', successMessage, 'success');
+            // Reset form
+            document.getElementById('returnForm').reset();
+            document.getElementById('returnDate').valueAsDate = new Date();
+            document.getElementById('currentStockReturn').textContent = '0';
+            document.getElementById('newStockReturn').textContent = '0';
+            // Reload inventory and stats
+            await populateDropdowns();
+            await populateUsers();
+            await updateStats();
+            await loadTransactionHistory();
+        } else {
+            showToast('Error', data.message || 'Failed to return item', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error', 'An error occurred while processing the return', 'error');
+    } finally {
+        document.getElementById('returnSubmitBtn').classList.remove('hidden');
+        document.getElementById('returnLoading').classList.add('hidden');
+    }
+});
+        // Update stats with counter animation
+        async function updateStats() {
+            try {
+                const res = await fetch('/transactions/stats');
+                if (!res.ok) throw new Error('Failed to load stats');
+                const data = await res.json();
+                
+                // Animate the counters
+                const currentReceived = parseInt(document.getElementById('totalReceived').textContent.replace(/,/g, '')) || 0;
+                const currentReturned = parseInt(document.getElementById('totalReturned').textContent.replace(/,/g, '')) || 0;
+                const currentNet = parseInt(document.getElementById('netChange').textContent.replace(/,/g, '')) || 0;
+                
+                animateCounter('totalReceived', currentReceived, data.total_received ?? 0, 1000);
+                animateCounter('totalReturned', currentReturned, data.total_returned ?? 0, 1000);
+                animateCounter('netChange', currentNet, data.net_change ?? 0, 1000);
+            } catch (e) {
+                console.error(e);
+                document.getElementById('totalReceived').textContent = '0';
+                document.getElementById('totalReturned').textContent = '0';
+                document.getElementById('netChange').textContent = '0';
+            }
+        }
+
+        // Show toast notification
+        function showToast(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            const icons = {
+                success: { 
+                    icon: 'check-circle', 
+                    color: 'text-green-600 bg-green-100'
+                },
+                error: { 
+                    icon: 'x-circle', 
+                    color: 'text-red-600 bg-red-100'
+                },
+                info: { 
+                    icon: 'info', 
+                    color: 'text-blue-600 bg-blue-100'
+                }
+            };
+            
+            const config = icons[type] || icons.success;
+            
+            toastIcon.className = `w-10 h-10 rounded-full flex items-center justify-center ${config.color}`;
+            toastIcon.innerHTML = `<i data-lucide="${config.icon}" class="w-6 h-6"></i>`;
+            
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastMessage').textContent = message;
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            lucide.createIcons();
+            
+            setTimeout(hideToast, 3000);
+        }
+
+// Load transaction history
+async function loadTransactionHistory() {
+
+    const filter = document.getElementById('filterTransaction').value;
+    const container = document.getElementById('transactionHistory');
+
+    try {
+
+        const res = await fetch(`/transactions/api?filter=${encodeURIComponent(filter)}&page=1&per_page=50`);
+
+        if (!res.ok) throw new Error("Failed to load transactions");
+
+        const data = await res.json();
+        let transactions = data.transactions || [];
+
+        // Apply filter client-side
+        if (filter !== "all") {
+            transactions = transactions.filter(t => t.type === filter);
+        }
+
+        if (transactions.length === 0) {
+
+            container.innerHTML = `
+                <div class="text-center py-12">
+                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="inbox" class="w-10 h-10 text-gray-400"></i>
+                    </div>
+                    <p class="text-gray-500">No transactions yet</p>
+                    <p class="text-gray-400 text-sm mt-1">Your transaction history will appear here</p>
+                </div>
+            `;
+
+            lucide.createIcons();
+            return;
+        }
+
+        container.innerHTML = transactions.map((t) => {
+
+            const dt = t.performed_at ? new Date(t.performed_at) : null;
+
+            const dateStr = dt ? dt.toLocaleDateString() : "";
+            const timeStr = dt ? dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "";
+
+            const isReceive = t.type === "receive";
+
+            const iconColor = isReceive
+                ? "text-green-600 bg-green-100"
+                : "text-orange-600 bg-orange-100";
+
+            const qty = Math.abs(t.quantity_change || 0);
+
+            return `
+                <div class="txn-entry rounded-xl p-4 flex items-center justify-between">
+
+                    <div class="flex items-center gap-3">
+
+                        <div class="w-10 h-10 rounded-xl ${iconColor} flex items-center justify-center">
+                            <i data-lucide="${isReceive ? 'arrow-down' : 'arrow-up'}" class="w-5 h-5"></i>
+                        </div>
+
+                        <div>
+                            <p class="font-semibold text-gray-800">${t.item_name || 'Unknown item'}</p>
+
+                            <div class="flex items-center gap-2 text-sm text-gray-500">
+
+                                <span class="px-2 py-0.5 rounded-full ${
+                                    isReceive
+                                        ? 'bg-green-100 text-green-600'
+                                        : 'bg-orange-100 text-orange-600'
+                                } text-xs font-medium">
+
+                                    ${isReceive ? 'Received' : 'Returned'}
+
+                                </span>
+
+                                <span>${dateStr} ${timeStr}</span>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+
+                        <p class="text-xl font-bold ${
+                            isReceive ? "text-green-600" : "text-orange-600"
+                        }">
+
+                            ${isReceive ? "+" : "-"}${qty}
+
+                        </p>
+
+                        <p class="text-xs text-gray-400">
+                            ${t.performed_by || "System"}
+                        </p>
+
+                    </div>
+
+                </div>
+            `;
+
+        }).join("");
+
+        lucide.createIcons();
+
+    } catch (err) {
+
+        console.error(err);
+
+        container.innerHTML = `
+            <div class="text-center py-8">
+                <i data-lucide="alert-circle" class="w-10 h-10 text-red-400 mx-auto mb-3"></i>
+                <p class="text-gray-500">Failed to load transactions.</p>
+            </div>
+        `;
+
+        lucide.createIcons();
+    }
+}
+        // Clear transaction history
+        function clearTransactionHistory() {
+            showToast('Info', 'Clearing DB-backed history is not enabled.', 'error');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await populateDropdowns();
+            await populateUsers();
+            await populateDepartments();
+            await updateStats();
+            await loadTransactionHistory();
+            updateReceivePreview();
+            updateReturnPreview();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
+

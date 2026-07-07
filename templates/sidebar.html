@@ -1,0 +1,447 @@
+<!-- templates/partials/sidebar.html -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+
+{% set current_endpoint = request.endpoint or '' %}
+
+<aside id="sidebar"
+  class="fixed inset-y-0 left-0 z-50 h-full w-64 transform overflow-hidden border-r border-white/10 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-slate-100 shadow-2xl shadow-slate-950/30 transition-transform duration-300 md:translate-x-0 -translate-x-full">
+  <div class="pointer-events-none absolute -left-12 -top-20 h-44 w-44 rounded-full bg-blue-500/20 blur-2xl"></div>
+  <div class="pointer-events-none absolute -right-16 bottom-24 h-52 w-52 rounded-full bg-cyan-400/10 blur-2xl"></div>
+
+  <div class="relative z-10 flex h-full flex-col justify-between">
+    <div>
+      <div class="mx-3 mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 shadow-lg shadow-black/20">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/20 ring-1 ring-blue-300/35">
+            <i data-lucide="boxes" class="h-5 w-5 text-blue-100"></i>
+          </div>
+          <div>
+            <h4 class="text-xl font-extrabold tracking-wide text-white">NCMIS</h4>
+            <span class="text-[11px] uppercase tracking-[0.18em] text-blue-200/80">Inventory Dashboard</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-4 pt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Navigation</div>
+
+      <!-- Navigation -->
+      <nav class="sidebar-scrollbar mt-2 flex max-h-[calc(100vh-255px)] flex-col gap-2 overflow-y-auto px-3 pb-4">
+{% if permissions.get('dashboard', {}).get('view', False) %}
+{% set is_dashboard_active = current_endpoint == 'dashboard_bp.dashboard_load' %}
+<a href="{{ url_for('dashboard_bp.dashboard_load') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_dashboard_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_dashboard_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Dashboard</span>
+</a>
+{% endif %}
+
+{% if is_admin == 1 %}
+{% set is_transaction_active = current_endpoint == 'transaction_bp.transaction_page' %}
+<a href="{{ url_for('transaction_bp.transaction_page') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_transaction_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_transaction_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="receipt" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Transaction</span>
+</a>
+{% endif %}
+
+{% if permissions.get('inventory', {}).get('view', False) %}
+{% set is_inventory_active = current_endpoint == 'manage_inventory.inventory_load' and request.args.get('open_usage') != '1' %}
+<a href="{{ url_for('manage_inventory.inventory_load') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_inventory_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_inventory_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="cpu" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Inventory</span>
+</a>
+{% endif %}
+
+{% if is_admin == 1 or permissions.get('transaction', {}).get('view', False) %}
+{% set is_consumable_usage_active = current_endpoint == 'transaction_bp.consumable_usage_page' %}
+<a href="{{ url_for('transaction_bp.consumable_usage_page') }}"
+   class="nav-usage group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_consumable_usage_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200 icon-accent
+               {% if is_consumable_usage_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                  bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="package-check" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Usage Log</span>  
+</a>
+{% endif %}
+
+{% if permissions.get('qrlist', {}).get('view', False) %}
+{% set is_qr_active = current_endpoint == 'qrcode_bp.qrcode_generator_page' %}
+<a href="{{ url_for('qrcode_bp.qrcode_generator_page') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_qr_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_qr_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="qr-code" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">QR List</span>
+</a>
+{% endif %}
+
+{% if is_admin == 1 %}
+{% set stock_room_href = url_for('stock_room_bp.stock_room_page') %}
+{% set is_stock_room_active = request.path.rstrip('/') == stock_room_href.rstrip('/') %}
+<a href="{{ stock_room_href }}"
+   data-no-refresh-current="true"
+   {% if is_stock_room_active %}aria-current="page" aria-disabled="true"{% endif %}
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_stock_room_active %}
+            pointer-events-none border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_stock_room_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="warehouse" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Stock Room</span>
+</a>
+{% endif %}
+
+{% if is_admin == 1 and permissions.get('manage_user', {'view': True}).get('view', True) %}
+{% set is_manage_user_active = current_endpoint == 'manage_user_bp.manage_user_page' %}
+<a href="{{ url_for('manage_user_bp.manage_user_page') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_manage_user_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_manage_user_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="users" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Manage Users</span>
+</a>
+{% endif %}
+
+{% if is_admin == 1 %}
+{% set is_department_active = current_endpoint == 'manage_department_bp.manage_department_page' %}
+<a href="{{ url_for('manage_department_bp.manage_department_page') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_department_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_department_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="building" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Manage Office and Facility</span>
+</a>
+{% endif %}
+
+{% if is_admin == 1 or permissions.get('submit_ticket', {}).get('view', False) %}
+{% set is_admin_tickets_active = current_endpoint == 'admin_tickets_bp.admin_tickets_page' %}
+<a href="{{ url_for('admin_tickets_bp.admin_tickets_page') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_admin_tickets_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_admin_tickets_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="inbox" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Ticket Queue</span>
+</a>
+  {% set is_ticket_history_active = current_endpoint == 'ticket_reports_bp.ticket_history' %}
+  <a href="{{ url_for('ticket_reports_bp.ticket_history') }}"
+     class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+            {% if is_ticket_history_active %}
+              border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+            {% else %}
+              border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+            {% endif %}">
+    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+                 {% if is_ticket_history_active %}
+                   bg-white/15 text-white ring-white/30
+                 {% else %}
+                   bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+                 {% endif %}">
+      <i data-lucide="clock" class="h-4 w-4"></i>
+    </span>
+    <span class="leading-tight">Ticket History</span>
+  </a>
+
+  {% set is_ticket_report_active = current_endpoint == 'ticket_reports_bp.ticket_report' %}
+  <a href="{{ url_for('ticket_reports_bp.ticket_report') }}"
+     class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+            {% if is_ticket_report_active %}
+              border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+            {% else %}
+              border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+            {% endif %}">
+    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+                 {% if is_ticket_report_active %}
+                   bg-white/15 text-white ring-white/30
+                 {% else %}
+                   bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+                 {% endif %}">
+      <i data-lucide="bar-chart-2" class="h-4 w-4"></i>
+    </span>
+    <span class="leading-tight">Ticket Report</span>
+  </a>
+{% endif %}
+
+{% if session.get('user') and permissions.get('activity_log', {'view': True}).get('view', True) %}
+{% set is_activity_log_active = current_endpoint == 'activity_log_bp.activity_log_page' %}
+<a href="/activity-log"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_activity_log_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_activity_log_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="history" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Activity Log</span>
+</a>
+{% endif %}
+
+{% if permissions.get('report', {}).get('view', False) %}
+{% set is_report_active = current_endpoint == 'report_bp.report_generator_page' %}
+<a href="{{ url_for('report_bp.report_generator_page') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_report_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_report_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="bar-chart-3" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Report</span>
+</a>
+{% endif %}
+
+{% if permissions.get('damage_report', {'view': True}).get('view', True) %}
+{% set is_damage_report_active = current_endpoint == 'damage_report_bp.damage_report_page' %}
+<a href="{{ url_for('damage_report_bp.damage_report_page') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_damage_report_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_damage_report_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="alert-triangle" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Damage Report</span>
+</a>
+{% endif %}
+
+{% if permissions.get('maintenance', {'view': True}).get('view', True) %}
+{% set is_maintenance_active = current_endpoint == 'maintenance_bp.maintenance_history_page' %}
+<a href="{{ url_for('maintenance_bp.maintenance_history_page') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_maintenance_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_maintenance_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="wrench" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Maintenance History</span>
+</a>
+{% endif %}
+
+{% if is_admin == 1 %}
+{% set is_transaction_history_active = current_endpoint == 'transaction_bp.transaction_history_page' %}
+<a href="{{ url_for('transaction_bp.transaction_history_page') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_transaction_history_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_transaction_history_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="history" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Transaction History</span>
+</a>
+{% set is_archive_active = current_endpoint == 'archive_bp.archive_page' %}
+<a href="{{ url_for('archive_bp.archive_page') }}"
+   class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-200
+          {% if is_archive_active %}
+            border-blue-300/40 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-950/45
+          {% else %}
+            border-transparent text-slate-200 hover:border-white/15 hover:bg-white/10 hover:text-white
+          {% endif %}">
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 transition-all duration-200
+               {% if is_archive_active %}
+                 bg-white/15 text-white ring-white/30
+               {% else %}
+                 bg-white/5 text-blue-200 ring-white/10 group-hover:bg-blue-500/20 group-hover:text-white group-hover:ring-blue-300/25
+               {% endif %}">
+    <i data-lucide="archive" class="h-4 w-4"></i>
+  </span>
+  <span class="leading-tight">Archive</span>
+</a>
+{% endif %}
+      </nav>
+    </div>
+
+    <!-- Logout Button -->
+    <div class="p-4">
+      <button id="logoutBtn"
+        class="sidebar-logout-btn group flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold text-white">
+        <i data-lucide="log-out" class="sidebar-logout-icon h-5 w-5"></i>
+        Logout
+      </button>
+    </div>
+  </div>
+</aside>
+
+
+  <!-- LOGOUT MODAL -->
+  <div id="logoutModal" class="logout-modal-backdrop hidden fixed inset-0 flex items-center justify-center z-50 p-4">
+    <div class="logout-modal-card w-full max-w-sm text-center">
+      <div class="logout-modal-icon-wrap">
+        <i data-lucide="alert-triangle" class="w-7 h-7 text-amber-600"></i>
+      </div>
+      <h2 class="logout-modal-title">Confirm Logout</h2>
+      <p class="logout-modal-subtitle">You are about to end your current session. Do you want to continue?</p>
+      <div class="logout-modal-actions">
+        <button id="cancelLogout" class="logout-modal-btn logout-modal-btn-cancel" type="button">Cancel</button>
+        <form method="post" action="{{ url_for('login_bp.logout') }}">
+          <button type="submit" class="logout-modal-btn logout-modal-btn-confirm w-full">Logout</button>
+        </form>
+      </div>
+    </div>
+  </div>
+<script>  
+
+     // Logout modal logic
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutModal = document.getElementById('logoutModal');
+    const cancelLogout = document.getElementById('cancelLogout');
+    if (logoutBtn && logoutModal && cancelLogout) {
+      logoutBtn.addEventListener('click', () => logoutModal.classList.remove('hidden'));
+      cancelLogout.addEventListener('click', () => logoutModal.classList.add('hidden'));
+      logoutModal.addEventListener('click', (event) => {
+        if (event.target === logoutModal) {
+          logoutModal.classList.add('hidden');
+        }
+      });
+    }
+
+    // Lucide icons
+    lucide.createIcons();
+
+    // Prevent Stock Room self-navigation from reloading the current page.
+    document.addEventListener('click', (event) => {
+      const stockRoomLink = event.target.closest('a[data-no-refresh-current="true"]');
+      if (!stockRoomLink) return;
+
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (stockRoomLink.target === '_blank' || stockRoomLink.hasAttribute('download')) return;
+
+      const normalizePath = (path) => path.replace(/\/+$/, '') || '/';
+      const currentPath = normalizePath(window.location.pathname);
+      const targetPath = normalizePath(new URL(stockRoomLink.href, window.location.origin).pathname);
+
+      if (currentPath === targetPath) {
+        event.preventDefault();
+      }
+    });
+
+</script>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction History - NCMIS</title>
+    <script src="{{ url_for('static', filename='js/tailwind.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lucide.js') }}"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex min-h-screen bg-gray-200 text-gray-800">
+    {% include 'sidebar.html' %}
+    
+    <!-- Main Content -->
+    <main class="flex-1 ml-0 md:ml-64 p-4 lg:p-6 transition-all duration-300">
+        <!-- Header -->
+        <div class="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white rounded-3xl shadow-2xl p-4 sm:p-5 mb-6 border border-blue-500/40">
+            <div class="pointer-events-none absolute -top-24 -right-20 h-56 w-56 rounded-full bg-white/15"></div>
+            <div class="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-blue-200/20"></div>
+
+            <div class="relative z-10 flex min-w-0 items-center gap-3">
+                <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+                    <i data-lucide="history" class="w-6 h-6 text-white"></i>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="text-xl sm:text-2xl font-bold text-white">Transaction History</h1>
+                    <p class="text-xs sm:text-sm text-blue-100">View all receive and return transactions</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Total Received -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-green-500 animate-fade-in">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Total Received</p>
+                        <p id="totalReceived" class="text-3xl font-bold text-green-600 mt-2">0</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-xl ml-4">
+                        <i data-lucide="arrow-down" class="w-8 h-8 text-green-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-green-500 flex items-center gap-1">
+                        <i data-lucide="trending-up" class="w-4 h-4"></i> Inbound
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Total Returned -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-orange-500 animate-fade-in" style="animation-delay: 0.1s">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Total Returned</p>
+                        <p id="totalReturned" class="text-3xl font-bold text-orange-600 mt-2">0</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-xl ml-4">
+                        <i data-lucide="arrow-up" class="w-8 h-8 text-orange-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-orange-500 flex items-center gap-1">
+                        <i data-lucide="trending-down" class="w-4 h-4"></i> Outbound
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Net Change -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-blue-500 animate-fade-in" style="animation-delay: 0.2s">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Net Change</p>
+                        <p id="netChange" class="text-3xl font-bold text-blue-600 mt-2">0</p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-xl ml-4">
+                        <i data-lucide="bar-chart-3" class="w-8 h-8 text-blue-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-blue-500 flex items-center gap-1">
+                        <i data-lucide="activity" class="w-4 h-4"></i> Live
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 animate-fade-in">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-100 p-3 rounded-xl">
+                        <i data-lucide="history" class="w-6 h-6 text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">All Transactions</h3>
+                        <p class="text-sm text-gray-500">View complete transaction history</p>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <!-- Date From -->
+                    <div class="relative">
+                        <i data-lucide="calendar" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                        <input type="date" id="dateFrom" class="pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Date From">
+                    </div>
+                    
+                    <!-- Date To -->
+                    <div class="relative">
+                        <i data-lucide="calendar" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                        <input type="date" id="dateTo" class="pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Date To">
+                    </div>
+                    
+                    <!-- Type Filter -->
+                    <div class="relative">
+                        <i data-lucide="filter" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                        <select id="filterTransaction" class="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            <option value="all">All</option>
+                            <option value="receive">Receive</option>
+                            <option value="return">Return</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Apply Filter Button -->
+                    <button onclick="loadTransactionHistory(1)" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition flex items-center gap-2">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                        Filter
+                    </button>
+                    
+                    <button onclick="exportToExcel()" class="px-4 py-2.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition font-medium border border-green-200 flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Export</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Search Bar (Left Aligned) -->
+            <div class="flex items-center justify-start mb-2">
+                <div class="relative max-w-xs w-full sm:w-72">
+                    <input id="transactionQuickSearch" type="text" class="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-xl bg-gray-50 text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Quick search...">
+                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </span>
+                    <button id="clearTransactionQuickSearch" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 focus:outline-none" style="display:none;" tabindex="-1">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Transaction Table -->
+            <div class="mb-6 border border-gray-200 rounded-2xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr class="text-left text-gray-600">
+                                <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide whitespace-nowrap">Date</th>
+                                <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide whitespace-nowrap">Time</th>
+                                <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide whitespace-nowrap">Type</th>
+                                <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide">Item</th>
+                                <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-right whitespace-nowrap">Quantity</th>
+                                <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide whitespace-nowrap">Performed By</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="transactionHistory" class="divide-y divide-gray-100 bg-white">
+                            <tr>
+                                <td colspan="6" class="px-4 py-12 text-center">
+                                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i data-lucide="inbox" class="w-10 h-10 text-gray-400"></i>
+                                    </div>
+                                    <p class="text-gray-500">No transactions yet</p>
+                                    <p class="text-gray-400 text-sm mt-1">Your transaction history will appear here</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div id="pagination-container" class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-200">
+                <div class="flex items-center gap-2">
+                    <label class="text-sm font-medium text-gray-600">Show:</label>
+                    <select id="per-page-select" class="px-3 py-1.5 border border-gray-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                    <span class="text-sm text-gray-600">entries</span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button id="prev-page" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors flex items-center gap-1" disabled>
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                        Prev
+                    </button>
+                    <div id="page-numbers" class="flex gap-1"></div>
+                    <button id="next-page" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors flex items-center gap-1" disabled>
+                        Next
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                
+                <div id="pagination-info" class="text-sm text-gray-600"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-4 flex items-center gap-3 border border-gray-200">
+            <div id="toastIcon" class="w-10 h-10 rounded-full flex items-center justify-center">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p id="toastTitle" class="font-semibold text-gray-800"></p>
+                <p id="toastMessage" class="text-sm text-gray-500"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pagination state
+        let currentPage = 1;
+        let perPage = 10;
+        let currentFilter = 'all';
+        let dateFrom = '';
+        let dateTo = '';
+
+        // Counter animation function
+        function animateCounter(elementId, start, end, duration) {
+            const element = document.getElementById(elementId);
+            const range = end - start;
+            const minTimer = 50;
+            let stepTime = Math.abs(Math.floor(duration / range));
+            stepTime = Math.max(stepTime, minTimer);
+            let startTime = new Date().getTime();
+            let endTime = startTime + duration;
+            let timer;
+
+            function run() {
+                let now = new Date().getTime();
+                let remaining = Math.max((endTime - now) / duration, 0);
+                let value = Math.round(end - (remaining * range));
+                element.textContent = value.toLocaleString();
+                if (value == end) {
+                    clearInterval(timer);
+                }
+            }
+
+            timer = setInterval(run, stepTime);
+            run();
+        }
+
+        // Update stats with counter animation
+        async function updateStats() {
+            try {
+                const res = await fetch('/transactions/stats');
+                if (!res.ok) throw new Error('Failed to load stats');
+                const data = await res.json();
+                
+                const currentReceived = parseInt(document.getElementById('totalReceived').textContent.replace(/,/g, '')) || 0;
+                const currentReturned = parseInt(document.getElementById('totalReturned').textContent.replace(/,/g, '')) || 0;
+                const currentNet = parseInt(document.getElementById('netChange').textContent.replace(/,/g, '')) || 0;
+                
+                animateCounter('totalReceived', currentReceived, data.total_received ?? 0, 1000);
+                animateCounter('totalReturned', currentReturned, data.total_returned ?? 0, 1000);
+                animateCounter('netChange', currentNet, data.net_change ?? 0, 1000);
+            } catch (e) {
+                console.error(e);
+                document.getElementById('totalReceived').textContent = '0';
+                document.getElementById('totalReturned').textContent = '0';
+                document.getElementById('netChange').textContent = '0';
+            }
+        }
+
+        // Show toast notification
+        function showToast(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            const icons = {
+                success: { 
+                    icon: 'check-circle', 
+                    color: 'text-green-600 bg-green-100'
+                },
+                error: { 
+                    icon: 'x-circle', 
+                    color: 'text-red-600 bg-red-100'
+                },
+                info: { 
+                    icon: 'info', 
+                    color: 'text-blue-600 bg-blue-100'
+                }
+            };
+            
+            const config = icons[type] || icons.success;
+            
+            toastIcon.className = `w-10 h-10 rounded-full flex items-center justify-center ${config.color}`;
+            toastIcon.innerHTML = `<i data-lucide="${config.icon}" class="w-6 h-6"></i>`;
+            
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastMessage').textContent = message;
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            lucide.createIcons();
+            
+            setTimeout(hideToast, 3000);
+        }
+
+        // Hide toast function
+        function hideToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('translate-y-20', 'opacity-0');
+        }
+
+        // Load transaction history with pagination
+        async function loadTransactionHistory(page = 1) {
+            currentFilter = document.getElementById('filterTransaction').value;
+            dateFrom = document.getElementById('dateFrom').value;
+            dateTo = document.getElementById('dateTo').value;
+            const container = document.getElementById('transactionHistory');
+
+            if (dateFrom && dateTo && dateFrom > dateTo) {
+                showToast('Error', 'Date From cannot be later than Date To.', 'error');
+                return;
+            }
+
+            try {
+                // Build query parameters
+                const params = new URLSearchParams({
+                    filter: currentFilter,
+                    type: currentFilter,
+                    page: String(page),
+                    per_page: String(perPage),
+                    _: String(Date.now())
+                });
+
+                if (dateFrom) params.set('date_from', dateFrom);
+                if (dateTo) params.set('date_to', dateTo);
+
+                const res = await fetch(`/transactions/api?${params.toString()}`, { cache: 'no-store' });
+
+                if (!res.ok) throw new Error("Failed to load transactions");
+
+                const data = await res.json();
+                const transactions = data.transactions || [];
+                const pagination = data.pagination;
+
+                if (transactions.length === 0) {
+                    container.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="px-4 py-12 text-center">
+                                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i data-lucide="inbox" class="w-10 h-10 text-gray-400"></i>
+                                </div>
+                                <p class="text-gray-500">No transactions found</p>
+                                <p class="text-gray-400 text-sm mt-1">Try adjusting your filters</p>
+                            </td>
+                        </tr>
+                    `;
+                    updatePaginationControls(null);
+                    lucide.createIcons();
+                    return;
+                }
+
+                container.innerHTML = transactions.map((t) => {
+                    const dt = t.performed_at ? new Date(t.performed_at) : null;
+
+                    const dateStr = dt ? dt.toLocaleDateString([], { year: 'numeric', month: 'short', day: '2-digit' }) : "-";
+                    const timeStr = dt ? dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "-";
+
+                    const isReceive = t.type === "receive";
+
+                    const qty = Math.abs(t.quantity_change || 0);
+                    const safeItemName = t.item_name || 'Unknown item';
+                    const safePerformedBy = t.performed_by || 'System';
+
+                    return `
+                        <tr class="hover:bg-blue-50/40 transition-colors">
+                            <td class="px-4 py-3 font-medium text-gray-700 whitespace-nowrap">${dateStr}</td>
+
+                            <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${timeStr}</td>
+
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                    isReceive ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                                }">
+                                    <i data-lucide="${isReceive ? 'arrow-down' : 'arrow-up'}" class="w-3.5 h-3.5"></i>
+                                    ${isReceive ? 'Received' : 'Returned'}
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-3 font-semibold text-gray-800">${safeItemName}</td>
+
+                            <td class="px-4 py-3 text-right">
+                                <span class="text-base font-bold ${isReceive ? 'text-green-600' : 'text-orange-600'}">
+                                    ${isReceive ? '+' : '-'}${qty}
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-3 text-gray-600 whitespace-nowrap">${safePerformedBy}</td>
+                        </tr>
+                    `;
+
+                }).join("");
+
+                updatePaginationControls(pagination);
+                lucide.createIcons();
+
+            } catch (err) {
+                console.error(err);
+
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-4 py-10 text-center">
+                            <i data-lucide="alert-circle" class="w-10 h-10 text-red-400 mx-auto mb-3"></i>
+                            <p class="text-gray-500">Failed to load transactions.</p>
+                        </td>
+                    </tr>
+                `;
+
+                updatePaginationControls(null);
+                lucide.createIcons();
+            }
+        }
+
+        // Update pagination controls
+        function updatePaginationControls(pagination) {
+            const container = document.getElementById('pagination-container');
+            
+            if (!pagination || pagination.total === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'flex';
+            currentPage = pagination.page;
+            
+            // Update prev/next buttons
+            const prevBtn = document.getElementById('prev-page');
+            const nextBtn = document.getElementById('next-page');
+            
+            prevBtn.disabled = !pagination.has_prev;
+            nextBtn.disabled = !pagination.has_next;
+            
+            // Update page numbers
+            const pageNumbers = document.getElementById('page-numbers');
+            pageNumbers.innerHTML = '';
+            
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(pagination.total_pages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage < maxVisiblePages - 1) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            // First page + ellipsis
+            if (startPage > 1) {
+                addPageButton(1);
+                if (startPage > 2) {
+                    pageNumbers.innerHTML += '<span class="px-2 text-gray-500">...</span>';
+                }
+            }
+            
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                addPageButton(i);
+            }
+            
+            // Last page + ellipsis
+            if (endPage < pagination.total_pages) {
+                if (endPage < pagination.total_pages - 1) {
+                    pageNumbers.innerHTML += '<span class="px-2 text-gray-500">...</span>';
+                }
+                addPageButton(pagination.total_pages);
+            }
+            
+            // Update info text
+            const startItem = (pagination.page - 1) * pagination.per_page + 1;
+            const endItem = Math.min(pagination.page * pagination.per_page, pagination.total);
+            document.getElementById('pagination-info').textContent = 
+                `Showing ${startItem}-${endItem} of ${pagination.total} entries`;
+        }
+
+        // Add page number button
+        function addPageButton(pageNum) {
+            const pageNumbers = document.getElementById('page-numbers');
+            const button = document.createElement('button');
+            button.textContent = pageNum;
+            button.className = pageNum === currentPage 
+                ? 'w-10 h-10 bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors' 
+                : 'w-10 h-10 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors';
+            button.onclick = () => loadTransactionHistory(pageNum);
+            pageNumbers.appendChild(button);
+        }
+
+        // Export to Excel function
+        async function exportToExcel() {
+            try {
+                showToast('Info', 'Preparing Excel export...', 'info');
+                
+                const res = await fetch('/transactions/api?limit=10000');
+                if (!res.ok) throw new Error('Failed to fetch transactions');
+                
+                const data = await res.json();
+                const transactions = data.transactions || [];
+                
+                if (transactions.length === 0) {
+                    showToast('Error', 'No transactions to export', 'error');
+                    return;
+                }
+                
+                // Create CSV content
+                const headers = ['Date', 'Time', 'Type', 'Item Name', 'Quantity', 'Performed By'];
+                const rows = transactions.map(t => {
+                    const dt = t.performed_at ? new Date(t.performed_at) : null;
+                    const dateStr = dt ? dt.toLocaleDateString() : '';
+                    const timeStr = dt ? dt.toLocaleTimeString() : '';
+                    const type = t.type === 'receive' ? 'Received' : 'Returned';
+                    const qty = Math.abs(t.quantity_change || 0);
+                    
+                    return [dateStr, timeStr, type, t.item_name || 'Unknown', qty, t.performed_by || 'System'];
+                });
+                
+                const csvContent = [
+                    headers.join(','),
+                    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+                ].join('\n');
+                
+                // Download CSV
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `transaction_history_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast('Success', 'Transaction history exported successfully', 'success');
+            } catch (err) {
+                console.error('Export error:', err);
+                showToast('Error', 'Failed to export transactions', 'error');
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                loadTransactionHistory(currentPage - 1);
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            loadTransactionHistory(currentPage + 1);
+        });
+
+        document.getElementById('per-page-select').addEventListener('change', (e) => {
+            perPage = parseInt(e.target.value);
+            currentPage = 1;
+            loadTransactionHistory(1);
+        });
+
+        document.getElementById('filterTransaction').addEventListener('change', () => {
+            currentPage = 1;
+            loadTransactionHistory(1);
+        });
+
+        // Quick Search Logic
+        function applyTransactionQuickSearchFilter() {
+            const input = document.getElementById('transactionQuickSearch');
+            const filter = input.value.trim().toLowerCase();
+            const clearBtn = document.getElementById('clearTransactionQuickSearch');
+            const table = document.getElementById('transactionHistory');
+            let anyVisible = false;
+
+            if (filter.length > 0) {
+                clearBtn.style.display = '';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+
+            // Only filter if not loading state
+            Array.from(table.rows).forEach(row => {
+                // Skip if it's the empty state row
+                if (row.querySelector('i[data-lucide="inbox"]') || row.querySelector('i[data-lucide="alert-circle"]')) {
+                    row.style.display = '';
+                    return;
+                }
+                const text = row.textContent.toLowerCase();
+                if (filter === '' || text.includes(filter)) {
+                    row.style.display = '';
+                    anyVisible = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Show empty state if nothing matches
+            const emptyRow = table.querySelector('tr[data-quicksearch-empty]');
+            if (!anyVisible) {
+                if (!emptyRow) {
+                    const tr = document.createElement('tr');
+                    tr.setAttribute('data-quicksearch-empty', '1');
+                    tr.innerHTML = `<td colspan="6" class="px-4 py-10 text-center"><i data-lucide="search-x" class="w-10 h-10 text-gray-400 mx-auto mb-3"></i><p class="text-gray-500">No results found</p></td>`;
+                    table.appendChild(tr);
+                    lucide.createIcons();
+                }
+            } else {
+                if (emptyRow) emptyRow.remove();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTransactionHistory(1);
+            updateStats();
+            lucide.createIcons();
+
+            const quickSearch = document.getElementById('transactionQuickSearch');
+            const clearBtn = document.getElementById('clearTransactionQuickSearch');
+            quickSearch.addEventListener('input', applyTransactionQuickSearchFilter);
+            clearBtn.addEventListener('click', function() {
+                quickSearch.value = '';
+                applyTransactionQuickSearchFilter();
+                quickSearch.focus();
+            });
+        });
+    </script>
+</body>
+</html>

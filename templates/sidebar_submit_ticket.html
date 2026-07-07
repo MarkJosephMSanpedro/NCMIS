@@ -1,0 +1,118 @@
+<!-- Sidebar: focused for Submit Ticket workflow -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+
+{% set current_endpoint = request.endpoint or '' %}
+
+<aside id="sidebar" class="fixed inset-y-0 left-0 z-50 h-full w-64 transform overflow-hidden border-r border-white/10 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-slate-100 shadow-2xl shadow-slate-950/30 transition-transform duration-300 md:translate-x-0 -translate-x-full">
+  <div class="pointer-events-none absolute -left-12 -top-20 h-44 w-44 rounded-full bg-blue-500/20 blur-2xl"></div>
+  <div class="pointer-events-none absolute -right-16 bottom-24 h-52 w-52 rounded-full bg-cyan-400/10 blur-2xl"></div>
+  <div class="relative z-10 flex h-full flex-col justify-between">
+    <div>
+      <div class="mx-3 mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 shadow-lg shadow-black/20">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/20 ring-1 ring-blue-300/35">
+            <i data-lucide="boxes" class="h-5 w-5 text-blue-100"></i>
+          </div>
+          <div>
+            <h4 class="text-xl font-extrabold tracking-wide text-white">NCMIS</h4>
+            <span class="text-[11px] uppercase tracking-[0.18em] text-blue-200/80">Inventory Dashboard</span>
+          </div>
+        </div>
+      </div>
+
+      
+
+      <nav class="sidebar-scrollbar mt-2 flex max-h-[calc(100vh-255px)] flex-col gap-2 overflow-y-auto px-3 pb-4">
+        {% set is_submit_active = current_endpoint in ['submit_ticket_bp.submit_ticket_page','submit_ticket_bp.submit_ticket_submit'] %}
+        <a href="{{ url_for('submit_ticket_bp.submit_ticket_page') }}" class="nav-item {% if is_submit_active %}nav-item-active{% else %}text-slate-200 hover:bg-white/6 hover:text-white{% endif %}">
+          <span class="icon text-blue-200"> <i data-lucide="edit-3"></i> </span>
+          <span class="leading-tight font-semibold">Submit Ticket</span>
+        </a>
+
+        {% set is_concerns_active = current_endpoint == 'concern_bp.concern_list' %}
+        <a href="{{ url_for('concern_bp.concern_list') }}" class="nav-item {% if is_concerns_active %}nav-item-active{% else %}text-slate-200 hover:bg-white/6 hover:text-white{% endif %}">
+          <span class="icon text-blue-200"> <i data-lucide="list-check"></i> </span>
+          <span class="leading-tight font-semibold">My Concerns</span>
+        </a>    
+       
+      </nav>
+    </div>
+
+    <div class="px-4 pb-6">
+      <button id="openLogoutModal" type="button" class="sidebar-logout-btn" aria-haspopup="dialog" aria-controls="logoutModal">
+        <i data-lucide="log-out" class="h-4 w-4"></i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </div>
+
+</aside>
+
+<!-- Logout confirmation modal (Tailwind-only) -->
+<div id="logoutModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" aria-hidden="true">
+  <div id="logoutModalCard" class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-200 scale-95 opacity-0" role="dialog" aria-modal="true" aria-labelledby="logoutModalTitle" aria-describedby="logoutModalDesc">
+    <div class="bg-gradient-to-r from-red-600 to-red-500 px-6 py-4 flex items-start gap-4">
+      <div class="flex-shrink-0 p-2 rounded-full bg-white/20 inline-flex items-center justify-center"><i data-lucide="alert-triangle" class="w-6 h-6 text-white"></i></div>
+      <div class="flex-1 min-w-0">
+        <h3 id="logoutModalTitle" class="text-white text-lg font-semibold leading-tight">Confirm Logout</h3>
+        <p id="logoutModalDesc" class="text-red-100 text-sm opacity-90 truncate">End your session securely — any unsaved changes may be lost.</p>
+      </div>
+      <button id="logoutModalCloseX" type="button" class="text-white/90 hover:text-white ml-2" aria-label="Close logout dialog"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="p-6">
+      <p class="text-sm text-slate-700">You are about to end your current session. If you continue, you will be logged out and redirected to the login page.</p>
+      <div class="mt-6 grid grid-cols-2 gap-3">
+        <button id="cancelLogout" class="w-full px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" type="button">Cancel</button>
+        <form method="post" action="{{ url_for('login_bp.logout') }}" class="m-0">
+          <button type="submit" class="w-full px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold">Logout</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const openBtn = document.getElementById('openLogoutModal');
+    const modal = document.getElementById('logoutModal');
+    const card = document.getElementById('logoutModalCard');
+    const cancelBtn = document.getElementById('cancelLogout');
+    const closeX = document.getElementById('logoutModalCloseX');
+    let lastActive = null;
+
+    function openModal() {
+      lastActive = document.activeElement;
+      if (!modal || !card) return;
+      modal.classList.remove('hidden');
+      // animate in
+      requestAnimationFrame(() => {
+        card.classList.remove('scale-95','opacity-0');
+        card.classList.add('scale-100','opacity-100');
+      });
+      modal.setAttribute('aria-hidden', 'false');
+      if (cancelBtn) cancelBtn.focus();
+      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    }
+
+    function closeModal() {
+      if (!modal || !card) return;
+      card.classList.remove('scale-100','opacity-100');
+      card.classList.add('scale-95','opacity-0');
+      modal.setAttribute('aria-hidden', 'true');
+      // wait for animation then hide
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        if (lastActive && typeof lastActive.focus === 'function') {
+          try { lastActive.focus(); } catch (e) { /* ignore */ }
+        }
+        lastActive = null;
+      }, 200);
+    }
+
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    if (closeX) closeX.addEventListener('click', closeModal);
+    if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (modal && !modal.classList.contains('hidden')) closeModal(); } });
+  })();
+</script>

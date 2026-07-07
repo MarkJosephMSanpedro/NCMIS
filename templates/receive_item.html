@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Receive Item</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% include 'includes/lucide.html' %}
+</head>
+<body class="bg-gray-100 text-gray-800 flex min-h-screen">
+
+  {% include 'sidebar.html' %}
+
+  <main class="flex-1 md:ml-64 p-8 space-y-10">
+    <header class="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white rounded-3xl shadow-2xl p-4 sm:p-5 border border-blue-500/40">
+      <div class="pointer-events-none absolute -top-24 -right-20 h-56 w-56 rounded-full bg-white/15"></div>
+      <div class="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-blue-200/20"></div>
+
+      <div class="relative z-10 flex min-w-0 items-center gap-3">
+        <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+          <i data-lucide="package-check" class="w-6 h-6 text-white"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-bold">Receive Item</h1>
+          <p class="text-xs sm:text-sm text-blue-100">Confirm returned assets and update condition logs</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Borrowed Items Section -->
+    <section class="bg-white p-8 rounded-xl shadow-md">
+      <div class="flex items-center mb-6">
+        <i data-lucide="package" class="w-7 h-7 text-blue-600 mr-2"></i>
+        <h2 class="text-2xl font-semibold text-blue-700">Your Borrowed Items</h2>
+      </div>
+
+      <!-- Items Table -->
+      <div class="overflow-x-auto rounded-lg border border-gray-300">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-gray-200 text-sm uppercase">
+            <tr>
+              <th class="p-2 border">Item Name</th>
+              <th class="p-2 border">Category</th>
+              <th class="p-2 border">Location</th>
+              <th class="p-2 border">Department</th>
+              <th class="p-2 border">Borrow Date</th>
+              <th class="p-2 border">Expected Return</th>
+              <th class="p-2 border">Action</th>
+            </tr>
+          </thead>
+          <tbody id="borrowed-items-body" class="text-sm"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div id="pagination-container" class="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+        <div id="pagination-info" class="text-sm text-gray-600"></div>
+        <nav id="pagination-nav" class="flex items-center gap-1 flex-wrap justify-center"></nav>
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-gray-600">Show:</label>
+          <select id="per-page-select" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Receive Item Modal -->
+  <div id="receiveModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-gray-800">Receive Item Condition</h3>
+          <button onclick="closeReceiveModal()" class="text-gray-500 hover:text-gray-700">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </div>
+
+        <form id="receiveForm">
+          <input type="hidden" id="borrowId">
+          
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Item Details</label>
+            <div id="itemDetails" class="p-3 bg-gray-50 rounded border"></div>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Item Condition</label>
+            <select id="itemCondition" required class="w-full p-2 rounded border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500">
+              <option value="">Select Condition</option>
+              <option value="Excellent">Excellent</option>
+              <option value="Good">Good</option>
+              <option value="Fair">Fair</option>
+              <option value="Poor">Poor</option>
+              <option value="Damaged">Damaged</option>
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="flex items-center">
+              <input type="checkbox" id="hasDamage" class="mr-2">
+              <span class="text-sm font-medium">Item has damage</span>
+            </label>
+          </div>
+
+          <div id="damageSection" class="mb-4 hidden">
+            <label class="block text-sm font-medium mb-2">Damage Description</label>
+            <textarea id="damageDescription" rows="3" class="w-full p-2 rounded border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500" placeholder="Describe the damage..."></textarea>
+          </div>
+
+          <div class="flex gap-3">
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow font-semibold">
+              Confirm Receive
+            </button>
+            <button type="button" onclick="closeReceiveModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg shadow font-semibold">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let currentPage = 1;
+    let perPage = 10;
+    let totalPages = 1;
+
+    // Load borrowed items
+    async function loadBorrowedItems(page = 1) {
+      try {
+        const res = await fetch(`/get-borrowed-items?page=${page}&per_page=${perPage}`);
+        const data = await res.json();
+
+        const tbody = document.getElementById("borrowed-items-body");
+        tbody.innerHTML = "";
+
+        if (data.error) {
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-red-500">Error loading items.</td></tr>`;
+          return;
+        }
+
+        const items = data.items || [];
+        currentPage = data.page || 1;
+        totalPages = data.total_pages || 1;
+        const totalItems = data.total_items || 0;
+
+        if (items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">No borrowed items found.</td></tr>`;
+          document.getElementById('pagination-container').classList.add('hidden');
+          return;
+        }
+
+        document.getElementById('pagination-container').classList.remove('hidden');
+
+        items.forEach(item => {
+          tbody.innerHTML += `
+            <tr class="hover:bg-gray-100">
+              <td class="p-2 border">${item.item_name}</td>
+              <td class="p-2 border">${item.category}</td>
+              <td class="p-2 border">${item.location}</td>
+              <td class="p-2 border">${item.department}</td>
+              <td class="p-2 border">${item.borrow_date}</td>
+              <td class="p-2 border">${item.expected_return_date}</td>
+              <td class="p-2 border">
+                <button onclick="openReceiveModal(${item.borrow_id}, '${item.item_name}', '${item.category}', '${item.location}', '${item.department}')" 
+                        class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold">
+                  Receive
+                </button>
+              </td>
+            </tr>`;
+        });
+
+        // Update pagination info
+        const startItem = (currentPage - 1) * perPage + 1;
+        const endItem = Math.min(currentPage * perPage, totalItems);
+        document.getElementById('pagination-info').innerHTML = 
+          `Showing <span class="font-medium">${startItem}</span> - <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalItems}</span> records`;
+
+        // Render pagination
+        renderPagination();
+        lucide.createIcons();
+      } catch (error) {
+        console.error('Error loading borrowed items:', error);
+        document.getElementById("borrowed-items-body").innerHTML = 
+          `<tr><td colspan="7" class="text-center py-4 text-red-500">Error loading items.</td></tr>`;
+      }
+    }
+
+    function renderPagination() {
+      const nav = document.getElementById('pagination-nav');
+      nav.innerHTML = '';
+
+      if (totalPages <= 1) return;
+
+      // Prev button
+      if (currentPage > 1) {
+        nav.innerHTML += `
+          <button onclick="loadBorrowedItems(${currentPage - 1})" 
+                  class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-colors">
+            <i data-lucide="chevron-left" class="w-4 h-4 mr-1"></i>
+            Prev
+          </button>`;
+      } else {
+        nav.innerHTML += `
+          <span class="flex items-center px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed">
+            <i data-lucide="chevron-left" class="w-4 h-4 mr-1"></i>
+            Prev
+          </span>`;
+      }
+
+      // Page numbers
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, currentPage + 2);
+
+      if (startPage > 1) {
+        nav.innerHTML += `<button onclick="loadBorrowedItems(1)" class="hidden sm:flex items-center justify-center w-10 h-10 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-colors">1</button>`;
+        if (startPage > 2) {
+          nav.innerHTML += `<span class="hidden sm:flex items-center justify-center w-10 h-10 text-sm font-medium text-gray-500">...</span>`;
+        }
+      }
+
+      for (let p = startPage; p <= endPage; p++) {
+        const isActive = p === currentPage;
+        nav.innerHTML += `
+          <button onclick="loadBorrowedItems(${p})" 
+                  class="flex items-center justify-center w-10 h-10 text-sm font-medium rounded-lg transition-colors
+                  ${isActive ? 'z-10 bg-blue-600 text-white border border-blue-600' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:text-blue-600'}">
+            ${p}
+          </button>`;
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          nav.innerHTML += `<span class="hidden sm:flex items-center justify-center w-10 h-10 text-sm font-medium text-gray-500">...</span>`;
+        }
+        nav.innerHTML += `<button onclick="loadBorrowedItems(${totalPages})" class="hidden sm:flex items-center justify-center w-10 h-10 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-colors">${totalPages}</button>`;
+      }
+
+      // Next button
+      if (currentPage < totalPages) {
+        nav.innerHTML += `
+          <button onclick="loadBorrowedItems(${currentPage + 1})" 
+                  class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-colors">
+            Next
+            <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+          </button>`;
+      } else {
+        nav.innerHTML += `
+          <span class="flex items-center px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed">
+            Next
+            <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+          </span>`;
+      }
+    }
+
+    // Handle per page change
+    document.getElementById('per-page-select').addEventListener('change', function() {
+      perPage = parseInt(this.value);
+      currentPage = 1;
+      loadBorrowedItems(1);
+    });
+
+    function openReceiveModal(borrowId, itemName, category, location, department) {
+      document.getElementById('borrowId').value = borrowId;
+      document.getElementById('itemDetails').innerHTML = `
+        <p><strong>Name:</strong> ${itemName}</p>
+        <p><strong>Category:</strong> ${category}</p>
+        <p><strong>Location:</strong> ${location}</p>
+        <p><strong>Department:</strong> ${department}</p>
+      `;
+      document.getElementById('receiveModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeReceiveModal() {
+      document.getElementById('receiveModal').classList.add('hidden');
+      document.getElementById('receiveForm').reset();
+      document.getElementById('damageSection').classList.add('hidden');
+    }
+
+    // Handle damage checkbox
+    document.getElementById('hasDamage').addEventListener('change', function() {
+      const damageSection = document.getElementById('damageSection');
+      if (this.checked) {
+        damageSection.classList.remove('hidden');
+        document.getElementById('damageDescription').required = true;
+      } else {
+        damageSection.classList.add('hidden');
+        document.getElementById('damageDescription').required = false;
+      }
+    });
+
+    // Handle form submission
+    document.getElementById('receiveForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = {
+        borrow_id: document.getElementById('borrowId').value,
+        item_condition: document.getElementById('itemCondition').value,
+        has_damage: document.getElementById('hasDamage').checked,
+        damage_description: document.getElementById('damageDescription').value
+      };
+
+      try {
+        const res = await fetch('/receive-item-submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+          alert('Item received successfully!');
+          closeReceiveModal();
+          loadBorrowedItems();
+        } else {
+          alert('Error: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error receiving item:', error);
+        alert('An error occurred while receiving the item');
+      }
+    });
+
+    // Load data on page load
+    window.addEventListener("DOMContentLoaded", () => loadBorrowedItems(1));
+  </script>
+</body>
+</html>
